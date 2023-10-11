@@ -1,4 +1,6 @@
-﻿using Neo4j.Driver;
+﻿using MoviesApi.Repository;
+using MoviesApi.Repository.IRepository;
+using Neo4j.Driver;
 
 namespace MoviesApi.Extensions
 {
@@ -17,6 +19,7 @@ namespace MoviesApi.Extensions
 				?? throw new Exception("Connection string not found");
 
 			services.AddSingleton(GraphDatabase.Driver(server, AuthTokens.Basic(userName, password)));
+			services.AddScoped<IMovieRepository, MovieRepository>();
 
 			return services;
 		}
