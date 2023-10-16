@@ -1,5 +1,6 @@
 ﻿using MoviesApi.Repository;
 using MoviesApi.Repository.IRepository;
+using MoviesApi.Services;
 using Neo4j.Driver;
 
 namespace MoviesApi.Extensions
@@ -20,6 +21,7 @@ namespace MoviesApi.Extensions
 
 			services.AddSingleton(GraphDatabase.Driver(server, AuthTokens.Basic(userName, password)));
 			services.AddScoped<IMovieRepository, MovieRepository>();
+			services.AddScoped<ITokenService, TokenService>();
 
 			return services;
 		}
