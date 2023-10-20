@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using MoviesApi.DTOs;
 using MoviesApi.Models;
 using Neo4j.Driver;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace MoviesApi.Controllers
 {
@@ -22,45 +24,71 @@ namespace MoviesApi.Controllers
 		[HttpPost("login")]
 		public async Task<ActionResult<UserDto>> Login(LoginDto loginDto)
 		{
-			User? user = null;
 			IAsyncSession session = _driver.AsyncSession();
 			try
 			{
-				IResultCursor cursor = await session.RunAsync($"MATCH (a:User {{ Name: \"{loginDto.Name}\" }}) RETURN a.Name as name, a.Role as role, a.Password as password, ID(a) as id");
+				string query = $$"""
+				                    MATCH (a:User { Name: "{{loginDto.Name}}" })
+				                    RETURN a.Name as name, a.Role as role, a.PasswordHash as passwordHash, a.PasswordSalt as passwordSalt, ID(a) as id
+				                 """;
+				IResultCursor cursor = await session.RunAsync(query);
 				IRecord node = await cursor.SingleAsync();
-				if (loginDto.Password == node["password"].As<string>())
+
+				if (node is null)
+					return Unauthorized("Invalid username or password");
+				
+				string storedPasswordHash = node["passwordHash"].As<string>();
+				string storedPasswordSalt = node["passwordSalt"].As<string>();
+
+				using HMACSHA512 hmac = new(Convert.FromBase64String(storedPasswordSalt));
+				byte[] computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(loginDto.Password));
+				byte[] storedHash = Convert.FromBase64String(storedPasswordHash);
+
+				if (computedHash.Where((t, i) => t != storedHash[i]).Any())
+					return Unauthorized("Invalid password");
+				
+				User? user = new User
 				{
-					user = new User
-					{
-						Id = node["id"].As<int>(),
-						Name = node["name"].As<string>(),
-						Role = (Role)Enum.Parse(typeof(Role), node["role"].As<string>())
-					};
-				}
+					Id = node["id"].As<int>(),
+					Name = node["name"].As<string>(),
+					Role = (Role)Enum.Parse(typeof(Role), node["role"].As<string>())
+				};
+				
+				return new UserDto
+				{
+					Name = user.Name,
+					Role = user.Role,
+					Token = _tokenService.CreateToken(user)
+				};
+				
 			}
 			finally
 			{
 				await session.CloseAsync();
 			}
-			
-			if (user is null)
-				return Unauthorized("Invalid username or password");
-
-			return new UserDto
-			{
-				Name = user.Name,
-				Role = user.Role,
-				Token = _tokenService.CreateToken(user)
-			};
 		}
 
 		[HttpPost("register")]
 		public async Task<ActionResult<UserDto>> Register(LoginDto loginDto)
 		{
+			using HMACSHA512 hmac = new();
+			byte[] passwordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(loginDto.Password));
+			byte[] passwordSalt = hmac.Key;
+
 			IAsyncSession session = _driver.AsyncSession();
+
 			try
 			{
-				IResultCursor cursor = await session.RunAsync($"CREATE (a:User {{ Name: \"{loginDto.Name}\", Password: \"{loginDto.Password}\", Role: \"User\" }})");
+				var query = $@"
+					        CREATE (a:User {{
+					            Name: ""{loginDto.Name}"",
+					            PasswordHash: ""{Convert.ToBase64String(passwordHash)}"",
+					            PasswordSalt: ""{Convert.ToBase64String(passwordSalt)}"",
+					            Role: ""User""
+					        }})";
+        
+				await session.RunAsync(query);
+
 				return new UserDto
 				{
 					Name = loginDto.Name,
