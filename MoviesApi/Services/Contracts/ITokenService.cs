@@ -1,6 +1,6 @@
 ﻿using MoviesApi.Models;
 
-namespace MoviesApi
+namespace MoviesApi.Services.Contracts
 {
 	public interface ITokenService
 	{

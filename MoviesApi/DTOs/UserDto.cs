@@ -1,13 +1,10 @@
-﻿#nullable disable
+﻿using MoviesApi.Models;
 
-using MoviesApi.Models;
+namespace MoviesApi.DTOs;
 
-namespace MoviesApi.DTOs
+public class UserDto
 {
-	public class UserDto
-	{
-		public string Name { get; set; }
-        public Role Role { get; set; }
-        public string Token { get; set; }
-	}
+	public required string Name { get; init; }
+	public Role Role { get; init; }
+	public required string Token { get; init; }
 }

@@ -1,54 +1,50 @@
 ﻿using MoviesApi.Models;
-using MoviesApi.Repository.IRepository;
+using MoviesApi.Repository.Contracts;
 using Neo4j.Driver;
 
-namespace MoviesApi.Repository
+namespace MoviesApi.Repository;
+
+public class MovieRepository(IDriver driver) : IMovieRepository
 {
-	public class MovieRepository : IMovieRepository
+	private IDriver Driver { get; } = driver;
+		
+	public async Task<Movie> AddMovie(Movie movie)
 	{
-		private readonly IDriver _driver;
+		var session = Driver.AsyncSession();
 
-        public MovieRepository(IDriver driver)
-        {
-            _driver = driver;
-        }
-
-        public async Task<Movie> AddMovie(Movie movie)
+		try
 		{
-			IAsyncSession session = _driver.AsyncSession();
-
-			try
-			{
-				await session.RunAsync($"CREATE (a:Movie {{ Title: \"${movie.Title}\", Description: \"${movie.Description}\" }})");
-			}
-			finally
-			{
-				await session.CloseAsync();
-			}
-			return movie;
-
+			await session.RunAsync($"CREATE (a:Movie {{ Title: \"${movie.Title}\", Description: \"${movie.Description}\" }})");
 		}
-
-		public async Task<List<Movie>> GetMovies()
+		finally
 		{
-			List<Movie> movies = new();
-			IAsyncSession session = _driver.AsyncSession();
-			try
-			{
-				IResultCursor cursor = await session.RunAsync(@"MATCH (a:Movie)
-				RETURN a.Title as title, a.Description as description
-				LIMIT 10");
-				movies = await cursor.ToListAsync(record => new Movie
-				{
-					Title = record["title"].As<string>(),
-					Description = record["description"].As<string>()
-				});
-			}
-			finally
-			{
-				await session.CloseAsync();
-			}
-			return movies;
+			await session.CloseAsync();
 		}
+		return movie;
+	}
+
+	public async Task<List<Movie>> GetMovies()
+	{
+		List<Movie> movies;
+		var session = Driver.AsyncSession();
+		try
+		{
+			const string query = """
+			                     MATCH (a:Movie)
+			                     RETURN a.Title as title, a.Description as description
+			                     LIMIT 10
+			                     """;
+			var cursor = await session.RunAsync(query);
+			movies = await cursor.ToListAsync(record => new Movie
+			{
+				Title = record["title"].As<string>(),
+				Description = record["description"].As<string>()
+			});
+		}
+		finally
+		{
+			await session.CloseAsync();
+		}
+		return movies;
 	}
 }

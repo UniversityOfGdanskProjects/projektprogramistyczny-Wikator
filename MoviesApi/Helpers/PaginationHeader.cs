@@ -1,18 +1,9 @@
-﻿namespace MoviesApi.Helpers
-{
-	public class PaginationHeader
-	{
-		public PaginationHeader(int currentPage, int itemsPerPage, int totalItems, int totalPages)
-		{
-			CurrentPage = currentPage;
-			ItemsPerPage = itemsPerPage;
-			TotalItems = totalItems;
-			TotalPages = totalPages;
-		}
+﻿namespace MoviesApi.Helpers;
 
-		public int CurrentPage { get; set; }
-		public int ItemsPerPage { get; set; }
-		public int TotalItems { get; set; }
-		public int TotalPages { get; set; }
-	}
+public class PaginationHeader(int currentPage, int itemsPerPage, int totalItems, int totalPages)
+{
+	public int CurrentPage { get; } = currentPage;
+	public int ItemsPerPage { get; } = itemsPerPage;
+	public int TotalItems { get; } = totalItems;
+	public int TotalPages { get; } = totalPages;
 }

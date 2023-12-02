@@ -11,8 +11,8 @@ builder.Services.AddControllers();
 
 builder.Services.AddApplicationServices(builder.Configuration);
 
-string tokenKey = builder.Configuration["TokenKey"]
-	?? throw new Exception("Token key not found");
+var tokenKey = builder.Configuration["TokenKey"]
+    ?? throw new Exception("Token key not found");
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 	.AddJwtBearer(options =>

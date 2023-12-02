@@ -1,10 +1,7 @@
-﻿#nullable disable
+﻿namespace MoviesApi.DTOs;
 
-namespace MoviesApi.DTOs
+public class LoginDto
 {
-	public class LoginDto
-	{
-		public string Name { get; set; }
-		public string Password { get; set; }
-	}
+	public required string Name { get; init; }
+	public required string Password { get; init; }
 }
