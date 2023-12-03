@@ -1,11 +1,10 @@
-﻿#nullable disable
+﻿namespace MoviesApi.Models;
 
-namespace MoviesApi.Models
+public class Movie
 {
-	public class Movie
-	{
-        public string Title { get; init; }
-
-        public string Description { get; init; }
-    }
+	public int Id { get; init; }
+	public required string Title { get; init; }
+	public required string Description { get; init; }
+        
+	public ICollection<Actor>? Actors { get; set; }
 }

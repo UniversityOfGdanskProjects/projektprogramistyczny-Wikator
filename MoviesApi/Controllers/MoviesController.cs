@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using MoviesApi.Models;
+using MoviesApi.DTOs;
 using MoviesApi.Repository.Contracts;
 
 namespace MoviesApi.Controllers;
@@ -11,7 +11,7 @@ public class MoviesController(IMovieRepository movieRepository) : ControllerBase
 	private IMovieRepository MovieRepository { get; } = movieRepository;
 		
 	[HttpGet]
-	public async Task<ActionResult<List<Movie>>> GetMovies()
+	public async Task<IActionResult> GetMovies()
 	{
 		var movies = await MovieRepository.GetMovies();
 
@@ -19,9 +19,12 @@ public class MoviesController(IMovieRepository movieRepository) : ControllerBase
 	}
 
 	[HttpPost]
-	public async Task<ActionResult<Movie>> CreateMovie(Movie movie)
+	public async Task<IActionResult> CreateMovie(AddMovieDto movieDto)
 	{
-		await MovieRepository.AddMovie(movie);
+		var movie = await MovieRepository.AddMovie(movieDto);
+			
+		if (movie is null)
+			return BadRequest("The movie could not be created.");
 
 		return CreatedAtAction(nameof(GetMovies), movie);
 	}
