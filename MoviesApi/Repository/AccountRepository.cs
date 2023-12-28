@@ -9,7 +9,7 @@ namespace MoviesApi.Repository;
 
 public class AccountRepository(IDriver driver) : Repository(driver), IAccountRepository
 {
-    public async Task<User?> RegisterAsync(LoginDto registerDto)
+    public async Task<User?> RegisterAsync(RegisterDto registerDto)
     {
         var session = Driver.AsyncSession();
 
@@ -34,7 +34,7 @@ public class AccountRepository(IDriver driver) : Repository(driver), IAccountRep
 
         try
         {
-            return await session.ExecuteWriteAsync(tx => CreateAndReturnNewUser(tx, loginDto));
+            return await session.ExecuteWriteAsync(tx => CheckPasswordAndReturnUser(tx, loginDto));
         }
         catch (Exception e)
         {
@@ -47,8 +47,22 @@ public class AccountRepository(IDriver driver) : Repository(driver), IAccountRep
         }
     }
 
+    public async Task<bool> EmailExistsAsync(string email)
+    {
+        var session = Driver.AsyncSession();
 
-    private static async Task<User?> CreateAndReturnNewUser(IAsyncQueryRunner tx, LoginDto registerDto)
+        try
+        {
+            return await session.ExecuteReadAsync(tx => CheckIfEmailExists(tx, email));
+        }
+        finally
+        {
+            await session.CloseAsync();
+        }
+    }
+
+
+    private static async Task<User?> CreateAndReturnNewUser(IAsyncQueryRunner tx, RegisterDto registerDto)
     {
         using HMACSHA512 hmac = new();
         var passwordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(registerDto.Password));
@@ -57,11 +71,12 @@ public class AccountRepository(IDriver driver) : Repository(driver), IAccountRep
         var query = $$"""
                             CREATE (a:User {
                                 Name: "{{registerDto.Name}}",
+                                Email: "{{registerDto.Email}}",
                                 PasswordHash: "{{Convert.ToBase64String(passwordHash)}}",
                                 PasswordSalt: "{{Convert.ToBase64String(passwordSalt)}}",
                                 Role: "User"
                             })
-                            RETURN a.Name as name, a.Role as role, ID(a) as id
+                            RETURN a.Name as name, a.Email as email, a.Role as role, ID(a) as id
                       """;
         
         var cursor = await tx.RunAsync(query);
@@ -70,6 +85,7 @@ public class AccountRepository(IDriver driver) : Repository(driver), IAccountRep
         return new User 
         {
             Id = node["id"].As<int>(),
+            Email = node["email"].As<string>(),
             Name = node["name"].As<string>(),
             Role = (Role)Enum.Parse(typeof(Role), node["role"].As<string>())
         };
@@ -78,8 +94,8 @@ public class AccountRepository(IDriver driver) : Repository(driver), IAccountRep
     private static async Task<User?> CheckPasswordAndReturnUser(IAsyncQueryRunner tx, LoginDto loginDto)
     {
         var query = $$"""
-                         MATCH (a:User { Name: "{{loginDto.Name}}" })
-                         RETURN a.Name as name, a.Role as role, a.PasswordHash as passwordHash, a.PasswordSalt as passwordSalt, ID(a) as id
+                         MATCH (a:User { Email: "{{loginDto.Email}}" })
+                         RETURN a.Name as name, a.Email as email, a.Role as role, a.PasswordHash as passwordHash, a.PasswordSalt as passwordSalt, ID(a) as id
                       """;
         var cursor = await tx.RunAsync(query);
         var node = await cursor.SingleAsync();
@@ -102,7 +118,27 @@ public class AccountRepository(IDriver driver) : Repository(driver), IAccountRep
         {
             Id = node["id"].As<int>(),
             Name = node["name"].As<string>(),
+            Email = node["email"].As<string>(),
             Role = (Role)Enum.Parse(typeof(Role), node["role"].As<string>())
         };
+    }
+
+    private static async Task<bool> CheckIfEmailExists(IAsyncQueryRunner tx, string email)
+    {
+        var query = $$"""
+                         MATCH (a:User { Email: "{{email}}" })
+                         RETURN a
+                      """;
+
+        var accountCursor = await tx.RunAsync(query);
+        try
+        {
+            await accountCursor.SingleAsync();
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 }

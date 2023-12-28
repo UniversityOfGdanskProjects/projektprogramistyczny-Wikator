@@ -1,7 +1,10 @@
-﻿namespace MoviesApi.DTOs;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace MoviesApi.DTOs;
 
 public class LoginDto
 {
-	public required string Name { get; init; }
+	[EmailAddress]
+	public required string Email { get; init; }
 	public required string Password { get; init; }
 }

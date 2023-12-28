@@ -36,9 +36,12 @@ public class AccountController(ITokenService tokenService, IAccountRepository ac
 	}
 
 	[HttpPost("register")]
-	public async Task<ActionResult<UserDto>> Register(LoginDto loginDto)
+	public async Task<ActionResult<UserDto>> Register(RegisterDto registerDto)
 	{
-		var user = await AccountRepository.RegisterAsync(loginDto);
+		if (await AccountRepository.EmailExistsAsync(registerDto.Email))
+			return BadRequest("Email is taken");
+		
+		var user = await AccountRepository.RegisterAsync(registerDto);
 
 		return user switch
 		{
