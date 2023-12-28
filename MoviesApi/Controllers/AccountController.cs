@@ -6,6 +6,7 @@ using Neo4j.Driver;
 using System.Security.Cryptography;
 using System.Text;
 using MoviesApi.Repository;
+using MoviesApi.Repository.Contracts;
 using MoviesApi.Services.Contracts;
 
 namespace MoviesApi.Controllers;

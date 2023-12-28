@@ -2,14 +2,13 @@
 using System.Text;
 using MoviesApi.DTOs;
 using MoviesApi.Models;
+using MoviesApi.Repository.Contracts;
 using Neo4j.Driver;
 
 namespace MoviesApi.Repository;
 
-public class AccountRepository(IDriver driver) : IAccountRepository
+public class AccountRepository(IDriver driver) : Repository(driver), IAccountRepository
 {
-    private IDriver Driver { get; } = driver;
-    
     public async Task<User?> RegisterAsync(LoginDto registerDto)
     {
         var session = Driver.AsyncSession();

@@ -1,7 +1,7 @@
 ﻿using MoviesApi.DTOs;
 using MoviesApi.Models;
 
-namespace MoviesApi.Repository;
+namespace MoviesApi.Repository.Contracts;
 
 public interface IAccountRepository
 {

@@ -5,10 +5,8 @@ using Neo4j.Driver;
 
 namespace MoviesApi.Repository;
 
-public class MovieRepository(IDriver driver) : IMovieRepository
+public class MovieRepository(IDriver driver) : Repository(driver), IMovieRepository
 {
-	private IDriver Driver { get; } = driver;
-		
 	public async Task<Movie?> AddMovie(AddMovieDto movieDto)
 	{
 		var session = Driver.AsyncSession();
