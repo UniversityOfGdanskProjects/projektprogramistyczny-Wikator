@@ -29,7 +29,7 @@ public class ActorRepository(IDriver driver) : Repository(driver), IActorReposit
     private static async Task<Actor?> CreateAndReturnActor(IAsyncQueryRunner tx, AddActorDto actorDto)
     {
         var actorQuery = $"" +
-                         $"CREATE (a:Movie {{ FirstName: \"{actorDto.FirstName}\", LastName: \"{actorDto.LastName}\", DateOfBirth: \"{actorDto.DateOfBirth}\", Biography:  \"{actorDto.Biography}\"}})" +
+                         $"CREATE (a:Actor {{ FirstName: \"{actorDto.FirstName}\", LastName: \"{actorDto.LastName}\", DateOfBirth: \"{actorDto.DateOfBirth}\", Biography:  \"{actorDto.Biography}\"}})" +
                          $"RETURN Id(a) as id, a.FirstName as firstName, a.LastName as lastName, a.DateOfBirth as dateOfBirth, a.Biography as biography";
         var actorCursor = await tx.RunAsync(actorQuery);
         var actorNode = await actorCursor.SingleAsync();

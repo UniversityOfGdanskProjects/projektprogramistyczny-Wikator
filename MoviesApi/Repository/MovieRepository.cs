@@ -84,12 +84,13 @@ public class MovieRepository(IDriver driver) : Repository(driver), IMovieReposit
 		};
 	}
 	
-	private static async Task<List<Actor>?> CreateRelationshipsAndReturnActors(IAsyncQueryRunner tx,
+	private static async Task<List<Actor>> CreateRelationshipsAndReturnActors(IAsyncQueryRunner tx,
 		AddMovieDto movieDto, Movie movie)
 	{
 		var actorIds = '[' + string.Join(", ", movieDto.ActorIds) + ']';
 		var relationshipQuery = $"MATCH (a:Movie), (b:Actor) WHERE Id(a) = {movie.Id} AND Id(b) IN {actorIds} " +
-		                        $"CREATE (b)-[r:{RelationshipType.PLAYED_IN}]->(a) RETURN b.FirstName as firstName, b.LastName as lastName, b.DateOfBirth as dateOfBirth, b.Biography as biography";
+		                        $"CREATE (b)-[r:{RelationshipType.PLAYED_IN}]->(a) " +
+		                        $"RETURN b.FirstName as firstName, b.LastName as lastName, b.DateOfBirth as dateOfBirth, b.Biography as biography";
 		var relationshipCursor = await tx.RunAsync(relationshipQuery);
 		return await relationshipCursor.ToListAsync(record => new Actor
 		{
