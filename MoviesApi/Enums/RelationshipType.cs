@@ -1,4 +1,4 @@
-﻿namespace MoviesApi.Models;
+﻿namespace MoviesApi.Enums;
 
 // ReSharper disable once InconsistentNaming
 public enum RelationshipType

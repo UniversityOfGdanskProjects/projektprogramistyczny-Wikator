@@ -1,11 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MoviesApi.DTOs;
-using MoviesApi.Models;
-using Neo4j.Driver;
-using System.Security.Cryptography;
-using System.Text;
-using MoviesApi.Repository;
 using MoviesApi.Repository.Contracts;
 using MoviesApi.Services.Contracts;
 

@@ -1,6 +1,4 @@
-﻿using MoviesApi.Models;
-
-namespace MoviesApi.DTOs;
+﻿namespace MoviesApi.DTOs;
 
 public class UserDto
 {

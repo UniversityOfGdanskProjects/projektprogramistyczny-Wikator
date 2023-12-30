@@ -1,28 +1,22 @@
 ﻿using MoviesApi.DTOs;
-using MoviesApi.Models;
+using MoviesApi.Enums;
 using MoviesApi.Repository.Contracts;
 using Neo4j.Driver;
 
 namespace MoviesApi.Repository;
 
-public class MovieRepository(IDriver driver) : Repository(driver), IMovieRepository
+public class MovieRepository(IDriver driver) : IMovieRepository
 {
-	public async Task<Movie?> AddMovie(AddMovieDto movieDto)
+	private IDriver Driver { get; } = driver;
+		
+	public async Task<MovieDto?> AddMovie(AddMovieDto movieDto)
 	{
 		var session = Driver.AsyncSession();
 
 		try
 		{
 			return await session.ExecuteWriteAsync(async tx =>
-			{
-				var movie = await CreateAndReturnMovie(tx, movieDto);
-				
-				if (movie is null)
-					return null;
-				
-				movie.Actors = await CreateRelationshipsAndReturnActors(tx, movieDto, movie);
-				return movie;
-			});
+				await CreateAndReturnMovie(tx, movieDto));
 		}
 		catch (Exception e)
 		{
@@ -35,9 +29,9 @@ public class MovieRepository(IDriver driver) : Repository(driver), IMovieReposit
 		}
 	}
 
-	public async Task<List<Movie>> GetMovies()
+	public async Task<IEnumerable<MovieDto>> GetMovies()
 	{
-		List<Movie> movies;
+		IEnumerable<MovieDto> movies;
 		var session = Driver.AsyncSession();
 		try
 		{
@@ -50,54 +44,104 @@ public class MovieRepository(IDriver driver) : Repository(driver), IMovieReposit
 		return movies;
 	}
 
-	private static async Task<List<Movie>> MatchAndReturnMovies(IAsyncQueryRunner tx)
+	private static async Task<IEnumerable<MovieDto>> MatchAndReturnMovies(IAsyncQueryRunner tx)
 	{
-		const string query = """
-		                     MATCH (a:Movie)
-		                     RETURN a.Title as title, a.Description as description
-		                     LIMIT 10
+		var query = $$"""
+		                     MATCH (m:Movie)
+		                     OPTIONAL MATCH (m)<-[:{{RelationshipType.PLAYED_IN}}]-(a:Actor)
+		                     WITH m, COLLECT(
+		                         CASE
+		                             WHEN a IS NULL THEN null
+		                             ELSE {
+		                                 Id: ID(a),
+		                                 FirstName: a.FirstName,
+		                                 LastName: a.LastName,
+		                                 DateOfBirth: a.DateOfBirth,
+		                                 Biography: a.Biography
+		                             }
+		                         END
+		                     ) AS Actors
+		                     RETURN {
+		                         Id: ID(m),
+		                         Title: m.Title,
+		                         Description: m.Description,
+		                         Actors: Actors
+		                     } AS MovieWithActors
 		                     """;
 		var cursor = await tx.RunAsync(query);
-		return await cursor.ToListAsync(record => new Movie
+		await cursor.FetchAsync();
+		return await cursor.ToListAsync(record =>
 		{
-			Title = record["title"].As<string>(),
-			Description = record["description"].As<string>()
+			var movieWithActorsDto = record["MovieWithActors"].As<IDictionary<string, object>>();
+			var actors = movieWithActorsDto["Actors"].As<List<IDictionary<string, object>>>();
+
+			return new MovieDto(
+				movieWithActorsDto["Id"].As<int>(),
+				movieWithActorsDto["Title"].As<string>(),
+				movieWithActorsDto["Description"].As<string>(),
+				actors.Select(actor => MapActorDto(actor))
+			);
 		});
-	}
+	}	
 
-	private static async Task<Movie?> CreateAndReturnMovie(IAsyncQueryRunner tx, AddMovieDto movieDto)
+	private static async Task<MovieDto?> CreateAndReturnMovie(IAsyncQueryRunner tx, AddMovieDto movieDto)
 	{
-		var movieQuery = $"" +
-		                 $"CREATE (a:Movie {{ Title: \"{movieDto.Title}\", Description: \"{movieDto.Description}\" }})" +
-		                 $"RETURN Id(a) as id, a.Title as title, a.Description as description";
-		var movieCursor = await tx.RunAsync(movieQuery);
-		var movieNode = await movieCursor.SingleAsync();
-
-		if (movieNode is null)
-			return null;
-
-		return new Movie
+		if (!movieDto.ActorIds.Any())
 		{
-			Id = movieNode["id"].As<int>(),
-			Title = movieNode["title"].As<string>(),
-			Description = movieNode["description"].As<string>()
-		};
+			const string createMovieQuery = """
+			                                CREATE (m:Movie {Title: $Title, Description: $Description})
+			                                RETURN m, Id(m) as id
+			                                """;
+
+			var movieCursorWithoutActors = await tx.RunAsync(createMovieQuery, new { movieDto.Title, movieDto.Description });
+			var movieRecordWithoutActors = await movieCursorWithoutActors.SingleAsync();
+        
+			var movieNodeWithoutActors = movieRecordWithoutActors["m"].As<INode>();
+
+			return new MovieDto(
+				Id: movieRecordWithoutActors["id"].As<int>(),
+				Title: movieNodeWithoutActors["Title"].As<string>(),
+				Description: movieNodeWithoutActors["Description"].As<string>(),
+				Actors: Enumerable.Empty<ActorDto>()
+			);
+		}
+		
+		
+		var createQuery = $$"""
+		                           CREATE (m:Movie {Title: $Title, Description: $Description})
+		                           WITH m
+		                           UNWIND $ActorIds AS actorId
+		                           MATCH (a:Actor) WHERE ID(a) = actorId
+		                           CREATE (a)-[:{{RelationshipType.PLAYED_IN}}]->(m)
+		                           RETURN m, Id(m) as id, COLLECT({ Id: ID(a), FirstName: a.FirstName, LastName: a.LastName, DateOfBirth: a.DateOfBirth, Biography: a.Biography }) AS actors
+		                           """;
+		
+		var movieCursor = await tx.RunAsync(
+			createQuery,
+			new { movieDto.Title, movieDto.Description, movieDto.ActorIds }
+		);
+		
+		var record = await movieCursor.SingleAsync();
+		
+		var movieNode = record["m"].As<INode>();
+		var actors = record["actors"].As<List<IDictionary<string, object>>>();
+
+		return new MovieDto(
+			Id: record["id"].As<int>(),
+			Title: movieNode["Title"].As<string>(),
+			Description: movieNode["Description"].As<string>(),
+			Actors: actors.Select(actor => MapActorDto(actor))
+		);
 	}
 	
-	private static async Task<List<Actor>> CreateRelationshipsAndReturnActors(IAsyncQueryRunner tx,
-		AddMovieDto movieDto, Movie movie)
+	private static ActorDto MapActorDto(IDictionary<string, object> actorData)
 	{
-		var actorIds = '[' + string.Join(", ", movieDto.ActorIds) + ']';
-		var relationshipQuery = $"MATCH (a:Movie), (b:Actor) WHERE Id(a) = {movie.Id} AND Id(b) IN {actorIds} " +
-		                        $"CREATE (b)-[r:{RelationshipType.PLAYED_IN}]->(a) " +
-		                        $"RETURN b.FirstName as firstName, b.LastName as lastName, b.DateOfBirth as dateOfBirth, b.Biography as biography";
-		var relationshipCursor = await tx.RunAsync(relationshipQuery);
-		return await relationshipCursor.ToListAsync(record => new Actor
-		{
-			FirstName = record["firstName"].As<string>(),
-			LastName = record["lastName"].As<string>(),
-			DateOfBirth = record["dateOfBirth"].As<string>(),
-			Biography = record["biography"].As<string>()
-		});
+		return new ActorDto(
+			actorData["Id"].As<int>(),
+			actorData["FirstName"].As<string>(),
+			actorData["LastName"].As<string>(),
+			actorData["DateOfBirth"].As<string>(),
+			actorData["Biography"]?.As<string>()
+		);
 	}
 }

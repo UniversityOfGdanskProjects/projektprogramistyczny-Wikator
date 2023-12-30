@@ -14,7 +14,6 @@ public class MoviesController(IMovieRepository movieRepository) : ControllerBase
 	public async Task<IActionResult> GetMovies()
 	{
 		var movies = await MovieRepository.GetMovies();
-
 		return Ok(movies);
 	}
 

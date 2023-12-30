@@ -1,9 +1,8 @@
 ﻿using MoviesApi.DTOs;
-using MoviesApi.Models;
 
 namespace MoviesApi.Repository.Contracts;
 
 public interface IActorRepository
 {
-    Task<Actor?> CreateActor(AddActorDto actor);
+    Task<ActorDto?> CreateActor(AddActorDto actor);
 }

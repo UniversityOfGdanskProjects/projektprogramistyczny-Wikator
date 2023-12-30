@@ -1,6 +1,7 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 using MoviesApi.DTOs;
+using MoviesApi.Enums;
 using MoviesApi.Models;
 using MoviesApi.Repository.Contracts;
 using Neo4j.Driver;
@@ -81,14 +82,8 @@ public class AccountRepository(IDriver driver) : Repository(driver), IAccountRep
         
         var cursor = await tx.RunAsync(query);
         var node = await cursor.SingleAsync();
-				
-        return new User 
-        {
-            Id = node["id"].As<int>(),
-            Email = node["email"].As<string>(),
-            Name = node["name"].As<string>(),
-            Role = (Role)Enum.Parse(typeof(Role), node["role"].As<string>())
-        };
+
+        return GetUserFromNode(node);
     }
 
     private static async Task<User?> CheckPasswordAndReturnUser(IAsyncQueryRunner tx, LoginDto loginDto)
@@ -111,16 +106,7 @@ public class AccountRepository(IDriver driver) : Repository(driver), IAccountRep
         var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(loginDto.Password));
         var storedHash = Convert.FromBase64String(storedPasswordHash);
 
-        if (computedHash.Where((t, i) => t != storedHash[i]).Any())
-            return null;
-				
-        return new User
-        {
-            Id = node["id"].As<int>(),
-            Name = node["name"].As<string>(),
-            Email = node["email"].As<string>(),
-            Role = (Role)Enum.Parse(typeof(Role), node["role"].As<string>())
-        };
+        return computedHash.Where((t, i) => t != storedHash[i]).Any() ? null : GetUserFromNode(node);
     }
 
     private static async Task<bool> CheckIfEmailExists(IAsyncQueryRunner tx, string email)
@@ -141,4 +127,13 @@ public class AccountRepository(IDriver driver) : Repository(driver), IAccountRep
             return false;
         }
     }
+    
+    private static User GetUserFromNode(IRecord node) =>
+        new
+        (
+            Id: node["id"].As<int>(),
+            Email: node["email"].As<string>(),
+            Name: node["name"].As<string>(),
+            Role: (Role)Enum.Parse(typeof(Role), node["role"].As<string>())
+        );
 }

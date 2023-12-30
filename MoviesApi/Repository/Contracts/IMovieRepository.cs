@@ -5,7 +5,7 @@ namespace MoviesApi.Repository.Contracts;
 
 public interface IMovieRepository
 {
-	Task<List<Movie>> GetMovies();
+	Task<IEnumerable<MovieDto>> GetMovies();
 
-	Task<Movie?> AddMovie(AddMovieDto movieDto);
+	Task<MovieDto?> AddMovie(AddMovieDto movieDto);
 }
