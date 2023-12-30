@@ -1,5 +1,4 @@
 ﻿using MoviesApi.DTOs;
-using MoviesApi.Models;
 
 namespace MoviesApi.Repository.Contracts;
 

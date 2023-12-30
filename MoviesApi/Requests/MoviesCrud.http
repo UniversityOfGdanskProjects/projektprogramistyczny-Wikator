@@ -1,0 +1,12 @@
+﻿GET https://localhost:7102/api/movies
+
+###
+
+POST https://localhost:7102/api/movies
+Content-Type: application/json
+
+{
+    "title": "The Matrix",
+    "description": "A computer hacker learns from mysterious rebels about the true nature of his reality and his role in the war against its controllers.",
+    "actorIds": [1, 2, 3]
+}

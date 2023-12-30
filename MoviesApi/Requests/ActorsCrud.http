@@ -1,0 +1,33 @@
+﻿GET https://localhost:7102/api/actors
+
+###
+
+GET https://localhost:7102/api/actors/1
+
+###
+
+POST https://localhost:7102/api/actors
+Content-Type: application/json
+
+{
+  "firstName": "John",
+  "lastName": "Doe",
+  "dateOfBirth": "1980-01-01",
+  "Biography": "Lorem ipsum"
+}
+
+###
+
+PUT https://localhost:7102/api/actors/1
+Content-Type: application/json
+
+{
+  "firstName": "John",
+  "lastName": "Doe",
+  "dateOfBirth": "1980-01-01",
+  "Biography": "Lorem ipsum, lorem ipsum"
+}
+
+###
+
+DELETE https://localhost:7102/api/actors/3

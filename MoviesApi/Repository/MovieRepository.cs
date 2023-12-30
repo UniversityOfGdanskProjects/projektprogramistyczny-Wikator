@@ -5,10 +5,8 @@ using Neo4j.Driver;
 
 namespace MoviesApi.Repository;
 
-public class MovieRepository(IDriver driver) : IMovieRepository
+public class MovieRepository(IDriver driver) : Repository(driver), IMovieRepository
 {
-	private IDriver Driver { get; } = driver;
-		
 	public async Task<MovieDto?> AddMovie(AddMovieDto movieDto)
 	{
 		var session = Driver.AsyncSession();
@@ -67,9 +65,8 @@ public class MovieRepository(IDriver driver) : IMovieRepository
 		                         Description: m.Description,
 		                         Actors: Actors
 		                     } AS MovieWithActors
-		                     """;
+		            """;
 		var cursor = await tx.RunAsync(query);
-		await cursor.FetchAsync();
 		return await cursor.ToListAsync(record =>
 		{
 			var movieWithActorsDto = record["MovieWithActors"].As<IDictionary<string, object>>();
@@ -79,7 +76,7 @@ public class MovieRepository(IDriver driver) : IMovieRepository
 				movieWithActorsDto["Id"].As<int>(),
 				movieWithActorsDto["Title"].As<string>(),
 				movieWithActorsDto["Description"].As<string>(),
-				actors.Select(actor => MapActorDto(actor))
+				actors.Select(MapActorDto)
 			);
 		});
 	}	
@@ -130,7 +127,7 @@ public class MovieRepository(IDriver driver) : IMovieRepository
 			Id: record["id"].As<int>(),
 			Title: movieNode["Title"].As<string>(),
 			Description: movieNode["Description"].As<string>(),
-			Actors: actors.Select(actor => MapActorDto(actor))
+			Actors: actors.Select(MapActorDto)
 		);
 	}
 	
@@ -141,7 +138,7 @@ public class MovieRepository(IDriver driver) : IMovieRepository
 			actorData["FirstName"].As<string>(),
 			actorData["LastName"].As<string>(),
 			actorData["DateOfBirth"].As<string>(),
-			actorData["Biography"]?.As<string>()
+			actorData["Biography"].As<string>()
 		);
 	}
 }
