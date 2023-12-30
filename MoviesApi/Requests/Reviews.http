@@ -1,0 +1,7 @@
+﻿POST https://localhost:7102/api/Reviews
+Content-Type: application/json
+
+{
+  "movieId": 1,
+  "rating": 5
+}

@@ -23,6 +23,7 @@ public static class ApplicationServiceExtensions
 		services.AddScoped<IMovieRepository, MovieRepository>();
 		services.AddScoped<IActorRepository, ActorRepository>();
 		services.AddScoped<IAccountRepository, AccountRepository>();
+		services.AddScoped<IReviewRepository, ReviewRepository>();
 		services.AddScoped<ITokenService, TokenService>();
 	}
 }

@@ -47,6 +47,7 @@ public class MovieRepository(IDriver driver) : Repository(driver), IMovieReposit
 		var query = $$"""
 		                     MATCH (m:Movie)
 		                     OPTIONAL MATCH (m)<-[:{{RelationshipType.PLAYED_IN}}]-(a:Actor)
+		                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(u:User)
 		                     WITH m, COLLECT(
 		                         CASE
 		                             WHEN a IS NULL THEN null
@@ -58,12 +59,13 @@ public class MovieRepository(IDriver driver) : Repository(driver), IMovieReposit
 		                                 Biography: a.Biography
 		                             }
 		                         END
-		                     ) AS Actors
+		                     ) AS Actors, AVG(r.score) AS AverageReviewScore
 		                     RETURN {
 		                         Id: ID(m),
 		                         Title: m.Title,
 		                         Description: m.Description,
-		                         Actors: Actors
+		                         Actors: Actors,
+		                         AverageReviewScore: COALESCE(AverageReviewScore, 0)
 		                     } AS MovieWithActors
 		            """;
 		var cursor = await tx.RunAsync(query);
@@ -76,6 +78,7 @@ public class MovieRepository(IDriver driver) : Repository(driver), IMovieReposit
 				movieWithActorsDto["Id"].As<int>(),
 				movieWithActorsDto["Title"].As<string>(),
 				movieWithActorsDto["Description"].As<string>(),
+				movieWithActorsDto["AverageReviewScore"].As<double>(),
 				actors.Select(MapActorDto)
 			);
 		});
@@ -99,6 +102,7 @@ public class MovieRepository(IDriver driver) : Repository(driver), IMovieReposit
 				Id: movieRecordWithoutActors["id"].As<int>(),
 				Title: movieNodeWithoutActors["Title"].As<string>(),
 				Description: movieNodeWithoutActors["Description"].As<string>(),
+				0,
 				Actors: Enumerable.Empty<ActorDto>()
 			);
 		}
@@ -127,6 +131,7 @@ public class MovieRepository(IDriver driver) : Repository(driver), IMovieReposit
 			Id: record["id"].As<int>(),
 			Title: movieNode["Title"].As<string>(),
 			Description: movieNode["Description"].As<string>(),
+			0,
 			Actors: actors.Select(MapActorDto)
 		);
 	}
