@@ -1,4 +1,5 @@
 ﻿using MoviesApi.DTOs;
+using MoviesApi.Enums;
 using MoviesApi.Repository.Contracts;
 using Neo4j.Driver;
 
@@ -6,7 +7,7 @@ namespace MoviesApi.Repository;
 
 public class ReviewRepository(IDriver driver) : Repository(driver), IReviewRepository
 {
-    public async Task<bool> AddReview(int userId, UpsertReviewDto reviewDto)
+    public async Task<QueryResult> AddReview(int userId, UpsertReviewDto reviewDto)
     {
         return await ExecuteAsync(async tx =>
         {
@@ -24,7 +25,7 @@ public class ReviewRepository(IDriver driver) : Repository(driver), IReviewRepos
             }
             catch (InvalidOperationException)
             {
-                return false;
+                return QueryResult.NotFound;
             }
 
             const string relationQuery = """
@@ -38,9 +39,7 @@ public class ReviewRepository(IDriver driver) : Repository(driver), IReviewRepos
             try
             {
                 await relationResult.SingleAsync();
-
-                // TODO: Review exists
-                return false;
+                return QueryResult.EntityAlreadyExists;
             }
             catch (InvalidOperationException)
             {
@@ -60,11 +59,11 @@ public class ReviewRepository(IDriver driver) : Repository(driver), IReviewRepos
             try
             {
                 await reviewResult.SingleAsync();
-                return true;
+                return QueryResult.Completed;
             }
             catch (InvalidOperationException)
             {
-                return false;
+                return QueryResult.UnexpectedError;
             }
         });
     }

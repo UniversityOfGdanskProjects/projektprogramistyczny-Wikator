@@ -1,8 +1,8 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MoviesApi.DTOs;
+using MoviesApi.Enums;
+using MoviesApi.Extensions;
 using MoviesApi.Repository.Contracts;
 
 namespace MoviesApi.Controllers;
@@ -17,13 +17,15 @@ public class ReviewsController(IReviewRepository reviewRepository) : ControllerB
     [HttpPost]
     public async Task<IActionResult> CreateReview(UpsertReviewDto reviewDto)
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
-        
-        var review = await ReviewRepository.AddReview(userId, reviewDto);
-        
-        if (!review)
-            return NotFound("Movie does not exist.");
+        var review = await ReviewRepository.AddReview(User.GetUserId(), reviewDto);
 
-        return NoContent();
+        return review switch
+        {
+            QueryResult.Completed => NoContent(),
+            QueryResult.NotFound => NotFound("Movie not found"),
+            QueryResult.EntityAlreadyExists => BadRequest("Review for this movie already exists"),
+            QueryResult.UnexpectedError => BadRequest("Failed to add review"),
+            _ => throw new Exception(nameof(review))
+        };
     }
 }
