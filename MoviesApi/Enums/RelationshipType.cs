@@ -4,5 +4,6 @@
 public enum RelationshipType
 {
     PLAYED_IN,
-    WATCHLIST
+    WATCHLIST,
+    IGNORES
 }

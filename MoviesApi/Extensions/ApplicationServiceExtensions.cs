@@ -25,6 +25,7 @@ public static class ApplicationServiceExtensions
 		services.AddScoped<IAccountRepository, AccountRepository>();
 		services.AddScoped<IReviewRepository, ReviewRepository>();
 		services.AddScoped<IWatchlistRepository, WatchlistRepository>();
+		services.AddScoped<IIgnoresRepository, IgnoresRepository>();
 		services.AddScoped<ITokenService, TokenService>();
 	}
 }
