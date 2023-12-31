@@ -8,6 +8,48 @@ namespace MoviesApi.Repository;
 
 public class MovieRepository(IDriver driver) : Repository(driver), IMovieRepository
 {
+	public async Task<IEnumerable<MovieDto>> GetMoviesExcludingIgnored(int userId)
+	{
+		return await ExecuteAsync(async tx =>
+		{
+			var query = $$"""
+			              MATCH (ignoredMovie:Movie)<-[:IGNORES]-(u:User)
+			              WHERE ID(u) = $userId
+			              WITH COLLECT(ID(ignoredMovie)) AS ignoredMovieIds
+			              
+			              MATCH (m:Movie)
+			              WHERE NOT ID(m) IN ignoredMovieIds
+			              OPTIONAL MATCH (m)<-[:{{RelationshipType.PLAYED_IN}}]-(a:Actor)
+			              OPTIONAL MATCH (m)<-[r:REVIEWED]-(u:User)
+			              WITH m, COLLECT(
+			                CASE
+			                  WHEN a IS NULL THEN null
+			                  ELSE {
+			                    Id: ID(a),
+			                    FirstName: a.FirstName,
+			                    LastName: a.LastName,
+			                    DateOfBirth: a.DateOfBirth,
+			                    Biography: a.Biography
+			                  }
+			                END
+			              ) AS Actors, AVG(r.score) AS AverageReviewScore
+			              RETURN {
+			                Id: ID(m),
+			                Title: m.Title,
+			                Description: m.Description,
+			                Actors: Actors,
+			                AverageReviewScore: COALESCE(AverageReviewScore, 0)
+			              } AS MovieWithActors
+			              """;
+			var cursor = await tx.RunAsync(query, new {userId});
+			return await cursor.ToListAsync(record =>
+			{
+				var movieWithActorsDto = record["MovieWithActors"].As<IDictionary<string, object>>();
+				return movieWithActorsDto.ConvertToMovieDto();
+			});
+		});
+	}
+
 	public async Task<MovieDto?> AddMovie(AddMovieDto movieDto)
 	{
 		return await ExecuteAsync(async tx =>
