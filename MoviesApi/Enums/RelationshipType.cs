@@ -3,5 +3,6 @@
 // ReSharper disable once InconsistentNaming
 public enum RelationshipType
 {
-    PLAYED_IN
+    PLAYED_IN,
+    WATCHLIST
 }
