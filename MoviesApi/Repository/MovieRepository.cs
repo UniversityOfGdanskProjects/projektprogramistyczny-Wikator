@@ -1,5 +1,6 @@
 ﻿using MoviesApi.DTOs;
 using MoviesApi.Enums;
+using MoviesApi.Extensions;
 using MoviesApi.Repository.Contracts;
 using Neo4j.Driver;
 
@@ -39,7 +40,25 @@ public class MovieRepository(IDriver driver) : Repository(driver), IMovieReposit
 			                    UNWIND $ActorIds AS actorId
 			                    MATCH (a:Actor) WHERE ID(a) = actorId
 			                    CREATE (a)-[:{{RelationshipType.PLAYED_IN}}]->(m)
-			                    RETURN m, Id(m) as id, COLLECT({ Id: ID(a), FirstName: a.FirstName, LastName: a.LastName, DateOfBirth: a.DateOfBirth, Biography: a.Biography }) AS actors
+			                    WITH m, COLLECT(
+			                      CASE
+			                        WHEN a IS NULL THEN null
+			                        ELSE {
+			                          Id: ID(a),
+			                          FirstName: a.FirstName,
+			                          LastName: a.LastName,
+			                          DateOfBirth: a.DateOfBirth,
+			                          Biography: a.Biography
+			                        }
+			                      END
+			                    ) AS Actors
+			                    RETURN {
+			                      Id: ID(m),
+			                      Title: m.Title,
+			                      Description: m.Description,
+			                      Actors: Actors,
+			                      AverageReviewScore: 0
+			                    } AS MovieWithActors
 			                    """;
 
 			var movieCursor = await tx.RunAsync(
@@ -49,16 +68,8 @@ public class MovieRepository(IDriver driver) : Repository(driver), IMovieReposit
 
 			var record = await movieCursor.SingleAsync();
 
-			var movieNode = record["m"].As<INode>();
-			var actors = record["actors"].As<List<IDictionary<string, object>>>();
-
-			return new MovieDto(
-				Id: record["id"].As<int>(),
-				Title: movieNode["Title"].As<string>(),
-				Description: movieNode["Description"].As<string>(),
-				0,
-				Actors: actors.Select(MapActorDto)
-			);
+			var movieNode = record["MovieWithActors"].As<IDictionary<string, object>>();
+			return movieNode.ConvertToMovieDto();
 		});
 	}
 
@@ -94,27 +105,8 @@ public class MovieRepository(IDriver driver) : Repository(driver), IMovieReposit
 			return await cursor.ToListAsync(record =>
 			{
 				var movieWithActorsDto = record["MovieWithActors"].As<IDictionary<string, object>>();
-				var actors = movieWithActorsDto["Actors"].As<List<IDictionary<string, object>>>();
-
-				return new MovieDto(
-					movieWithActorsDto["Id"].As<int>(),
-					movieWithActorsDto["Title"].As<string>(),
-					movieWithActorsDto["Description"].As<string>(),
-					movieWithActorsDto["AverageReviewScore"].As<double>(),
-					actors.Select(MapActorDto)
-				);
+				return movieWithActorsDto.ConvertToMovieDto();
 			});
 		});
-	}
-	
-	private static ActorDto MapActorDto(IDictionary<string, object> actorData)
-	{
-		return new ActorDto(
-			actorData["Id"].As<int>(),
-			actorData["FirstName"].As<string>(),
-			actorData["LastName"].As<string>(),
-			actorData["DateOfBirth"].As<string>(),
-			actorData["Biography"].As<string>()
-		);
 	}
 }

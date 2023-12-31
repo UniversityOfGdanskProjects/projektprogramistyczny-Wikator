@@ -1,5 +1,6 @@
 ﻿using MoviesApi.DTOs;
 using MoviesApi.Enums;
+using MoviesApi.Extensions;
 using MoviesApi.Repository.Contracts;
 using Neo4j.Driver;
 
@@ -41,15 +42,7 @@ public class WatchlistRepository(IDriver driver) : Repository(driver), IWatchlis
             return await result.ToListAsync(record =>
             {
                 var movieWithActorsDto = record["MovieWithActors"].As<IDictionary<string, object>>();
-                var actors = movieWithActorsDto["Actors"].As<List<IDictionary<string, object>>>();
-
-                return new MovieDto(
-                    movieWithActorsDto["Id"].As<int>(),
-                    movieWithActorsDto["Title"].As<string>(),
-                    movieWithActorsDto["Description"].As<string>(),
-                    movieWithActorsDto["AverageReviewScore"].As<double>(),
-                    actors.Select(MapActorDto)
-                );
+                return movieWithActorsDto.ConvertToMovieDto();
             });
         });
     }
@@ -151,16 +144,5 @@ public class WatchlistRepository(IDriver driver) : Repository(driver), IWatchlis
             await tx.RunAsync(removeFromWatchlistQuery, new { userId, movieId });
             return QueryResult.Completed;
         });
-    }
-    
-    private static ActorDto MapActorDto(IDictionary<string, object> actorData)
-    {
-        return new ActorDto(
-            actorData["Id"].As<int>(),
-            actorData["FirstName"].As<string>(),
-            actorData["LastName"].As<string>(),
-            actorData["DateOfBirth"].As<string>(),
-            actorData["Biography"].As<string>()
-        );
     }
 }
