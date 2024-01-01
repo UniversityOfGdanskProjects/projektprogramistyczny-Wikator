@@ -2,6 +2,14 @@
 
 ###
 
+GET https://localhost:7102/api/movies?title=mat
+
+###
+
+GET https://localhost:7102/api/movies?actor=1
+
+###
+
 POST https://localhost:7102/api/movies
 Content-Type: application/json
 

@@ -1,6 +1,7 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using MoviesApi.DTOs;
+using MoviesApi.Helpers;
 using MoviesApi.Repository.Contracts;
 
 namespace MoviesApi.Controllers;
@@ -12,13 +13,13 @@ public class MoviesController(IMovieRepository movieRepository) : ControllerBase
 	private IMovieRepository MovieRepository { get; } = movieRepository;
 		
 	[HttpGet]
-	public async Task<IActionResult> GetMovies()
+	public async Task<IActionResult> GetMovies([FromQuery] MovieQueryParams queryParams)
 	{
 		var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 		return userId switch
 		{
-			null => Ok(await MovieRepository.GetMovies()),
-			_ => Ok(await MovieRepository.GetMoviesExcludingIgnored(int.Parse(userId)))
+			null => Ok(await MovieRepository.GetMovies(queryParams)),
+			_ => Ok(await MovieRepository.GetMoviesExcludingIgnored(int.Parse(userId), queryParams))
 		};
 	}
 

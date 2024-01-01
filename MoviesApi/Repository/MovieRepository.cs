@@ -1,5 +1,6 @@
 ﻿using MoviesApi.DTOs;
 using MoviesApi.Extensions;
+using MoviesApi.Helpers;
 using MoviesApi.Repository.Contracts;
 using Neo4j.Driver;
 
@@ -7,7 +8,7 @@ namespace MoviesApi.Repository;
 
 public class MovieRepository(IDriver driver) : Repository(driver), IMovieRepository
 {
-	public async Task<IEnumerable<MovieDto>> GetMoviesExcludingIgnored(int userId)
+	public async Task<IEnumerable<MovieDto>> GetMoviesExcludingIgnored(int userId, MovieQueryParams queryParams)
 	{
 		return await ExecuteAsync(async tx =>
 		{
@@ -18,7 +19,11 @@ public class MovieRepository(IDriver driver) : Repository(driver), IMovieReposit
 			                     WITH COLLECT(ID(ignoredMovie)) AS ignoredMovieIds
 
 			                     MATCH (m:Movie)
-			                     WHERE NOT ID(m) IN ignoredMovieIds
+			                     WHERE NOT ID(m) IN ignoredMovieIds AND toLower(m.Title) CONTAINS toLower($Title)
+			                     	AND ($Actor IS NULL OR EXISTS {
+			                     	MATCH (m)<-[:PLAYED_IN]-(a:Actor)
+			                     	WHERE ID(a) = $Actor
+			                     	})
 			                     OPTIONAL MATCH (m)<-[:PLAYED_IN]-(a:Actor)
 			                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(u:User)
 			                     WITH m, COLLECT(
@@ -42,7 +47,7 @@ public class MovieRepository(IDriver driver) : Repository(driver), IMovieReposit
 			                     } AS MovieWithActors
 			                     """;
 			
-			var cursor = await tx.RunAsync(query, new {userId});
+			var cursor = await tx.RunAsync(query, new {userId, queryParams.Title, queryParams.Actor});
 			return await cursor.ToListAsync(record =>
 			{
 				var movieWithActorsDto = record["MovieWithActors"].As<IDictionary<string, object>>();
@@ -67,7 +72,6 @@ public class MovieRepository(IDriver driver) : Repository(driver), IMovieReposit
 					await tx.RunAsync(createMovieQuery, new { movieDto.Title, movieDto.Description });
 				
 				var movieRecordWithoutActors = await movieCursorWithoutActors.SingleAsync();
-
 				var movieNodeWithoutActors = movieRecordWithoutActors["m"].As<INode>();
 
 				return new MovieDto(
@@ -119,13 +123,19 @@ public class MovieRepository(IDriver driver) : Repository(driver), IMovieReposit
 		});
 	}
 
-	public async Task<IEnumerable<MovieDto>> GetMovies()
+	public async Task<IEnumerable<MovieDto>> GetMovies(MovieQueryParams queryParams)
 	{
 		return await ExecuteAsync(async tx =>
 		{
 			// language=Cypher
 			const string query = """
+
 			                     MATCH (m:Movie)
+			                     WHERE toLower(m.Title) CONTAINS toLower($Title)
+			                     	AND $Actor IS NULL OR EXISTS {
+			                     		MATCH (m)<-[:PLAYED_IN]-(a:Actor)
+			                     		WHERE ID(a) = $Actor
+			                     	}
 			                     OPTIONAL MATCH (m)<-[:PLAYED_IN]-(a:Actor)
 			                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(u:User)
 			                     WITH m, COLLECT(
@@ -149,7 +159,7 @@ public class MovieRepository(IDriver driver) : Repository(driver), IMovieReposit
 			                     } AS MovieWithActors
 			                     """;
 			
-			var cursor = await tx.RunAsync(query);
+			var cursor = await tx.RunAsync(query, queryParams);
 			return await cursor.ToListAsync(record =>
 			{
 				var movieWithActorsDto = record["MovieWithActors"].As<IDictionary<string, object>>();
