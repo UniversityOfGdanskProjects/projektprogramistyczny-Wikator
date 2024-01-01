@@ -10,6 +10,7 @@ public class ActorRepository(IDriver driver) : Repository(driver), IActorReposit
     {
         return await ExecuteAsync(async tx =>
         {
+            // language=Cypher
             const string query = """
                                  MATCH (a:Actor)
                                  RETURN {
@@ -40,6 +41,7 @@ public class ActorRepository(IDriver driver) : Repository(driver), IActorReposit
     {
         return await ExecuteAsync(async tx =>
         {
+            // language=Cypher
             const string query = """
                                  MATCH (a:Actor)
                                  WHERE Id(a) = $id
@@ -80,10 +82,17 @@ public class ActorRepository(IDriver driver) : Repository(driver), IActorReposit
     {
         return await ExecuteAsync(async tx =>
         {
-            var actorQuery = $"" +
-                             $"CREATE (a:Actor {{ FirstName: \"{actorDto.FirstName}\", LastName: \"{actorDto.LastName}\", DateOfBirth: \"{actorDto.DateOfBirth}\", Biography:  \"{actorDto.Biography}\"}})" +
-                             $"RETURN Id(a) as id, a.FirstName as firstName, a.LastName as lastName, a.DateOfBirth as dateOfBirth, a.Biography as biography";
-            var actorCursor = await tx.RunAsync(actorQuery);
+            // language=Cypher
+            const string actorQuery = """
+                                      CREATE (a:Actor { FirstName: $FirstName, LastName: $LastName, DateOfBirth: $DateOfBirth, Biography: $Biography})
+                                      RETURN Id(a) as id, a.FirstName as firstName, a.LastName as lastName, a.DateOfBirth as dateOfBirth, a.Biography as biography
+                                      """;
+
+            var actorCursor = await tx.RunAsync(actorQuery, new
+            {
+                actorDto.FirstName, actorDto.LastName, actorDto.DateOfBirth, actorDto.Biography
+            });
+            
             var actorNode = await actorCursor.SingleAsync();
 
             if (actorNode is null)
@@ -104,11 +113,13 @@ public class ActorRepository(IDriver driver) : Repository(driver), IActorReposit
     {
         return await ExecuteAsync(async tx =>
         {
+            // language=Cypher
             const string actorQuery = """
                                       MATCH (a:Actor) WHERE Id(a) = $id
                                       SET a.FirstName = $FirstName, a.LastName = $LastName, a.DateOfBirth = $DateOfBirth, a.Biography = $Biography
                                       RETURN Id(a) as id, a.FirstName as firstName, a.LastName as lastName, a.DateOfBirth as dateOfBirth, a.Biography as biography
                                       """;
+            
             var actorCursor = await tx.RunAsync(actorQuery, new
             {
                 id, actorDto.FirstName, actorDto.LastName, actorDto.DateOfBirth,
@@ -134,12 +145,14 @@ public class ActorRepository(IDriver driver) : Repository(driver), IActorReposit
     {
         return await ExecuteAsync(async tx =>
         {
+            // language=Cypher
             const string matchQuery = "MATCH (a:Actor) WHERE Id(a) = $id RETURN a";
             var matchCursor = await tx.RunAsync(matchQuery, new { id });
 
             try
             {
                 await matchCursor.SingleAsync();
+                // language=Cypher
                 const string deleteQuery = "MATCH (a:Actor) WHERE Id(a) = $id DETACH DELETE a";
                 await tx.RunAsync(deleteQuery, new { id });
                 return true;

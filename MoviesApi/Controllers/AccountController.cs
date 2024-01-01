@@ -17,7 +17,7 @@ public class AccountController(ITokenService tokenService, IAccountRepository ac
 	[HttpPost("login")]
 	public async Task<ActionResult<UserDto>> Login(LoginDto loginDto)
 	{
-		var user = await AccountRepository.LoginASync(loginDto);
+		var user = await AccountRepository.LoginAsync(loginDto);
 
 		return user switch
 		{

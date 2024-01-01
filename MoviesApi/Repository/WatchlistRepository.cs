@@ -12,31 +12,32 @@ public class WatchlistRepository(IDriver driver) : Repository(driver), IWatchlis
     {
         return await ExecuteAsync(async tx =>
         {
-            var query = $$"""
-                          MATCH (m:Movie)<-[:{{RelationshipType.WATCHLIST}}]-(u:User)
-                          WHERE Id(u) = $userId
-                          OPTIONAL MATCH (m)<-[:{{RelationshipType.PLAYED_IN}}]-(a:Actor)
-                          OPTIONAL MATCH (m)<-[r:REVIEWED]-(u:User)
-                          WITH m, COLLECT(
-                            CASE
-                              WHEN a IS NULL THEN null
-                              ELSE {
-                                Id: ID(a),
-                                FirstName: a.FirstName,
-                                LastName: a.LastName,
-                                DateOfBirth: a.DateOfBirth,
-                                Biography: a.Biography
-                              }
-                            END
-                          ) AS Actors, AVG(r.score) AS AverageReviewScore
-                          RETURN {
-                            Id: ID(m),
-                            Title: m.Title,
-                            Description: m.Description,
-                            Actors: Actors,
-                            AverageReviewScore: COALESCE(AverageReviewScore, 0)
-                          } AS MovieWithActors
-                          """;
+            // language=Cypher
+            const string query = """
+                                 MATCH (m:Movie)<-[:WATCHLIST]-(u:User)
+                                 WHERE Id(u) = $userId
+                                 OPTIONAL MATCH (m)<-[:PLAYED_IN]-(a:Actor)
+                                 OPTIONAL MATCH (m)<-[r:REVIEWED]-(u:User)
+                                 WITH m, COLLECT(
+                                   CASE
+                                     WHEN a IS NULL THEN null
+                                     ELSE {
+                                       Id: ID(a),
+                                       FirstName: a.FirstName,
+                                       LastName: a.LastName,
+                                       DateOfBirth: a.DateOfBirth,
+                                       Biography: a.Biography
+                                     }
+                                   END
+                                 ) AS Actors, AVG(r.score) AS AverageReviewScore
+                                 RETURN {
+                                   Id: ID(m),
+                                   Title: m.Title,
+                                   Description: m.Description,
+                                   Actors: Actors,
+                                   AverageReviewScore: COALESCE(AverageReviewScore, 0)
+                                 } AS MovieWithActors
+                                 """;
 
             var result = await tx.RunAsync(query, new { userId });
             return await result.ToListAsync(record =>
@@ -51,6 +52,7 @@ public class WatchlistRepository(IDriver driver) : Repository(driver), IWatchlis
     {
         return await ExecuteAsync(async tx =>
         {
+            // language=Cypher
             const string checkMovieExistsQuery = """
                                                  MATCH (m:Movie)
                                                  WHERE Id(m) = $movieId
@@ -68,11 +70,12 @@ public class WatchlistRepository(IDriver driver) : Repository(driver), IWatchlis
                 return QueryResult.NotFound;
             }
 
-            var checkIfWatchlistExists = $"""
-                                          MATCH (u:User)-[r:{RelationshipType.WATCHLIST}]->(m:Movie)
-                                          WHERE Id(u) = $userId AND Id(m) = $movieId
-                                          RETURN r
-                                          """;
+            // language=Cypher
+            const string checkIfWatchlistExists = """
+                                                  MATCH (u:User)-[r:WATCHLIST]->(m:Movie)
+                                                  WHERE Id(u) = $userId AND Id(m) = $movieId
+                                                  RETURN r
+                                                  """;
 
             var watchlistExistsResult = await tx.RunAsync(checkIfWatchlistExists, new { userId, movieId });
 
@@ -86,11 +89,12 @@ public class WatchlistRepository(IDriver driver) : Repository(driver), IWatchlis
                 // ignored
             }
             
-            var createNewQuery = $"""
-                                  MATCH (u:User), (m:Movie)
-                                  WHERE Id(u) = $userId AND Id(m) = $movieId
-                                  CREATE (u)-[r:{RelationshipType.WATCHLIST}]->(m)
-                                  """;
+            // language=Cypher
+            const string createNewQuery = """
+                                          MATCH (u:User), (m:Movie)
+                                          WHERE Id(u) = $userId AND Id(m) = $movieId
+                                          CREATE (u)-[r:WATCHLIST]->(m)
+                                          """;
             
             await tx.RunAsync(createNewQuery, new { userId, movieId });
             return QueryResult.Completed;
@@ -101,6 +105,7 @@ public class WatchlistRepository(IDriver driver) : Repository(driver), IWatchlis
     {
         return await ExecuteAsync(async tx =>
         {
+            // language=Cypher
             const string checkMovieExistsQuery = """
                                                  MATCH (m:Movie)
                                                  WHERE Id(m) = $movieId
@@ -117,7 +122,8 @@ public class WatchlistRepository(IDriver driver) : Repository(driver), IWatchlis
             {
                 return QueryResult.NotFound;
             }
-
+            
+            // language=Cypher
             const string checkIfWatchlistExists = """
                                                   MATCH (u:User)-[r:WATCHLIST]->(m:Movie)
                                                   WHERE Id(u) = $userId AND Id(m) = $movieId
@@ -134,7 +140,8 @@ public class WatchlistRepository(IDriver driver) : Repository(driver), IWatchlis
             {
                 return QueryResult.NotFound;
             }
-
+            
+            // language=Cypher
             const string removeFromWatchlistQuery = """
                                                     MATCH (u:User)-[r:WATCHLIST]->(m:Movie)
                                                     WHERE Id(u) = $userId AND Id(m) = $movieId

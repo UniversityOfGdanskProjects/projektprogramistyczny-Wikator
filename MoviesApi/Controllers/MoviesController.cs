@@ -1,7 +1,6 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using MoviesApi.DTOs;
-using MoviesApi.Extensions;
 using MoviesApi.Repository.Contracts;
 
 namespace MoviesApi.Controllers;

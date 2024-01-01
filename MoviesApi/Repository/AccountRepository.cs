@@ -12,120 +12,82 @@ public class AccountRepository(IDriver driver) : Repository(driver), IAccountRep
 {
     public async Task<User?> RegisterAsync(RegisterDto registerDto)
     {
-        var session = Driver.AsyncSession();
+        return await ExecuteAsync(async tx =>
+        {
+            using HMACSHA512 hmac = new();
+            var passwordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(registerDto.Password));
+            var passwordSalt = hmac.Key;
 
-        try
-        {
-            return await session.ExecuteWriteAsync(tx => CreateAndReturnNewUser(tx, registerDto));
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-            return null;
-        }
-        finally
-        {
-            await session.CloseAsync();
-        }
+            // language=Cypher
+            const string query = """
+                                 CREATE (a:User {
+                                   Name: $FirstName,
+                                   Email: $Email,
+                                   PasswordHash: $PasswordHash,
+                                   PasswordSalt: $PasswordSalt,
+                                   Role: "User"
+                                 })
+                                 RETURN a.Name as name, a.Email as email, a.Role as role, ID(a) as id
+                                 """;
+
+            var cursor = await tx.RunAsync(query, new
+            {
+                registerDto.Name, registerDto.Email,
+                PasswordHash = Convert.ToBase64String(passwordHash), PasswordSalt = Convert.ToBase64String(passwordSalt)
+            });
+            var node = await cursor.SingleAsync();
+
+            return GetUserFromNode(node);
+        });
     }
 
-    public async Task<User?> LoginASync(LoginDto loginDto)
+    public async Task<User?> LoginAsync(LoginDto loginDto)
     {
-        var session = Driver.AsyncSession();
+        return await ExecuteAsync(async tx =>
+        {
+            // language=Cypher
+            const string query = """
+                                 MATCH (a:User { Email: $Email })
+                                 RETURN a.Name as name, a.Email as email, a.Role as role, a.PasswordHash as passwordHash, a.PasswordSalt as passwordSalt, ID(a) as id
+                                 """;
+            var cursor = await tx.RunAsync(query, new { loginDto.Email });
+            var node = await cursor.SingleAsync();
 
-        try
-        {
-            return await session.ExecuteWriteAsync(tx => CheckPasswordAndReturnUser(tx, loginDto));
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-            return null;
-        }
-        finally
-        {
-            await session.CloseAsync();
-        }
+            if (node is null)
+                return null;
+
+            var storedPasswordHash = node["passwordHash"].As<string>();
+            var storedPasswordSalt = node["passwordSalt"].As<string>();
+
+            using HMACSHA512 hmac = new(Convert.FromBase64String(storedPasswordSalt));
+            var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(loginDto.Password));
+            var storedHash = Convert.FromBase64String(storedPasswordHash);
+
+            return computedHash.Where((t, i) => t != storedHash[i]).Any() ? null : GetUserFromNode(node);
+        });
     }
 
     public async Task<bool> EmailExistsAsync(string email)
     {
-        var session = Driver.AsyncSession();
-
-        try
+        return await ExecuteAsync(async tx =>
         {
-            return await session.ExecuteReadAsync(tx => CheckIfEmailExists(tx, email));
-        }
-        finally
-        {
-            await session.CloseAsync();
-        }
-    }
+            // language=Cypher
+            const string query = """
+                                 MATCH (a:User { Email: $Email })
+                                 RETURN a
+                                 """;
 
-
-    private static async Task<User?> CreateAndReturnNewUser(IAsyncQueryRunner tx, RegisterDto registerDto)
-    {
-        using HMACSHA512 hmac = new();
-        var passwordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(registerDto.Password));
-        var passwordSalt = hmac.Key;
-        
-        var query = $$"""
-                            CREATE (a:User {
-                                Name: "{{registerDto.Name}}",
-                                Email: "{{registerDto.Email}}",
-                                PasswordHash: "{{Convert.ToBase64String(passwordHash)}}",
-                                PasswordSalt: "{{Convert.ToBase64String(passwordSalt)}}",
-                                Role: "User"
-                            })
-                            RETURN a.Name as name, a.Email as email, a.Role as role, ID(a) as id
-                      """;
-        
-        var cursor = await tx.RunAsync(query);
-        var node = await cursor.SingleAsync();
-
-        return GetUserFromNode(node);
-    }
-
-    private static async Task<User?> CheckPasswordAndReturnUser(IAsyncQueryRunner tx, LoginDto loginDto)
-    {
-        var query = $$"""
-                         MATCH (a:User { Email: "{{loginDto.Email}}" })
-                         RETURN a.Name as name, a.Email as email, a.Role as role, a.PasswordHash as passwordHash, a.PasswordSalt as passwordSalt, ID(a) as id
-                      """;
-        var cursor = await tx.RunAsync(query);
-        var node = await cursor.SingleAsync();
-
-        if (node is null)
-            return null;
-				
-        var storedPasswordHash = node["passwordHash"].As<string>();
-        var storedPasswordSalt = node["passwordSalt"].As<string>();
-
-        Console.WriteLine();
-        using HMACSHA512 hmac = new(Convert.FromBase64String(storedPasswordSalt));
-        var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(loginDto.Password));
-        var storedHash = Convert.FromBase64String(storedPasswordHash);
-
-        return computedHash.Where((t, i) => t != storedHash[i]).Any() ? null : GetUserFromNode(node);
-    }
-
-    private static async Task<bool> CheckIfEmailExists(IAsyncQueryRunner tx, string email)
-    {
-        var query = $$"""
-                         MATCH (a:User { Email: "{{email}}" })
-                         RETURN a
-                      """;
-
-        var accountCursor = await tx.RunAsync(query);
-        try
-        {
-            await accountCursor.SingleAsync();
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
+            var accountCursor = await tx.RunAsync(query, new { Email = email });
+            try
+            {
+                await accountCursor.SingleAsync();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        });
     }
     
     private static User GetUserFromNode(IRecord node) =>

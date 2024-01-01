@@ -11,6 +11,7 @@ public class ReviewRepository(IDriver driver) : Repository(driver), IReviewRepos
     {
         return await ExecuteAsync(async tx =>
         {
+            // language=Cypher
             const string movieQuery = """
                                       MATCH (m:Movie)
                                       WHERE Id(m) = $movieId
@@ -27,11 +28,12 @@ public class ReviewRepository(IDriver driver) : Repository(driver), IReviewRepos
             {
                 return QueryResult.NotFound;
             }
-
+            
+            // language=Cypher
             const string relationQuery = """
-                                            MATCH (u:User)-[r:REVIEWED]->(m:Movie)
-                                            WHERE Id(u) = $userId AND Id(m) = $movieId
-                                            RETURN r
+                                         MATCH (u:User)-[r:REVIEWED]->(m:Movie)
+                                         WHERE Id(u) = $userId AND Id(m) = $movieId
+                                         RETURN r
                                          """;
 
             var relationResult = await tx.RunAsync(relationQuery, new { userId, movieId = reviewDto.MovieId });
@@ -45,12 +47,13 @@ public class ReviewRepository(IDriver driver) : Repository(driver), IReviewRepos
             {
                 // ignored
             }
-
+            
+            // language=Cypher
             const string query = """
-                                    MATCH (u:User), (m:Movie)
-                                    WHERE Id(u) = $userId AND Id(m) = $movieId
-                                    CREATE (u)-[r:REVIEWED {score: $score}]->(m)
-                                    RETURN r
+                                 MATCH (u:User), (m:Movie)
+                                 WHERE Id(u) = $userId AND Id(m) = $movieId
+                                 CREATE (u)-[r:REVIEWED {score: $score}]->(m)
+                                 RETURN r
                                  """;
 
             var reviewResult =

@@ -1,5 +1,4 @@
 ﻿using MoviesApi.DTOs;
-using MoviesApi.Enums;
 using MoviesApi.Extensions;
 using MoviesApi.Repository.Contracts;
 using Neo4j.Driver;
@@ -12,35 +11,37 @@ public class MovieRepository(IDriver driver) : Repository(driver), IMovieReposit
 	{
 		return await ExecuteAsync(async tx =>
 		{
-			var query = $$"""
-			              MATCH (ignoredMovie:Movie)<-[:IGNORES]-(u:User)
-			              WHERE ID(u) = $userId
-			              WITH COLLECT(ID(ignoredMovie)) AS ignoredMovieIds
-			              
-			              MATCH (m:Movie)
-			              WHERE NOT ID(m) IN ignoredMovieIds
-			              OPTIONAL MATCH (m)<-[:{{RelationshipType.PLAYED_IN}}]-(a:Actor)
-			              OPTIONAL MATCH (m)<-[r:REVIEWED]-(u:User)
-			              WITH m, COLLECT(
-			                CASE
-			                  WHEN a IS NULL THEN null
-			                  ELSE {
-			                    Id: ID(a),
-			                    FirstName: a.FirstName,
-			                    LastName: a.LastName,
-			                    DateOfBirth: a.DateOfBirth,
-			                    Biography: a.Biography
-			                  }
-			                END
-			              ) AS Actors, AVG(r.score) AS AverageReviewScore
-			              RETURN {
-			                Id: ID(m),
-			                Title: m.Title,
-			                Description: m.Description,
-			                Actors: Actors,
-			                AverageReviewScore: COALESCE(AverageReviewScore, 0)
-			              } AS MovieWithActors
-			              """;
+			// language=Cypher
+			const string query = """
+			                     MATCH (ignoredMovie:Movie)<-[:IGNORES]-(u:User)
+			                     WHERE ID(u) = $userId
+			                     WITH COLLECT(ID(ignoredMovie)) AS ignoredMovieIds
+
+			                     MATCH (m:Movie)
+			                     WHERE NOT ID(m) IN ignoredMovieIds
+			                     OPTIONAL MATCH (m)<-[:PLAYED_IN]-(a:Actor)
+			                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(u:User)
+			                     WITH m, COLLECT(
+			                       CASE
+			                         WHEN a IS NULL THEN null
+			                         ELSE {
+			                           Id: ID(a),
+			                           FirstName: a.FirstName,
+			                           LastName: a.LastName,
+			                           DateOfBirth: a.DateOfBirth,
+			                           Biography: a.Biography
+			                         }
+			                       END
+			                     ) AS Actors, AVG(r.score) AS AverageReviewScore
+			                     RETURN {
+			                       Id: ID(m),
+			                       Title: m.Title,
+			                       Description: m.Description,
+			                       Actors: Actors,
+			                       AverageReviewScore: COALESCE(AverageReviewScore, 0)
+			                     } AS MovieWithActors
+			                     """;
+			
 			var cursor = await tx.RunAsync(query, new {userId});
 			return await cursor.ToListAsync(record =>
 			{
@@ -56,6 +57,7 @@ public class MovieRepository(IDriver driver) : Repository(driver), IMovieReposit
 		{
 			if (!movieDto.ActorIds.Any())
 			{
+				// language=Cypher
 				const string createMovieQuery = """
 				                                CREATE (m:Movie {Title: $Title, Description: $Description})
 				                                RETURN m, Id(m) as id
@@ -63,6 +65,7 @@ public class MovieRepository(IDriver driver) : Repository(driver), IMovieReposit
 
 				var movieCursorWithoutActors =
 					await tx.RunAsync(createMovieQuery, new { movieDto.Title, movieDto.Description });
+				
 				var movieRecordWithoutActors = await movieCursorWithoutActors.SingleAsync();
 
 				var movieNodeWithoutActors = movieRecordWithoutActors["m"].As<INode>();
@@ -76,32 +79,33 @@ public class MovieRepository(IDriver driver) : Repository(driver), IMovieReposit
 				);
 			}
 			
-			var createQuery = $$"""
-			                    CREATE (m:Movie {Title: $Title, Description: $Description})
-			                    WITH m
-			                    UNWIND $ActorIds AS actorId
-			                    MATCH (a:Actor) WHERE ID(a) = actorId
-			                    CREATE (a)-[:{{RelationshipType.PLAYED_IN}}]->(m)
-			                    WITH m, COLLECT(
-			                      CASE
-			                        WHEN a IS NULL THEN null
-			                        ELSE {
-			                          Id: ID(a),
-			                          FirstName: a.FirstName,
-			                          LastName: a.LastName,
-			                          DateOfBirth: a.DateOfBirth,
-			                          Biography: a.Biography
-			                        }
-			                      END
-			                    ) AS Actors
-			                    RETURN {
-			                      Id: ID(m),
-			                      Title: m.Title,
-			                      Description: m.Description,
-			                      Actors: Actors,
-			                      AverageReviewScore: 0
-			                    } AS MovieWithActors
-			                    """;
+			// language=Cypher
+			const string createQuery = """
+			                           CREATE (m:Movie {Title: $Title, Description: $Description})
+			                           WITH m
+			                           UNWIND $ActorIds AS actorId
+			                           MATCH (a:Actor) WHERE ID(a) = actorId
+			                           CREATE (a)-[:PLAYED_IN]->(m)
+			                           WITH m, COLLECT(
+			                             CASE
+			                               WHEN a IS NULL THEN null
+			                               ELSE {
+			                                 Id: ID(a),
+			                                 FirstName: a.FirstName,
+			                                 LastName: a.LastName,
+			                                 DateOfBirth: a.DateOfBirth,
+			                                 Biography: a.Biography
+			                               }
+			                             END
+			                           ) AS Actors
+			                           RETURN {
+			                             Id: ID(m),
+			                             Title: m.Title,
+			                             Description: m.Description,
+			                             Actors: Actors,
+			                             AverageReviewScore: 0
+			                           } AS MovieWithActors
+			                           """;
 
 			var movieCursor = await tx.RunAsync(
 				createQuery,
@@ -119,30 +123,32 @@ public class MovieRepository(IDriver driver) : Repository(driver), IMovieReposit
 	{
 		return await ExecuteAsync(async tx =>
 		{
-			var query = $$"""
-			              MATCH (m:Movie)
-			              OPTIONAL MATCH (m)<-[:{{RelationshipType.PLAYED_IN}}]-(a:Actor)
-			              OPTIONAL MATCH (m)<-[r:REVIEWED]-(u:User)
-			              WITH m, COLLECT(
-			                CASE
-			                  WHEN a IS NULL THEN null
-			                  ELSE {
-			                    Id: ID(a),
-			                    FirstName: a.FirstName,
-			                    LastName: a.LastName,
-			                    DateOfBirth: a.DateOfBirth,
-			                    Biography: a.Biography
-			                  }
-			                END
-			              ) AS Actors, AVG(r.score) AS AverageReviewScore
-			              RETURN {
-			                Id: ID(m),
-			                Title: m.Title,
-			                Description: m.Description,
-			                Actors: Actors,
-			                AverageReviewScore: COALESCE(AverageReviewScore, 0)
-			              } AS MovieWithActors
-			              """;
+			// language=Cypher
+			const string query = """
+			                     MATCH (m:Movie)
+			                     OPTIONAL MATCH (m)<-[:PLAYED_IN]-(a:Actor)
+			                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(u:User)
+			                     WITH m, COLLECT(
+			                       CASE
+			                         WHEN a IS NULL THEN null
+			                         ELSE {
+			                           Id: ID(a),
+			                           FirstName: a.FirstName,
+			                           LastName: a.LastName,
+			                           DateOfBirth: a.DateOfBirth,
+			                           Biography: a.Biography
+			                         }
+			                       END
+			                     ) AS Actors, AVG(r.score) AS AverageReviewScore
+			                     RETURN {
+			                       Id: ID(m),
+			                       Title: m.Title,
+			                       Description: m.Description,
+			                       Actors: Actors,
+			                       AverageReviewScore: COALESCE(AverageReviewScore, 0)
+			                     } AS MovieWithActors
+			                     """;
+			
 			var cursor = await tx.RunAsync(query);
 			return await cursor.ToListAsync(record =>
 			{

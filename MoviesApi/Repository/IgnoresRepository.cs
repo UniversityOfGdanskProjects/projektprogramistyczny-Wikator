@@ -12,31 +12,32 @@ public class IgnoresRepository(IDriver driver) : Repository(driver), IIgnoresRep
     {
         return await ExecuteAsync(async tx =>
         {
-            var query = $$"""
-                          MATCH (m:Movie)<-[:{{RelationshipType.WATCHLIST}}]-(u:User)
-                          WHERE Id(u) = $userId
-                          OPTIONAL MATCH (m)<-[:{{RelationshipType.IGNORES}}]-(a:Actor)
-                          OPTIONAL MATCH (m)<-[r:REVIEWED]-(u:User)
-                          WITH m, COLLECT(
-                            CASE
-                              WHEN a IS NULL THEN null
-                              ELSE {
-                                Id: ID(a),
-                                FirstName: a.FirstName,
-                                LastName: a.LastName,
-                                DateOfBirth: a.DateOfBirth,
-                                Biography: a.Biography
-                              }
-                            END
-                          ) AS Actors, AVG(r.score) AS AverageReviewScore
-                          RETURN {
-                            Id: ID(m),
-                            Title: m.Title,
-                            Description: m.Description,
-                            Actors: Actors,
-                            AverageReviewScore: COALESCE(AverageReviewScore, 0)
-                          } AS MovieWithActors
-                          """;
+            // language=Cypher
+            const string query = """
+                                 MATCH (m:Movie)<-[:WATCHLIST]-(u:User)
+                                 WHERE Id(u) = $userId
+                                 OPTIONAL MATCH (m)<-[:IGNORES]-(a:Actor)
+                                 OPTIONAL MATCH (m)<-[r:REVIEWED]-(u:User)
+                                 WITH m, COLLECT(
+                                   CASE
+                                     WHEN a IS NULL THEN null
+                                     ELSE {
+                                       Id: ID(a),
+                                       FirstName: a.FirstName,
+                                       LastName: a.LastName,
+                                       DateOfBirth: a.DateOfBirth,
+                                       Biography: a.Biography
+                                     }
+                                   END
+                                 ) AS Actors, AVG(r.score) AS AverageReviewScore
+                                 RETURN {
+                                   Id: ID(m),
+                                   Title: m.Title,
+                                   Description: m.Description,
+                                   Actors: Actors,
+                                   AverageReviewScore: COALESCE(AverageReviewScore, 0)
+                                 } AS MovieWithActors
+                                 """;
 
             var result = await tx.RunAsync(query, new { userId });
             return await result.ToListAsync(record =>
@@ -51,6 +52,7 @@ public class IgnoresRepository(IDriver driver) : Repository(driver), IIgnoresRep
     {
         return await ExecuteAsync(async tx =>
         {
+            // language=Cypher
             const string checkMovieExistsQuery = """
                                                  MATCH (m:Movie)
                                                  WHERE Id(m) = $movieId
@@ -67,12 +69,13 @@ public class IgnoresRepository(IDriver driver) : Repository(driver), IIgnoresRep
             {
                 return QueryResult.NotFound;
             }
-
-            var movieIsIgnoredQuery = $"""
-                                          MATCH (u:User)-[r:{RelationshipType.IGNORES}]->(m:Movie)
-                                          WHERE Id(u) = $userId AND Id(m) = $movieId
-                                          RETURN r
-                                          """;
+            
+            // language=Cypher
+            const string movieIsIgnoredQuery = """
+                                               MATCH (u:User)-[r:IGNORES]->(m:Movie)
+                                               WHERE Id(u) = $userId AND Id(m) = $movieId
+                                               RETURN r
+                                               """;
 
             var movieIsIgnoredResult = await tx.RunAsync(movieIsIgnoredQuery, new { userId, movieId });
 
@@ -86,11 +89,12 @@ public class IgnoresRepository(IDriver driver) : Repository(driver), IIgnoresRep
                 // ignored
             }
             
-            var createNewQuery = $"""
-                                  MATCH (u:User), (m:Movie)
-                                  WHERE Id(u) = $userId AND Id(m) = $movieId
-                                  CREATE (u)-[r:{RelationshipType.IGNORES}]->(m)
-                                  """;
+            // language=Cypher
+            const string createNewQuery = """
+                                          MATCH (u:User), (m:Movie)
+                                          WHERE Id(u) = $userId AND Id(m) = $movieId
+                                          CREATE (u)-[r:IGNORES]->(m)
+                                          """;
             
             await tx.RunAsync(createNewQuery, new { userId, movieId });
             return QueryResult.Completed;
@@ -101,6 +105,7 @@ public class IgnoresRepository(IDriver driver) : Repository(driver), IIgnoresRep
     {
         return await ExecuteAsync(async tx =>
         {
+            // language=Cypher
             const string checkMovieExistsQuery = """
                                                  MATCH (m:Movie)
                                                  WHERE Id(m) = $movieId
@@ -117,12 +122,13 @@ public class IgnoresRepository(IDriver driver) : Repository(driver), IIgnoresRep
             {
                 return QueryResult.NotFound;
             }
-
-            var movieIsIgnoredQuery = $"""
-                                           MATCH (u:User)-[r:{RelationshipType.IGNORES}]->(m:Movie)
-                                           WHERE Id(u) = $userId AND Id(m) = $movieId
-                                           RETURN r
-                                           """;
+            
+            // language=Cypher
+            const string movieIsIgnoredQuery = """
+                                               MATCH (u:User)-[r:IGNORES]->(m:Movie)
+                                               WHERE Id(u) = $userId AND Id(m) = $movieId
+                                               RETURN r
+                                               """;
 
             var movieIsIgnoredResult = await tx.RunAsync(movieIsIgnoredQuery, new { userId, movieId });
 
@@ -134,12 +140,13 @@ public class IgnoresRepository(IDriver driver) : Repository(driver), IIgnoresRep
             {
                 return QueryResult.NotFound;
             }
-
-            var removeMovieFromIgnoredQuery = $"""
-                                            MATCH (u:User)-[r:{RelationshipType.IGNORES}]->(m:Movie)
-                                            WHERE Id(u) = $userId AND Id(m) = $movieId
-                                            DELETE r
-                                            """;
+            
+            // language=Cypher
+            const string removeMovieFromIgnoredQuery = """
+                                                       MATCH (u:User)-[r:IGNORES]->(m:Movie)
+                                                       WHERE Id(u) = $userId AND Id(m) = $movieId
+                                                       DELETE r
+                                                       """;
 
             await tx.RunAsync(removeMovieFromIgnoredQuery, new { userId, movieId });
             return QueryResult.Completed;
