@@ -1,14 +1,13 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
+using MoviesApi.Controllers.Base;
 using MoviesApi.DTOs;
 using MoviesApi.Helpers;
 using MoviesApi.Repository.Contracts;
 
 namespace MoviesApi.Controllers;
 
-[ApiController]
-[Route("/api/[controller]")]
-public class MoviesController(IMovieRepository movieRepository) : ControllerBase
+public class MoviesController(IMovieRepository movieRepository) : BaseApiController
 {
 	private IMovieRepository MovieRepository { get; } = movieRepository;
 		

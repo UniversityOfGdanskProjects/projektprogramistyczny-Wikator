@@ -1,13 +1,14 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using MoviesApi.Controllers.Base;
 using MoviesApi.Enums;
 using MoviesApi.Extensions;
 using MoviesApi.Repository.Contracts;
 
 namespace MoviesApi.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
-public class WatchlistController(IWatchlistRepository watchlistRepository) : ControllerBase
+[Authorize]
+public class WatchlistController(IWatchlistRepository watchlistRepository) : BaseApiController
 {
     private IWatchlistRepository WatchlistRepository { get; } = watchlistRepository;
     

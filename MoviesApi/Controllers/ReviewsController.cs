@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MoviesApi.Controllers.Base;
 using MoviesApi.DTOs;
 using MoviesApi.Enums;
 using MoviesApi.Extensions;
@@ -8,9 +9,7 @@ using MoviesApi.Repository.Contracts;
 namespace MoviesApi.Controllers;
 
 [Authorize]
-[ApiController]
-[Route("/api/[controller]")]
-public class ReviewsController(IReviewRepository reviewRepository) : ControllerBase
+public class ReviewsController(IReviewRepository reviewRepository) : BaseApiController
 {
     private IReviewRepository ReviewRepository { get; } = reviewRepository;
     

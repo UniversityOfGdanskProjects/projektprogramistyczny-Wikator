@@ -1,13 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using MoviesApi.Controllers.Base;
 using MoviesApi.Enums;
 using MoviesApi.Extensions;
 using MoviesApi.Repository.Contracts;
 
 namespace MoviesApi.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
-public class IgnoresController(IIgnoresRepository ignoresRepository) : ControllerBase
+public class IgnoresController(IIgnoresRepository ignoresRepository) : BaseApiController
 {
     private IIgnoresRepository IgnoresRepository { get; } = ignoresRepository;
     

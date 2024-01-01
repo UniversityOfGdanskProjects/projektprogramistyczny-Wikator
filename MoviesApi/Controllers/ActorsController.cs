@@ -1,12 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using MoviesApi.Controllers.Base;
 using MoviesApi.DTOs;
 using MoviesApi.Repository.Contracts;
 
 namespace MoviesApi.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
-public class ActorsController(IActorRepository actorRepository) : ControllerBase
+public class ActorsController(IActorRepository actorRepository) : BaseApiController
 {
     private IActorRepository ActorRepository { get; } = actorRepository;
 

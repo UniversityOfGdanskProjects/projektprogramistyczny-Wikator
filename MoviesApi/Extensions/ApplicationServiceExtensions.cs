@@ -1,4 +1,5 @@
-﻿using MoviesApi.Repository;
+﻿using MoviesApi.Helpers;
+using MoviesApi.Repository;
 using MoviesApi.Repository.Contracts;
 using MoviesApi.Services;
 using MoviesApi.Services.Contracts;
@@ -20,9 +21,11 @@ public static class ApplicationServiceExtensions
 		    ?? throw new Exception("Connection string not found");
 
 		services.AddSingleton(GraphDatabase.Driver(server, AuthTokens.Basic(userName, password)));
+		services.AddScoped<LogUserActivity>();
 		services.AddScoped<IMovieRepository, MovieRepository>();
 		services.AddScoped<IActorRepository, ActorRepository>();
 		services.AddScoped<IAccountRepository, AccountRepository>();
+		services.AddScoped<IUserRepository, UserRepository>();
 		services.AddScoped<IReviewRepository, ReviewRepository>();
 		services.AddScoped<IWatchlistRepository, WatchlistRepository>();
 		services.AddScoped<IIgnoresRepository, IgnoresRepository>();

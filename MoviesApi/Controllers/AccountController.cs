@@ -1,14 +1,13 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MoviesApi.Controllers.Base;
 using MoviesApi.DTOs;
 using MoviesApi.Repository.Contracts;
 using MoviesApi.Services.Contracts;
 
 namespace MoviesApi.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
-public class AccountController(ITokenService tokenService, IAccountRepository accountRepository) : ControllerBase
+public class AccountController(ITokenService tokenService, IAccountRepository accountRepository) : BaseApiController
 {
 	private ITokenService TokenService { get; } = tokenService;
 	private IAccountRepository AccountRepository { get; } = accountRepository;

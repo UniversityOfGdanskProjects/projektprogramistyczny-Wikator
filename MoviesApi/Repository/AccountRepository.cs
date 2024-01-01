@@ -21,11 +21,12 @@ public class AccountRepository(IDriver driver) : Repository(driver), IAccountRep
             // language=Cypher
             const string query = """
                                  CREATE (a:User {
-                                   Name: $FirstName,
+                                   Name: $Name,
                                    Email: $Email,
                                    PasswordHash: $PasswordHash,
                                    PasswordSalt: $PasswordSalt,
-                                   Role: "User"
+                                   Role: "User",
+                                   LastActive: datetime()
                                  })
                                  RETURN a.Name as name, a.Email as email, a.Role as role, ID(a) as id
                                  """;
