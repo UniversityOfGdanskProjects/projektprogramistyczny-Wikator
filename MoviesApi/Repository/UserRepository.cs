@@ -22,11 +22,13 @@ public class UserRepository(IDriver driver) : Repository(driver), IUserRepositor
             return await result.ToListAsync(record =>
             {
                 var user = record["u"].As<INode>();
+                if (!Enum.TryParse<Role>(user["Role"].As<string>(), out var role))
+                    throw new Exception("Role missing in User in Db");
 
                 return new MemberDto(
                     Id: record["Id"].As<int>(),
                     Username: user["Name"].As<string>(),
-                    Role: Role.User,
+                    Role: role,
                     LastActive: DateTime.Parse(user["LastActive"].As<string>())
                 );
             });
