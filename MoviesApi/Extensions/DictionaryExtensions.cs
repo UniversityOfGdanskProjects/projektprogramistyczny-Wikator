@@ -11,6 +11,7 @@ public static class DictionaryExtensions
                 Title: movie["Title"].As<string>(),
                 Description: movie["Description"].As<string>(),
                 AverageScore: movie["AverageReviewScore"].As<double>(),
+                PictureUri: movie["PictureAbsoluteUri"].As<string?>(),
                 Actors: movie["Actors"].As<List<IDictionary<string, object>>>().Select(ConvertToActorDto)
         );
 

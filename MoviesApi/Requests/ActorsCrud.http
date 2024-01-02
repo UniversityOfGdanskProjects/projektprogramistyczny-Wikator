@@ -12,8 +12,7 @@ Content-Type: application/json
 {
   "firstName": "John",
   "lastName": "Doe",
-  "dateOfBirth": "1980-01-01",
-  "Biography": "Lorem ipsum"
+  "dateOfBirth": "1980-01-01"
 }
 
 ###

@@ -21,6 +21,7 @@ public static class ApplicationServiceExtensions
 		    ?? throw new Exception("Connection string not found");
 
 		services.AddSingleton(GraphDatabase.Driver(server, AuthTokens.Basic(userName, password)));
+		services.AddScoped<IPhotoService, PhotoService>();
 		services.AddScoped<LogUserActivity>();
 		services.AddScoped<IMovieRepository, MovieRepository>();
 		services.AddScoped<IActorRepository, ActorRepository>();
