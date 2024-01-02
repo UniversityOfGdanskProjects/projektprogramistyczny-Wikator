@@ -38,7 +38,8 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			                           FirstName: a.FirstName,
 			                           LastName: a.LastName,
 			                           DateOfBirth: a.DateOfBirth,
-			                           Biography: a.Biography
+			                           Biography: a.Biography,
+			                           PictureAbsoluteUri: m.PictureAbsoluteUri
 			                         }
 			                       END
 			                     ) AS Actors, AVG(r.score) AS AverageReviewScore
@@ -46,6 +47,11 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			                       Id: ID(m),
 			                       Title: m.Title,
 			                       Description: m.Description,
+			                       InTheaters: m.InTheaters,
+			                       TrailerAbsoluteUri: m.TrailerAbsoluteUri,
+			                       PictureAbsoluteUri: m.PictureAbsoluteUri,
+			                       ReleaseDate: m.ReleaseDate,
+			                       MinimumAge: m.MinimumAge,
 			                       Actors: Actors,
 			                       AverageReviewScore: COALESCE(AverageReviewScore, 0)
 			                     } AS MovieWithActors
@@ -87,29 +93,54 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			{
 				// language=Cypher
 				const string createMovieQuery = """
-				                                CREATE (m:Movie {Title: $Title, Description: $Description, PictureAbsoluteUri: $PictureAbsoluteUri, PicturePublicId: $PicturePublicId})
-				                                RETURN m, m.PictureAbsoluteUri AS PictureAbsoluteUri, Id(m) as id
+				                                CREATE (m:Movie {
+				                                  Title: $Title,
+				                                  Description: $Description,
+				                                  PictureAbsoluteUri: $PictureAbsoluteUri,
+				                                  PicturePublicId: $PicturePublicId,
+				                                  InTheaters: $InTheaters,
+				                                  ReleaseDate: $ReleaseDate,
+				                                  MinimumAge: $MinimumAge,
+				                                  TrailerAbsoluteUri: $TrailerAbsoluteUri
+				                                })
+				                                RETURN {
+				                                  Id: ID(m),
+				                                  Title: m.Title,
+				                                  Description: m.Description,
+				                                  InTheaters: m.InTheaters,
+				                                  TrailerAbsoluteUri: m.TrailerAbsoluteUri,
+				                                  PictureAbsoluteUri: m.PictureAbsoluteUri,
+				                                  ReleaseDate: m.ReleaseDate,
+				                                  MinimumAge: m.MinimumAge,
+				                                  Actors: [],
+				                                  AverageReviewScore: 0
+				                                } AS MovieWithActors
 				                                """;
 
 				var movieCursorWithoutActors =
-					await tx.RunAsync(createMovieQuery, new { movieDto.Title, movieDto.Description, PictureAbsoluteUri = pictureAbsoluteUri, PicturePublicId = picturePublicId });
+					await tx.RunAsync(createMovieQuery, 
+						new { movieDto.Title, movieDto.Description, movieDto.ActorIds, PictureAbsoluteUri = pictureAbsoluteUri,
+							PicturePublicId = picturePublicId, movieDto.InTheaters, movieDto.ReleaseDate, movieDto.MinimumAge,
+							TrailerAbsoluteUri = movieDto.TrailerUrl });
 				
 				var movieRecordWithoutActors = await movieCursorWithoutActors.SingleAsync();
-				var movieNodeWithoutActors = movieRecordWithoutActors["m"].As<INode>();
+				var movieNodeWithoutActors = movieRecordWithoutActors["MovieWithActors"].As<IDictionary<string, object>>();
 
-				return new MovieDto(
-					Id: movieRecordWithoutActors["id"].As<int>(),
-					Title: movieNodeWithoutActors["Title"].As<string>(),
-					Description: movieNodeWithoutActors["Description"].As<string>(),
-					0,
-					PictureUri: movieRecordWithoutActors["PictureAbsoluteUri"].As<string?>(),
-					Actors: Enumerable.Empty<ActorDto>()
-				);
+				return movieNodeWithoutActors.ConvertToMovieDto();
 			}
 			
 			// language=Cypher
 			const string createQuery = """
-			                           CREATE (m:Movie {Title: $Title, Description: $Description, PictureAbsoluteUri: $PictureAbsoluteUri, PicturePublicId: $PicturePublicId})
+			                           CREATE (m:Movie {
+			                             Title: $Title,
+			                             Description: $Description,
+			                             PictureAbsoluteUri: $PictureAbsoluteUri,
+			                             PicturePublicId: $PicturePublicId,
+			                             InTheaters: $InTheaters,
+			                             ReleaseDate: $ReleaseDate,
+			                             MinimumAge: $MinimumAge,
+			                             TrailerAbsoluteUri: $TrailerAbsoluteUri
+			                           })
 			                           WITH m
 			                           UNWIND $ActorIds AS actorId
 			                           MATCH (a:Actor) WHERE ID(a) = actorId
@@ -122,7 +153,8 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			                                 FirstName: a.FirstName,
 			                                 LastName: a.LastName,
 			                                 DateOfBirth: a.DateOfBirth,
-			                                 Biography: a.Biography
+			                                 Biography: a.Biography,
+			                                 PictureAbsoluteUri: a.PictureAbsoluteUri
 			                               }
 			                             END
 			                           ) AS Actors
@@ -130,8 +162,12 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			                             Id: ID(m),
 			                             Title: m.Title,
 			                             Description: m.Description,
-			                             Actors: Actors,
+			                             InTheaters: m.InTheaters,
+			                             TrailerAbsoluteUri: m.TrailerAbsoluteUri,
 			                             PictureAbsoluteUri: m.PictureAbsoluteUri,
+			                             ReleaseDate: m.ReleaseDate,
+			                             MinimumAge: m.MinimumAge,
+			                             Actors: Actors,
 			                             AverageReviewScore: 0
 			                           } AS MovieWithActors
 			                           """;
@@ -139,7 +175,8 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			var movieCursor = await tx.RunAsync(
 				createQuery,
 				new { movieDto.Title, movieDto.Description, movieDto.ActorIds, PictureAbsoluteUri = pictureAbsoluteUri,
-					PicturePublicId = picturePublicId }
+					PicturePublicId = picturePublicId, movieDto.InTheaters, movieDto.ReleaseDate, movieDto.MinimumAge,
+					TrailerAbsoluteUri = movieDto.TrailerUrl }
 			);
 
 			var record = await movieCursor.SingleAsync();
@@ -204,7 +241,8 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			                           FirstName: a.FirstName,
 			                           LastName: a.LastName,
 			                           DateOfBirth: a.DateOfBirth,
-			                           Biography: a.Biography
+			                           Biography: a.Biography,
+			                           PictureAbsoluteUri: a.PictureAbsoluteUri
 			                         }
 			                       END
 			                     ) AS Actors, AVG(r.score) AS AverageReviewScore
@@ -212,6 +250,11 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			                       Id: ID(m),
 			                       Title: m.Title,
 			                       Description: m.Description,
+			                       InTheaters: m.InTheaters,
+			                       TrailerAbsoluteUri: m.TrailerAbsoluteUri,
+			                       PictureAbsoluteUri: m.PictureAbsoluteUri,
+			                       ReleaseDate: m.ReleaseDate,
+			                       MinimumAge: m.MinimumAge,
 			                       Actors: Actors,
 			                       AverageReviewScore: COALESCE(AverageReviewScore, 0)
 			                     } AS MovieWithActors

@@ -1,4 +1,5 @@
 ﻿using MoviesApi.DTOs;
+using MoviesApi.Enums;
 
 namespace MoviesApi.Repository.Contracts;
 
@@ -8,5 +9,5 @@ public interface IActorRepository
     Task<ActorDto?> GetActor(int id);
     Task<ActorDto?> CreateActor(UpsertActorDto actor);
     Task<ActorDto?> UpdateActor(int id, UpsertActorDto actor);
-    Task<bool> DeleteActor(int id);
+    Task<QueryResult> DeleteActor(int id);
 }

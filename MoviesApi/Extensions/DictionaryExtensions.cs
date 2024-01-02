@@ -10,18 +10,23 @@ public static class DictionaryExtensions
                 Id: movie["Id"].As<int>(),
                 Title: movie["Title"].As<string>(),
                 Description: movie["Description"].As<string>(),
+                InTheaters: movie["InTheaters"].As<bool>(),
                 AverageScore: movie["AverageReviewScore"].As<double>(),
+                TrailerUrl: movie["TrailerAbsoluteUri"].As<string?>(),
                 PictureUri: movie["PictureAbsoluteUri"].As<string?>(),
+                ReleaseDate: DateOnly.FromDateTime(movie["ReleaseDate"].As<DateTime>()) ,
+                MinimumAge: movie["MinimumAge"].As<int>(),
                 Actors: movie["Actors"].As<List<IDictionary<string, object>>>().Select(ConvertToActorDto)
         );
 
 
-    private static ActorDto ConvertToActorDto(this IDictionary<string, object> actorData) =>
+    public static ActorDto ConvertToActorDto(this IDictionary<string, object> actorData) =>
         new(
             Id: actorData["Id"].As<int>(),
             FirstName: actorData["FirstName"].As<string>(),
             LastName: actorData["LastName"].As<string>(),
-            DateOfBirth: actorData["DateOfBirth"].As<string>(),
-            Biography: actorData["Biography"].As<string>()
+            DateOfBirth: DateOnly.FromDateTime(actorData["DateOfBirth"].As<DateTime>()),
+            Biography: actorData["Biography"].As<string>(),
+            PictureUri: actorData["PictureAbsoluteUri"].As<string?>()
         );
 }

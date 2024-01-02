@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MoviesApi.Controllers.Base;
 using MoviesApi.DTOs;
+using MoviesApi.Enums;
 using MoviesApi.Repository.Contracts;
 
 namespace MoviesApi.Controllers;
@@ -59,8 +60,10 @@ public class ActorsController(IActorRepository actorRepository) : BaseApiControl
 
         return deleted switch
         {
-            false => NotFound($"Actor with id {id} was not found"),
-            true => NoContent()
+            QueryResult.NotFound => NotFound($"Actor with id {id} was not found"),
+            QueryResult.PhotoFailedToDelete => BadRequest("Something went wrong when deleting photo"),
+            QueryResult.Completed => NoContent(),
+            _ => throw new Exception("This shouldn't have happened")
         };
     }
 }
