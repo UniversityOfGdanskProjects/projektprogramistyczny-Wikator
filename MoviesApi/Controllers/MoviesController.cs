@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using MoviesApi.Controllers.Base;
 using MoviesApi.DTOs;
+using MoviesApi.Enums;
 using MoviesApi.Helpers;
 using MoviesApi.Repository.Contracts;
 
@@ -31,5 +32,17 @@ public class MoviesController(IMovieRepository movieRepository) : BaseApiControl
 			return BadRequest("The movie could not be created.");
 
 		return CreatedAtAction(nameof(GetMovies), movie);
+	}
+
+	[HttpDelete("{id:int}")]
+	public async Task<IActionResult> DeleteMovie(int id)
+	{
+		return await MovieRepository.DeleteMovie(id) switch
+		{
+			QueryResult.NotFound => NotFound("Movie does not exist"),
+			QueryResult.PhotoFailedToDelete => BadRequest("Photo failed to delete"),
+			QueryResult.Completed => NoContent(),
+			_ => throw new Exception("This shouldn't have happened")
+		};
 	}
 }

@@ -1,4 +1,5 @@
 ﻿using MoviesApi.DTOs;
+using MoviesApi.Enums;
 using MoviesApi.Extensions;
 using MoviesApi.Helpers;
 using MoviesApi.Repository.Contracts;
@@ -145,6 +146,38 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 
 			var movieNode = record["MovieWithActors"].As<IDictionary<string, object>>();
 			return movieNode.ConvertToMovieDto();
+		});
+	}
+
+	public async Task<QueryResult> DeleteMovie(int movieId)
+	{
+		return await ExecuteAsync(async tx =>
+		{
+			// language=cypher
+			const string movieExistsAsync = """
+			                                  MATCH (m:Movie)
+			                                  WHERE ID(m) = $movieId
+			                                  RETURN m.PicturePublicId AS PicturePublicId
+			                                """;
+
+			var cursor = await tx.RunAsync(movieExistsAsync, new { movieId });
+
+			try
+			{
+				var movie = await cursor.SingleAsync();
+				var publicId = movie["PicturePublicId"].As<string?>();
+
+				if (publicId is not null && (await PhotoService.DeleteASync(publicId)).Error is not null)
+					return QueryResult.PhotoFailedToDelete;
+
+				// language=cypher
+				await tx.RunAsync("MATCH (m:Movie) WHERE Id(m) = $movieId DETACH DELETE m", new { movieId });
+				return QueryResult.Completed;
+			}
+			catch
+			{
+				return QueryResult.NotFound;
+			}
 		});
 	}
 

@@ -5,5 +5,6 @@ public enum QueryResult
     Completed,
     NotFound,
     EntityAlreadyExists,
-    UnexpectedError
+    UnexpectedError,
+    PhotoFailedToDelete
 }
