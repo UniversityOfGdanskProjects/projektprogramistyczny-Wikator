@@ -2,4 +2,4 @@
 
 namespace MoviesApi.DTOs;
 
-public record MemberDto(int Id, string Username, Role Role, DateTime LastActive);
+public record MemberDto(Guid Id, string Username, Role Role, DateTime LastActive);

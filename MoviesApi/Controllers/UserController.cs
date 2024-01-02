@@ -16,7 +16,7 @@ public class UserController(IUserRepository userRepository) : BaseApiController
         return userId switch
         {
             null => Ok(await UserRepository.GetUsersByMostActiveAsync(null)),
-            _ => Ok(await UserRepository.GetUsersByMostActiveAsync(int.Parse(userId)))
+            _ => Ok(await UserRepository.GetUsersByMostActiveAsync(Guid.Parse(userId)))
         };
     }
 }

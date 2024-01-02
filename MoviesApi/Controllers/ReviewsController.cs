@@ -17,7 +17,7 @@ public class ReviewsController(IReviewRepository reviewRepository) : BaseApiCont
     public async Task<IActionResult> CreateReview(UpsertReviewDto reviewDto)
     {
         var review = await ReviewRepository.AddReview(User.GetUserId(), reviewDto);
-
+    
         return review switch
         {
             QueryResult.Completed => NoContent(),

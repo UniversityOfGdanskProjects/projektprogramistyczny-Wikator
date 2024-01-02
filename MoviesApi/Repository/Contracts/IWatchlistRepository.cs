@@ -5,7 +5,7 @@ namespace MoviesApi.Repository.Contracts;
 
 public interface IWatchlistRepository
 {
-    Task<IEnumerable<MovieDto>> GetAllMoviesOnWatchlist(int userId);
-    Task<QueryResult> AddToWatchList(int userId, int movieId);
-    Task<QueryResult> RemoveFromWatchList(int userId, int movieId);
+    Task<IEnumerable<MovieDto>> GetAllMoviesOnWatchlist(Guid userId);
+    Task<QueryResult> AddToWatchList(Guid userId, Guid movieId);
+    Task<QueryResult> RemoveFromWatchList(Guid userId, Guid movieId);
 }

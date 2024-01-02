@@ -1,0 +1,18 @@
+﻿POST https://localhost:7102/api/account/register
+Content-Type: application/json
+
+{
+  "email": "test3@gmail.com",
+  "name": "Test3",
+  "password": "Pa$$w0rd"
+}
+
+###
+
+POST https://localhost:7102/api/account/login
+Content-Type: application/json
+
+{
+  "email": "test3@gmail.com",
+  "password": "Pa$$w0rd"
+}

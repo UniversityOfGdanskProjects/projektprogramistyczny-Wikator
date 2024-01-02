@@ -7,18 +7,17 @@ namespace MoviesApi.Repository;
 
 public class ReviewRepository(IDriver driver) : Repository(driver), IReviewRepository
 {
-    public async Task<QueryResult> AddReview(int userId, UpsertReviewDto reviewDto)
+    public async Task<QueryResult> AddReview(Guid userId, UpsertReviewDto reviewDto)
     {
         return await ExecuteAsync(async tx =>
         {
             // language=Cypher
             const string movieQuery = """
-                                      MATCH (m:Movie)
-                                      WHERE Id(m) = $movieId
+                                      MATCH (m:Movie { Id: $movieId })
                                       RETURN m
                                       """;
 
-            var movieResult = await tx.RunAsync(movieQuery, new { movieId = reviewDto.MovieId });
+            var movieResult = await tx.RunAsync(movieQuery, new { movieId = reviewDto.MovieId.ToString() });
 
             try
             {
@@ -31,12 +30,12 @@ public class ReviewRepository(IDriver driver) : Repository(driver), IReviewRepos
             
             // language=Cypher
             const string relationQuery = """
-                                         MATCH (u:User)-[r:REVIEWED]->(m:Movie)
-                                         WHERE Id(u) = $userId AND Id(m) = $movieId
+                                         MATCH (:User { Id: $userId})-[r:REVIEWED]->(:Movie { Id: $movieId })
                                          RETURN r
                                          """;
 
-            var relationResult = await tx.RunAsync(relationQuery, new { userId, movieId = reviewDto.MovieId });
+            var relationResult = await tx.RunAsync(relationQuery,
+                new { userId = userId.ToString(), movieId = reviewDto.MovieId.ToString() });
 
             try
             {
@@ -50,14 +49,14 @@ public class ReviewRepository(IDriver driver) : Repository(driver), IReviewRepos
             
             // language=Cypher
             const string query = """
-                                 MATCH (u:User), (m:Movie)
-                                 WHERE Id(u) = $userId AND Id(m) = $movieId
+                                 MATCH (u:User { Id: $userId}), (m:Movie { Id: $movieId })
                                  CREATE (u)-[r:REVIEWED {score: $score}]->(m)
                                  RETURN r
                                  """;
 
             var reviewResult =
-                await tx.RunAsync(query, new { userId, movieId = reviewDto.MovieId, score = reviewDto.Score });
+                await tx.RunAsync(query,
+                    new { userId = userId.ToString(), movieId = reviewDto.MovieId.ToString(), score = reviewDto.Score });
 
             try
             {

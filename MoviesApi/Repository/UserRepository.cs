@@ -7,18 +7,19 @@ namespace MoviesApi.Repository;
 
 public class UserRepository(IDriver driver) : Repository(driver), IUserRepository
 {
-    public async Task<IEnumerable<MemberDto>> GetUsersByMostActiveAsync(int? userId)
+    public async Task<IEnumerable<MemberDto>> GetUsersByMostActiveAsync(Guid? userId)
     {
         return await ExecuteAsync(async tx =>
         {
+            // language=Cypher
             const string query = """
                                  MATCH (u:User)
-                                 WHERE $userId IS NULL OR ID(u) <> $userId
-                                 RETURN ID(u) as Id, u
+                                 WHERE $userId IS NULL OR u.Id <> $userId
+                                 RETURN u
                                  ORDER BY u.LastActive DESC
                                  """;
 
-            var result = await tx.RunAsync(query, new { userId });
+            var result = await tx.RunAsync(query, new { userId = userId.ToString() });
             return await result.ToListAsync(record =>
             {
                 var user = record["u"].As<INode>();
@@ -26,7 +27,7 @@ public class UserRepository(IDriver driver) : Repository(driver), IUserRepositor
                     throw new Exception("Role missing in User in Db");
 
                 return new MemberDto(
-                    Id: record["Id"].As<int>(),
+                    Id: Guid.Parse(user["Id"].As<string>()),
                     Username: user["Name"].As<string>(),
                     Role: role,
                     LastActive: DateTime.Parse(user["LastActive"].As<string>())

@@ -19,12 +19,12 @@ public class ActorRepository(IPhotoService photoService, IDriver driver) : Repos
             const string query = """
                                  MATCH (a:Actor)
                                  RETURN {
-                                     Id: Id(a),
+                                     Id: a.Id,
                                      FirstName: a.FirstName,
                                      LastName: a.LastName,
                                      DateOfBirth: a.DateOfBirth,
                                      Biography: a.Biography,
-                                     PictureUri: a.PictureAbsoluteUri
+                                     PictureAbsoluteUri: a.PictureAbsoluteUri
                                  } AS Actors
                                  """;
 
@@ -33,27 +33,20 @@ public class ActorRepository(IPhotoService photoService, IDriver driver) : Repos
             {
                 var actor = record["Actors"].As<IDictionary<string, object>>();
 
-                return new ActorDto(
-                    Id: actor["Id"].As<int>(),
-                    FirstName: actor["FirstName"].As<string>(),
-                    LastName: actor["LastName"].As<string>(),
-                    DateOfBirth: DateOnly.FromDateTime(actor["DateOfBirth"].As<DateTime>()),
-                    PictureUri: actor["PictureUri"].As<string?>(),
-                    Biography: actor["Biography"].As<string?>());
+                return actor.ConvertToActorDto();
             });
         });
     }
 
-    public async Task<ActorDto?> GetActor(int id)
+    public async Task<ActorDto?> GetActor(Guid id)
     {
         return await ExecuteAsync(async tx =>
         {
             // language=Cypher
             const string query = """
-                                 MATCH (a:Actor)
-                                 WHERE Id(a) = $id
+                                 MATCH (a:Actor { Id: $id })
                                  RETURN {
-                                     Id: Id(a),
+                                     Id: a.Id,
                                      FirstName: a.FirstName,
                                      LastName: a.LastName,
                                      DateOfBirth: a.DateOfBirth,
@@ -62,7 +55,7 @@ public class ActorRepository(IPhotoService photoService, IDriver driver) : Repos
                                  } AS Actor
                                  """;
         
-            var cursor = await tx.RunAsync(query, new { id });
+            var cursor = await tx.RunAsync(query, new { id = id.ToString() });
 
             try
             {
@@ -101,6 +94,7 @@ public class ActorRepository(IPhotoService photoService, IDriver driver) : Repos
             // language=Cypher
             const string actorQuery = """
                                       CREATE (a:Actor { 
+                                        Id: randomUUID(),
                                         FirstName: $FirstName,
                                         LastName: $LastName,
                                         DateOfBirth: $DateOfBirth,
@@ -109,7 +103,7 @@ public class ActorRepository(IPhotoService photoService, IDriver driver) : Repos
                                         PicturePublicId: $PicturePublicId
                                       })
                                       RETURN {
-                                        Id: Id(a),
+                                        Id: a.Id,
                                         FirstName: a.FirstName,
                                         LastName: a.LastName,
                                         DateOfBirth: a.DateOfBirth,
@@ -128,20 +122,20 @@ public class ActorRepository(IPhotoService photoService, IDriver driver) : Repos
         });
     }
 
-    public async Task<ActorDto?> UpdateActor(int id, UpsertActorDto actorDto)
+    public async Task<ActorDto?> UpdateActor(Guid id, UpsertActorDto actorDto)
     {
         return await ExecuteAsync(async tx =>
         {
             // language=Cypher
             const string actorQuery = """
-                                      MATCH (a:Actor) WHERE Id(a) = $id
+                                      MATCH (a:Actor {Id: $id})
                                       SET
                                         a.FirstName = $FirstName,
                                         a.LastName = $LastName,
                                         a.DateOfBirth = $DateOfBirth,
                                         a.Biography = $Biography
                                       RETURN {
-                                        Id: Id(a),
+                                        Id: a.Id,
                                         FirstName: a.FirstName,
                                         LastName: a.LastName,
                                         DateOfBirth: a.DateOfBirth,
@@ -152,21 +146,21 @@ public class ActorRepository(IPhotoService photoService, IDriver driver) : Repos
             
             var actorCursor = await tx.RunAsync(actorQuery, new
             {
-                id, actorDto.FirstName, actorDto.LastName, actorDto.DateOfBirth,
-                actorDto.Biography
+                id = id.ToString(), actorDto.FirstName, actorDto.LastName,
+                actorDto.DateOfBirth, actorDto.Biography
             });
             
             return await ConvertCursorToActorDto(actorCursor);
         });
     }
 
-    public async Task<QueryResult> DeleteActor(int id)
+    public async Task<QueryResult> DeleteActor(Guid id)
     {
         return await ExecuteAsync(async tx =>
         {
             // language=Cypher
-            const string matchQuery = "MATCH (a:Actor) WHERE Id(a) = $id RETURN a.PicturePublicId AS PicturePublicId";
-            var matchCursor = await tx.RunAsync(matchQuery, new { id });
+            const string matchQuery = "MATCH (a:Actor) WHERE a.Id = $id RETURN a.PicturePublicId AS PicturePublicId";
+            var matchCursor = await tx.RunAsync(matchQuery, new { id = id.ToString() });
 
             try
             {
@@ -178,7 +172,7 @@ public class ActorRepository(IPhotoService photoService, IDriver driver) : Repos
                 
                 // language=Cypher
                 const string deleteQuery = "MATCH (a:Actor) WHERE Id(a) = $id DETACH DELETE a";
-                await tx.RunAsync(deleteQuery, new { id });
+                await tx.RunAsync(deleteQuery, new { id = id.ToString() });
                 return QueryResult.Completed;
             }
             catch (InvalidOperationException)

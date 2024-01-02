@@ -21,6 +21,7 @@ public class AccountRepository(IDriver driver) : Repository(driver), IAccountRep
             // language=Cypher
             const string query = """
                                  CREATE (a:User {
+                                   Id: randomUUID(),
                                    Name: $Name,
                                    Email: $Email,
                                    PasswordHash: $PasswordHash,
@@ -28,7 +29,7 @@ public class AccountRepository(IDriver driver) : Repository(driver), IAccountRep
                                    Role: "User",
                                    LastActive: datetime()
                                  })
-                                 RETURN a.Name as name, a.Email as email, a.Role as role, ID(a) as id
+                                 RETURN a.Name as name, a.Email as email, a.Role as role, a.Id as id
                                  """;
 
             var cursor = await tx.RunAsync(query, new
@@ -49,7 +50,7 @@ public class AccountRepository(IDriver driver) : Repository(driver), IAccountRep
             // language=Cypher
             const string query = """
                                  MATCH (a:User { Email: $Email })
-                                 RETURN a.Name as name, a.Email as email, a.Role as role, a.PasswordHash as passwordHash, a.PasswordSalt as passwordSalt, ID(a) as id
+                                 RETURN a.Name as name, a.Email as email, a.Role as role, a.PasswordHash as passwordHash, a.PasswordSalt as passwordSalt, a.Id as id
                                  """;
             var cursor = await tx.RunAsync(query, new { loginDto.Email });
             var node = await cursor.SingleAsync();
@@ -94,7 +95,7 @@ public class AccountRepository(IDriver driver) : Repository(driver), IAccountRep
     private static User GetUserFromNode(IRecord node) =>
         new
         (
-            Id: node["id"].As<int>(),
+            Id: Guid.Parse(node["id"].As<string>()),
             Email: node["email"].As<string>(),
             Name: node["name"].As<string>(),
             Role: (Role)Enum.Parse(typeof(Role), node["role"].As<string>())

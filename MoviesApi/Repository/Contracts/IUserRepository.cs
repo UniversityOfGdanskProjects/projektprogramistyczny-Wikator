@@ -4,5 +4,5 @@ namespace MoviesApi.Repository.Contracts;
 
 public interface IUserRepository
 {
-    Task<IEnumerable<MemberDto>> GetUsersByMostActiveAsync(int? userId);
+    Task<IEnumerable<MemberDto>> GetUsersByMostActiveAsync(Guid? userId);
 }

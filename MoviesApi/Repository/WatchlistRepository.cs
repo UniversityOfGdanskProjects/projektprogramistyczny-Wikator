@@ -8,38 +8,43 @@ namespace MoviesApi.Repository;
 
 public class WatchlistRepository(IDriver driver) : Repository(driver), IWatchlistRepository
 {
-    public async Task<IEnumerable<MovieDto>> GetAllMoviesOnWatchlist(int userId)
+    public async Task<IEnumerable<MovieDto>> GetAllMoviesOnWatchlist(Guid userId)
     {
         return await ExecuteAsync(async tx =>
         {
             // language=Cypher
             const string query = """
-                                 MATCH (m:Movie)<-[:WATCHLIST]-(u:User)
-                                 WHERE Id(u) = $userId
+                                 MATCH (m:Movie)<-[:WATCHLIST]-(u:User {Id: $userId})
                                  OPTIONAL MATCH (m)<-[:PLAYED_IN]-(a:Actor)
                                  OPTIONAL MATCH (m)<-[r:REVIEWED]-(u:User)
                                  WITH m, COLLECT(
                                    CASE
                                      WHEN a IS NULL THEN null
                                      ELSE {
-                                       Id: ID(a),
+                                       Id: a.Id,
                                        FirstName: a.FirstName,
                                        LastName: a.LastName,
                                        DateOfBirth: a.DateOfBirth,
-                                       Biography: a.Biography
+                                       Biography: a.Biography,
+                                       PictureAbsoluteUri: a.PictureAbsoluteUri
                                      }
                                    END
-                                 ) AS Actors, AVG(r.score) AS AverageReviewScore
+                                 ) AS Actors
                                  RETURN {
-                                   Id: ID(m),
+                                   Id: m.Id,
                                    Title: m.Title,
                                    Description: m.Description,
+                                   InTheaters: m.InTheaters,
+                                   TrailerAbsoluteUri: m.TrailerAbsoluteUri,
+                                   PictureAbsoluteUri: m.PictureAbsoluteUri,
+                                   ReleaseDate: m.ReleaseDate,
+                                   MinimumAge: m.MinimumAge,
                                    Actors: Actors,
-                                   AverageReviewScore: COALESCE(AverageReviewScore, 0)
+                                   AverageReviewScore: 0
                                  } AS MovieWithActors
                                  """;
 
-            var result = await tx.RunAsync(query, new { userId });
+            var result = await tx.RunAsync(query, new { userId = userId.ToString() });
             return await result.ToListAsync(record =>
             {
                 var movieWithActorsDto = record["MovieWithActors"].As<IDictionary<string, object>>();
@@ -48,18 +53,17 @@ public class WatchlistRepository(IDriver driver) : Repository(driver), IWatchlis
         });
     }
 
-    public async Task<QueryResult> AddToWatchList(int userId, int movieId)
+    public async Task<QueryResult> AddToWatchList(Guid userId, Guid movieId)
     {
         return await ExecuteAsync(async tx =>
         {
             // language=Cypher
             const string checkMovieExistsQuery = """
-                                                 MATCH (m:Movie)
-                                                 WHERE Id(m) = $movieId
+                                                 MATCH (m:Movie {Id: $movieId})
                                                  RETURN m
                                                  """;
 
-            var movieExistsResult = await tx.RunAsync(checkMovieExistsQuery, new { movieId });
+            var movieExistsResult = await tx.RunAsync(checkMovieExistsQuery, new { movieId = movieId.ToString() });
 
             try
             {
@@ -72,12 +76,12 @@ public class WatchlistRepository(IDriver driver) : Repository(driver), IWatchlis
 
             // language=Cypher
             const string checkIfWatchlistExists = """
-                                                  MATCH (u:User)-[r:WATCHLIST]->(m:Movie)
-                                                  WHERE Id(u) = $userId AND Id(m) = $movieId
+                                                  MATCH (:User { Id: $userId })-[r:WATCHLIST]->(:Movie { Id: $movieId })
                                                   RETURN r
                                                   """;
 
-            var watchlistExistsResult = await tx.RunAsync(checkIfWatchlistExists, new { userId, movieId });
+            var watchlistExistsResult = await tx.RunAsync(checkIfWatchlistExists,
+                new { userId = userId.ToString(), movieId = movieId.ToString() });
 
             try
             {
@@ -91,28 +95,26 @@ public class WatchlistRepository(IDriver driver) : Repository(driver), IWatchlis
             
             // language=Cypher
             const string createNewQuery = """
-                                          MATCH (u:User), (m:Movie)
-                                          WHERE Id(u) = $userId AND Id(m) = $movieId
+                                          MATCH (u:User { Id: $userId }), (m:Movie { Id: $movieId })
                                           CREATE (u)-[r:WATCHLIST]->(m)
                                           """;
             
-            await tx.RunAsync(createNewQuery, new { userId, movieId });
+            await tx.RunAsync(createNewQuery, new { userId = userId.ToString(), movieId = movieId.ToString() });
             return QueryResult.Completed;
         });
     }
 
-    public async Task<QueryResult> RemoveFromWatchList(int userId, int movieId)
+    public async Task<QueryResult> RemoveFromWatchList(Guid userId, Guid movieId)
     {
         return await ExecuteAsync(async tx =>
         {
             // language=Cypher
             const string checkMovieExistsQuery = """
-                                                 MATCH (m:Movie)
-                                                 WHERE Id(m) = $movieId
+                                                 MATCH (m:Movie { Id: $movieId })
                                                  RETURN m
                                                  """;
 
-            var movieExistsResult = await tx.RunAsync(checkMovieExistsQuery, new { movieId });
+            var movieExistsResult = await tx.RunAsync(checkMovieExistsQuery, new { movieId = movieId.ToString() });
 
             try
             {
@@ -125,12 +127,12 @@ public class WatchlistRepository(IDriver driver) : Repository(driver), IWatchlis
             
             // language=Cypher
             const string checkIfWatchlistExists = """
-                                                  MATCH (u:User)-[r:WATCHLIST]->(m:Movie)
-                                                  WHERE Id(u) = $userId AND Id(m) = $movieId
+                                                  MATCH (:User { Id: $userId })-[r:WATCHLIST]->(:Movie { Id: $movieId })
                                                   RETURN r
                                                   """;
 
-            var watchlistExistsResult = await tx.RunAsync(checkIfWatchlistExists, new { userId, movieId });
+            var watchlistExistsResult = await tx.RunAsync(checkIfWatchlistExists,
+                new { userId = userId.ToString(), movieId = movieId.ToString() });
 
             try
             {
@@ -143,12 +145,11 @@ public class WatchlistRepository(IDriver driver) : Repository(driver), IWatchlis
             
             // language=Cypher
             const string removeFromWatchlistQuery = """
-                                                    MATCH (u:User)-[r:WATCHLIST]->(m:Movie)
-                                                    WHERE Id(u) = $userId AND Id(m) = $movieId
+                                                    MATCH (:User { Id: $userId })-[r:WATCHLIST]->(:Movie { Id: $movieId })
                                                     DELETE r
                                                     """;
 
-            await tx.RunAsync(removeFromWatchlistQuery, new { userId, movieId });
+            await tx.RunAsync(removeFromWatchlistQuery, new { userId = userId.ToString(), movieId = movieId.ToString() });
             return QueryResult.Completed;
         });
     }

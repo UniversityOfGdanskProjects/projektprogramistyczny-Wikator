@@ -8,21 +8,20 @@ namespace MoviesApi.Repository;
 
 public class IgnoresRepository(IDriver driver) : Repository(driver), IIgnoresRepository
 {
-    public async Task<IEnumerable<MovieDto>> GetAllIgnoreMovies(int userId)
+    public async Task<IEnumerable<MovieDto>> GetAllIgnoreMovies(Guid userId)
     {
         return await ExecuteAsync(async tx =>
         {
             // language=Cypher
             const string query = """
-                                 MATCH (m:Movie)<-[:WATCHLIST]-(u:User)
-                                 WHERE Id(u) = $userId
+                                 MATCH (m:Movie)<-[:WATCHLIST]-(u:User { Id: $userId })
                                  OPTIONAL MATCH (m)<-[:IGNORES]-(a:Actor)
                                  OPTIONAL MATCH (m)<-[r:REVIEWED]-(u:User)
                                  WITH m, COLLECT(
                                    CASE
                                      WHEN a IS NULL THEN null
                                      ELSE {
-                                       Id: ID(a),
+                                       Id: a.Id,
                                        FirstName: a.FirstName,
                                        LastName: a.LastName,
                                        DateOfBirth: a.DateOfBirth,
@@ -31,7 +30,7 @@ public class IgnoresRepository(IDriver driver) : Repository(driver), IIgnoresRep
                                    END
                                  ) AS Actors, AVG(r.score) AS AverageReviewScore
                                  RETURN {
-                                   Id: ID(m),
+                                   Id: m.Id,
                                    Title: m.Title,
                                    Description: m.Description,
                                    Actors: Actors,
@@ -39,7 +38,7 @@ public class IgnoresRepository(IDriver driver) : Repository(driver), IIgnoresRep
                                  } AS MovieWithActors
                                  """;
 
-            var result = await tx.RunAsync(query, new { userId });
+            var result = await tx.RunAsync(query, new { userId = userId.ToString() });
             return await result.ToListAsync(record =>
             {
                 var movieWithActorsDto = record["MovieWithActors"].As<IDictionary<string, object>>();
@@ -48,18 +47,17 @@ public class IgnoresRepository(IDriver driver) : Repository(driver), IIgnoresRep
         });
     }
 
-    public async Task<QueryResult> IgnoreMovie(int userId, int movieId)
+    public async Task<QueryResult> IgnoreMovie(Guid userId, Guid movieId)
     {
         return await ExecuteAsync(async tx =>
         {
             // language=Cypher
             const string checkMovieExistsQuery = """
-                                                 MATCH (m:Movie)
-                                                 WHERE Id(m) = $movieId
+                                                 MATCH (m:Movie { Id: $movieId })
                                                  RETURN m
                                                  """;
 
-            var movieExistsResult = await tx.RunAsync(checkMovieExistsQuery, new { movieId });
+            var movieExistsResult = await tx.RunAsync(checkMovieExistsQuery, new { movieId = movieId.ToString() });
 
             try
             {
@@ -72,12 +70,12 @@ public class IgnoresRepository(IDriver driver) : Repository(driver), IIgnoresRep
             
             // language=Cypher
             const string movieIsIgnoredQuery = """
-                                               MATCH (u:User)-[r:IGNORES]->(m:Movie)
-                                               WHERE Id(u) = $userId AND Id(m) = $movieId
+                                               MATCH (:User { Id: $userId })-[r:IGNORES]->(:Movie { Id: $movieId })
                                                RETURN r
                                                """;
 
-            var movieIsIgnoredResult = await tx.RunAsync(movieIsIgnoredQuery, new { userId, movieId });
+            var movieIsIgnoredResult = await tx.RunAsync(movieIsIgnoredQuery,
+                new { userId = userId.ToString(), movieId = movieId.ToString() });
 
             try
             {
@@ -91,28 +89,29 @@ public class IgnoresRepository(IDriver driver) : Repository(driver), IIgnoresRep
             
             // language=Cypher
             const string createNewQuery = """
-                                          MATCH (u:User), (m:Movie)
-                                          WHERE Id(u) = $userId AND Id(m) = $movieId
+                                          MATCH (u:User { Id: $userId }), (m:Movie { Id: $movieId })
                                           CREATE (u)-[r:IGNORES]->(m)
                                           """;
             
-            await tx.RunAsync(createNewQuery, new { userId, movieId });
+            await tx.RunAsync(createNewQuery,
+                new { userId = userId.ToString(), movieId = movieId.ToString() });
+            
             return QueryResult.Completed;
         });
     }
 
-    public async Task<QueryResult> RemoveIgnoreMovie(int userId, int movieId)
+    public async Task<QueryResult> RemoveIgnoreMovie(Guid userId, Guid movieId)
     {
         return await ExecuteAsync(async tx =>
         {
             // language=Cypher
             const string checkMovieExistsQuery = """
-                                                 MATCH (m:Movie)
-                                                 WHERE Id(m) = $movieId
+                                                 MATCH (m:Movie { Id: $movieId })
                                                  RETURN m
                                                  """;
 
-            var movieExistsResult = await tx.RunAsync(checkMovieExistsQuery, new { movieId });
+            var movieExistsResult = await tx.RunAsync(checkMovieExistsQuery,
+                new { movieId = movieId.ToString() });
 
             try
             {
@@ -125,12 +124,12 @@ public class IgnoresRepository(IDriver driver) : Repository(driver), IIgnoresRep
             
             // language=Cypher
             const string movieIsIgnoredQuery = """
-                                               MATCH (u:User)-[r:IGNORES]->(m:Movie)
-                                               WHERE Id(u) = $userId AND Id(m) = $movieId
+                                               MATCH (u:User { Id: $userId })-[r:IGNORES]->(m:Movie { Id: $movieId })
                                                RETURN r
                                                """;
 
-            var movieIsIgnoredResult = await tx.RunAsync(movieIsIgnoredQuery, new { userId, movieId });
+            var movieIsIgnoredResult = await tx.RunAsync(movieIsIgnoredQuery,
+                new { userId = userId.ToString(), movieId = movieId.ToString() });
 
             try
             {
@@ -143,12 +142,13 @@ public class IgnoresRepository(IDriver driver) : Repository(driver), IIgnoresRep
             
             // language=Cypher
             const string removeMovieFromIgnoredQuery = """
-                                                       MATCH (u:User)-[r:IGNORES]->(m:Movie)
-                                                       WHERE Id(u) = $userId AND Id(m) = $movieId
+                                                       MATCH (:User { Id: $userId })-[r:IGNORES]->(:Movie { Id: $movieId })
                                                        DELETE r
                                                        """;
 
-            await tx.RunAsync(removeMovieFromIgnoredQuery, new { userId, movieId });
+            await tx.RunAsync(removeMovieFromIgnoredQuery,
+                new { userId = userId.ToString(), movieId = movieId.ToString() });
+            
             return QueryResult.Completed;
         });
     }

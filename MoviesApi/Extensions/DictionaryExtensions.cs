@@ -7,7 +7,7 @@ public static class DictionaryExtensions
 {
     public static MovieDto ConvertToMovieDto(this IDictionary<string, object> movie) =>
          new(
-                Id: movie["Id"].As<int>(),
+                Id: Guid.Parse(movie["Id"].As<string>()),
                 Title: movie["Title"].As<string>(),
                 Description: movie["Description"].As<string>(),
                 InTheaters: movie["InTheaters"].As<bool>(),
@@ -22,7 +22,7 @@ public static class DictionaryExtensions
 
     public static ActorDto ConvertToActorDto(this IDictionary<string, object> actorData) =>
         new(
-            Id: actorData["Id"].As<int>(),
+            Id: Guid.Parse(actorData["Id"].As<string>()),
             FirstName: actorData["FirstName"].As<string>(),
             LastName: actorData["LastName"].As<string>(),
             DateOfBirth: DateOnly.FromDateTime(actorData["DateOfBirth"].As<DateTime>()),

@@ -1,7 +1,7 @@
 ﻿namespace MoviesApi.DTOs;
 
 public record MovieDto(
-    int Id,
+    Guid Id,
     string Title,
     string Description,
     bool InTheaters,

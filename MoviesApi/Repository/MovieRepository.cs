@@ -12,18 +12,17 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 {
 	private IPhotoService PhotoService { get; } = photoService;
 	
-	public async Task<IEnumerable<MovieDto>> GetMoviesExcludingIgnored(int userId, MovieQueryParams queryParams)
+	public async Task<IEnumerable<MovieDto>> GetMoviesExcludingIgnored(Guid userId, MovieQueryParams queryParams)
 	{
 		return await ExecuteAsync(async tx =>
 		{
 			// language=Cypher
 			const string query = """
-			                     MATCH (ignoredMovie:Movie)<-[:IGNORES]-(u:User)
-			                     WHERE ID(u) = $userId
-			                     WITH COLLECT(ID(ignoredMovie)) AS ignoredMovieIds
+			                     MATCH (ignoredMovie:Movie)<-[:IGNORES]-(u:User { Id: $userId })
+			                     WITH COLLECT(ignoredMovie.Id) AS ignoredMovieIds
 
 			                     MATCH (m:Movie)
-			                     WHERE NOT ID(m) IN ignoredMovieIds AND toLower(m.Title) CONTAINS toLower($Title)
+			                     WHERE NOT m.Id IN ignoredMovieIds AND toLower(m.Title) CONTAINS toLower($Title)
 			                     	AND ($Actor IS NULL OR EXISTS {
 			                     	MATCH (m)<-[:PLAYED_IN]-(a:Actor)
 			                     	WHERE ID(a) = $Actor
@@ -34,7 +33,7 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			                       CASE
 			                         WHEN a IS NULL THEN null
 			                         ELSE {
-			                           Id: ID(a),
+			                           Id: a.Id,
 			                           FirstName: a.FirstName,
 			                           LastName: a.LastName,
 			                           DateOfBirth: a.DateOfBirth,
@@ -44,7 +43,7 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			                       END
 			                     ) AS Actors, AVG(r.score) AS AverageReviewScore
 			                     RETURN {
-			                       Id: ID(m),
+			                       Id: m.Id,
 			                       Title: m.Title,
 			                       Description: m.Description,
 			                       InTheaters: m.InTheaters,
@@ -57,7 +56,9 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			                     } AS MovieWithActors
 			                     """;
 			
-			var cursor = await tx.RunAsync(query, new {userId, queryParams.Title, queryParams.Actor});
+			var cursor = await tx.RunAsync(query,
+				new {userId = userId.ToString(), queryParams.Title, queryParams.Actor});
+			
 			return await cursor.ToListAsync(record =>
 			{
 				var movieWithActorsDto = record["MovieWithActors"].As<IDictionary<string, object>>();
@@ -94,6 +95,7 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 				// language=Cypher
 				const string createMovieQuery = """
 				                                CREATE (m:Movie {
+				                                  Id: randomUUID(),
 				                                  Title: $Title,
 				                                  Description: $Description,
 				                                  PictureAbsoluteUri: $PictureAbsoluteUri,
@@ -104,7 +106,7 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 				                                  TrailerAbsoluteUri: $TrailerAbsoluteUri
 				                                })
 				                                RETURN {
-				                                  Id: ID(m),
+				                                  Id: m.Id,
 				                                  Title: m.Title,
 				                                  Description: m.Description,
 				                                  InTheaters: m.InTheaters,
@@ -132,6 +134,7 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			// language=Cypher
 			const string createQuery = """
 			                           CREATE (m:Movie {
+			                             Id: randomUUID(),
 			                             Title: $Title,
 			                             Description: $Description,
 			                             PictureAbsoluteUri: $PictureAbsoluteUri,
@@ -143,13 +146,13 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			                           })
 			                           WITH m
 			                           UNWIND $ActorIds AS actorId
-			                           MATCH (a:Actor) WHERE ID(a) = actorId
+			                           MATCH (a:Actor { Id: actorId })
 			                           CREATE (a)-[:PLAYED_IN]->(m)
 			                           WITH m, COLLECT(
 			                             CASE
 			                               WHEN a IS NULL THEN null
 			                               ELSE {
-			                                 Id: ID(a),
+			                                 Id: a.Id,
 			                                 FirstName: a.FirstName,
 			                                 LastName: a.LastName,
 			                                 DateOfBirth: a.DateOfBirth,
@@ -159,7 +162,7 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			                             END
 			                           ) AS Actors
 			                           RETURN {
-			                             Id: ID(m),
+			                             Id: m.Id,
 			                             Title: m.Title,
 			                             Description: m.Description,
 			                             InTheaters: m.InTheaters,
@@ -174,7 +177,7 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 
 			var movieCursor = await tx.RunAsync(
 				createQuery,
-				new { movieDto.Title, movieDto.Description, movieDto.ActorIds, PictureAbsoluteUri = pictureAbsoluteUri,
+				new { movieDto.Title, movieDto.Description, ActorIds = movieDto.ActorIds.Select(a => a.ToString()), PictureAbsoluteUri = pictureAbsoluteUri,
 					PicturePublicId = picturePublicId, movieDto.InTheaters, movieDto.ReleaseDate, movieDto.MinimumAge,
 					TrailerAbsoluteUri = movieDto.TrailerUrl }
 			);
@@ -186,18 +189,17 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 		});
 	}
 
-	public async Task<QueryResult> DeleteMovie(int movieId)
+	public async Task<QueryResult> DeleteMovie(Guid movieId)
 	{
 		return await ExecuteAsync(async tx =>
 		{
 			// language=cypher
 			const string movieExistsAsync = """
-			                                  MATCH (m:Movie)
-			                                  WHERE ID(m) = $movieId
+			                                  MATCH (m:Movie { Id: $movieId })
 			                                  RETURN m.PicturePublicId AS PicturePublicId
 			                                """;
 
-			var cursor = await tx.RunAsync(movieExistsAsync, new { movieId });
+			var cursor = await tx.RunAsync(movieExistsAsync, new { movieId = movieId.ToString() });
 
 			try
 			{
@@ -208,7 +210,9 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 					return QueryResult.PhotoFailedToDelete;
 
 				// language=cypher
-				await tx.RunAsync("MATCH (m:Movie) WHERE Id(m) = $movieId DETACH DELETE m", new { movieId });
+				await tx.RunAsync("MATCH (m:Movie { Id: $movieId }) DETACH DELETE m",
+					new { movieId = movieId.ToString() });
+				
 				return QueryResult.Completed;
 			}
 			catch
@@ -228,8 +232,7 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			                     MATCH (m:Movie)
 			                     WHERE toLower(m.Title) CONTAINS toLower($Title)
 			                     	AND $Actor IS NULL OR EXISTS {
-			                     		MATCH (m)<-[:PLAYED_IN]-(a:Actor)
-			                     		WHERE ID(a) = $Actor
+			                     		MATCH (m)<-[:PLAYED_IN]-(a:Actor { Id: $Actor })
 			                     	}
 			                     OPTIONAL MATCH (m)<-[:PLAYED_IN]-(a:Actor)
 			                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(u:User)
@@ -237,7 +240,7 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			                       CASE
 			                         WHEN a IS NULL THEN null
 			                         ELSE {
-			                           Id: ID(a),
+			                           Id: a.Id,
 			                           FirstName: a.FirstName,
 			                           LastName: a.LastName,
 			                           DateOfBirth: a.DateOfBirth,
@@ -247,7 +250,7 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			                       END
 			                     ) AS Actors, AVG(r.score) AS AverageReviewScore
 			                     RETURN {
-			                       Id: ID(m),
+			                       Id: m.Id,
 			                       Title: m.Title,
 			                       Description: m.Description,
 			                       InTheaters: m.InTheaters,

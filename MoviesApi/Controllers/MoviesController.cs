@@ -19,7 +19,7 @@ public class MoviesController(IMovieRepository movieRepository) : BaseApiControl
 		return userId switch
 		{
 			null => Ok(await MovieRepository.GetMovies(queryParams)),
-			_ => Ok(await MovieRepository.GetMoviesExcludingIgnored(int.Parse(userId), queryParams))
+			_ => Ok(await MovieRepository.GetMoviesExcludingIgnored(Guid.Parse(userId), queryParams))
 		};
 	}
 
@@ -34,8 +34,8 @@ public class MoviesController(IMovieRepository movieRepository) : BaseApiControl
 		return CreatedAtAction(nameof(GetMovies), movie);
 	}
 
-	[HttpDelete("{id:int}")]
-	public async Task<IActionResult> DeleteMovie(int id)
+	[HttpDelete("{id:guid}")]
+	public async Task<IActionResult> DeleteMovie(Guid id)
 	{
 		return await MovieRepository.DeleteMovie(id) switch
 		{

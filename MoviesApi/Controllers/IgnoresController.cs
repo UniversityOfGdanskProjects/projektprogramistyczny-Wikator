@@ -19,8 +19,8 @@ public class IgnoresController(IIgnoresRepository ignoresRepository) : BaseApiCo
         return Ok(movies);
     }
     
-    [HttpPost("{movieId:int}")]
-    public async Task<IActionResult> AddToWatchList(int movieId)
+    [HttpPost("{movieId:guid}")]
+    public async Task<IActionResult> AddToWatchList(Guid movieId)
     {
         var userId = User.GetUserId();
         var result = await IgnoresRepository.IgnoreMovie(userId, movieId);
@@ -34,8 +34,8 @@ public class IgnoresController(IIgnoresRepository ignoresRepository) : BaseApiCo
         };
     }
     
-    [HttpDelete("{movieId:int}")]
-    public async Task<IActionResult> RemoveFromWatchList(int movieId)
+    [HttpDelete("{movieId:guid}")]
+    public async Task<IActionResult> RemoveFromWatchList(Guid movieId)
     {
         var userId = User.GetUserId();
         var result = await IgnoresRepository.RemoveIgnoreMovie(userId, movieId);

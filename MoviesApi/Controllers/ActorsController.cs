@@ -18,8 +18,8 @@ public class ActorsController(IActorRepository actorRepository) : BaseApiControl
         return Ok(actors);
     }
     
-    [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetActor(int id)
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetActor(Guid id)
     {
         var actor = await ActorRepository.GetActor(id);
 
@@ -41,8 +41,8 @@ public class ActorsController(IActorRepository actorRepository) : BaseApiControl
         return Ok(newActor);
     }
     
-    [HttpPut("{id:int}")]
-    public async Task<IActionResult> UpdateActor(int id, UpsertActorDto actorDto)
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> UpdateActor(Guid id, UpsertActorDto actorDto)
     {
         var updatedActor = await ActorRepository.UpdateActor(id, actorDto);
 
@@ -53,8 +53,8 @@ public class ActorsController(IActorRepository actorRepository) : BaseApiControl
         };
     }
     
-    [HttpDelete("{id:int}")]
-    public async Task<IActionResult> DeleteActor(int id)
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> DeleteActor(Guid id)
     {
         var deleted = await ActorRepository.DeleteActor(id);
 

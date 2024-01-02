@@ -6,8 +6,8 @@ namespace MoviesApi.Repository.Contracts;
 public interface IActorRepository
 {
     Task<IEnumerable<ActorDto>> GetAllActors();
-    Task<ActorDto?> GetActor(int id);
+    Task<ActorDto?> GetActor(Guid id);
     Task<ActorDto?> CreateActor(UpsertActorDto actor);
-    Task<ActorDto?> UpdateActor(int id, UpsertActorDto actor);
-    Task<QueryResult> DeleteActor(int id);
+    Task<ActorDto?> UpdateActor(Guid id, UpsertActorDto actor);
+    Task<QueryResult> DeleteActor(Guid id);
 }

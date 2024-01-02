@@ -12,5 +12,5 @@ public class AddMovieDto
     [Url] public string? TrailerUrl { get; init; }
     public string? FileName { get; init; }
     public byte[]? FileContent { get; init; }
-    public IEnumerable<int> ActorIds { get; init; } = Enumerable.Empty<int>();
+    public IEnumerable<Guid> ActorIds { get; init; } = Enumerable.Empty<Guid>();
 }

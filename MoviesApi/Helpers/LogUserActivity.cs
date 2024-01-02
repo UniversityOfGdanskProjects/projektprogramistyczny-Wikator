@@ -15,13 +15,14 @@ public class LogUserActivity : IAsyncActionFilter
         
         var userId = resultContext.HttpContext.User.GetUserId();
         var driver = resultContext.HttpContext.RequestServices.GetRequiredService<IDriver>();
+        // language=Cypher
         const string query = """
-                             MATCH (u:User)
-                             WHERE ID(u) = $userId
+                             MATCH (u:User { Id: $userId })
                              SET u.LastActive = datetime()
                              """;
         
         await using var session = driver.AsyncSession();
-        await session.ExecuteWriteAsync(tx => tx.RunAsync(query, new {userId}));
+        await session.ExecuteWriteAsync(tx => tx.RunAsync(query,
+            new { userId = userId.ToString()}));
     }
 }

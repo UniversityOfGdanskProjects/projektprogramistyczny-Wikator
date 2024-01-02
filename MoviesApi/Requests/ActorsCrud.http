@@ -2,7 +2,7 @@
 
 ###
 
-GET https://localhost:7102/api/actors/1
+GET https://localhost:7102/api/actors/9a4ce18a-6dae-4709-afca-f633a13dd155
 
 ###
 
@@ -19,7 +19,7 @@ Content-Type: application/json
 
 ###
 
-PUT https://localhost:7102/api/actors/12
+PUT https://localhost:7102/api/actors/2a9b41b1-87af-47bc-b599-454c8e90d06d
 Content-Type: application/json
 
 {
@@ -31,4 +31,4 @@ Content-Type: application/json
 
 ###
 
-DELETE https://localhost:7102/api/actors/20
+DELETE https://localhost:7102/api/actors/2a9b41b1-87af-47bc-b599-454c8e90d06d
