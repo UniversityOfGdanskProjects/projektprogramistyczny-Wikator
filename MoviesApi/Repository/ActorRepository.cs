@@ -182,10 +182,17 @@ public class ActorRepository(IPhotoService photoService, IDriver driver) : Repos
         });
     }
     
-    private static async Task<ActorDto> ConvertCursorToActorDto(IResultCursor cursor)
+    private static async Task<ActorDto?> ConvertCursorToActorDto(IResultCursor cursor)
     {
-        var result = await cursor.SingleAsync();
-        var actor = result["Actor"].As<Dictionary<string, object>>();
-        return actor.ConvertToActorDto();
+        try
+        {
+            var result = await cursor.SingleAsync();
+            var actor = result["Actor"].As<Dictionary<string, object>>();
+            return actor.ConvertToActorDto();
+        }
+        catch (InvalidOperationException)
+        {
+            return null;
+        }
     }
 }

@@ -4,7 +4,7 @@ namespace MoviesApi.Repository;
 
 public abstract class Repository(IDriver driver)
 {
-    protected IDriver Driver { get; } = driver;
+    private IDriver Driver { get; } = driver;
     
     protected async Task<T> ExecuteAsync<T>(Func<IAsyncSession, Task<T>> query)
     {

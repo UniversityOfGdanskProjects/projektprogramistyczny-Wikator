@@ -5,28 +5,16 @@ using Neo4j.Driver;
 
 namespace MoviesApi.Repository;
 
-public class ReviewRepository(IDriver driver) : Repository(driver), IReviewRepository
+public class ReviewRepository(IMovieRepository movieRepository, IDriver driver) : Repository(driver), IReviewRepository
 {
+    private IMovieRepository MovieRepository { get; } = movieRepository;
+    
     public async Task<QueryResult> AddReview(Guid userId, UpsertReviewDto reviewDto)
     {
         return await ExecuteAsync(async tx =>
         {
-            // language=Cypher
-            const string movieQuery = """
-                                      MATCH (m:Movie { Id: $movieId })
-                                      RETURN m
-                                      """;
-
-            var movieResult = await tx.RunAsync(movieQuery, new { movieId = reviewDto.MovieId.ToString() });
-
-            try
-            {
-                await movieResult.SingleAsync();
-            }
-            catch (InvalidOperationException)
-            {
+            if (!await MovieRepository.MovieExists(tx, reviewDto.MovieId))
                 return QueryResult.NotFound;
-            }
             
             // language=Cypher
             const string relationQuery = """
@@ -68,5 +56,17 @@ public class ReviewRepository(IDriver driver) : Repository(driver), IReviewRepos
                 return QueryResult.UnexpectedError;
             }
         });
+    }
+
+    private static async Task<bool> ReviewExists(IAsyncQueryRunner tx, Guid movieId, Guid userId)
+    {
+        // language=Cypher
+        const string query = """
+                             MATCH(:User { Id: $userId })-[r:REVIEWED]->(:Movie { Id: $movieId })
+                             WITH COUNT(r) > 0 AS reviewExists
+                             RETURN reviewExists
+                             """;
+        var cursor = await tx.RunAsync(query, new { userId = userId.ToString(), movieId = movieId.ToString() });
+        return await cursor.SingleAsync(record => record["reviewExists"].As<bool>());
     }
 }

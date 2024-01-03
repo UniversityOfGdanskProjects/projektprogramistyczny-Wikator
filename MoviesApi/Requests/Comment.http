@@ -1,25 +1,25 @@
 ﻿POST https://localhost:7102/api/Comment
-Authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJuYW1laWQiOiJlMzdlYjA2NC05OTdjLTQwNzEtOWNkOS1hNzRkOGZmNzM3MGUiLCJ1bmlxdWVfbmFtZSI6IlRlc3QzIiwicm9sZSI6IlVzZXIiLCJuYmYiOjE3MDQyOTE5NzMsImV4cCI6MTcwNDg5Njc3MywiaWF0IjoxNzA0MjkxOTczLCJpc3MiOiJsb2NhbGhvc3QifQ.ZXMMKzj7Ak_ieZ6uymprSXnQhafVgozoTtZtOye65L3f1Gnicuv7EFVhpWVX8-HJDP0ZwAIcsyhr5wqr7lXKXQ
+Authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJuYW1laWQiOiJlMzdlYjA2NC05OTdjLTQwNzEtOWNkOS1hNzRkOGZmNzM3MGUiLCJ1bmlxdWVfbmFtZSI6IlRlc3QzIiwicm9sZSI6IlVzZXIiLCJuYmYiOjE3MDQzMTQ1OTcsImV4cCI6MTcwNDkxOTM5NywiaWF0IjoxNzA0MzE0NTk3LCJpc3MiOiJsb2NhbGhvc3QifQ.fqTmxCt0T-WiCofRZARKaqmiMrbR7vRO5UqjDzKF7pD_2FPX35SZn8S1NBRc2TvESE36pdo2Kv044SQQWS5FPQ
 Content-Type: application/json
 
 {
-  "text": "Cool comment",
-  "movieId": "b8bf6a62-af04-43dc-83c9-6cf1449f57cb"
+  "text": "Pew-pew",
+  "movieId": "f70065b6-b425-4faa-8daa-e3977dcae01f"
 }
 
 ###
 
-PUT https://localhost:7102/api/Comment/f7747ad3-b0dd-49b5-ac95-9b2e6b95e311
+PUT https://localhost:7102/api/Comment/d652aacd-88d8-46ac-a908-2de0c85a23ad
 Authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJuYW1laWQiOiJlMzdlYjA2NC05OTdjLTQwNzEtOWNkOS1hNzRkOGZmNzM3MGUiLCJ1bmlxdWVfbmFtZSI6IlRlc3QzIiwicm9sZSI6IlVzZXIiLCJuYmYiOjE3MDQyOTE5NzMsImV4cCI6MTcwNDg5Njc3MywiaWF0IjoxNzA0MjkxOTczLCJpc3MiOiJsb2NhbGhvc3QifQ.ZXMMKzj7Ak_ieZ6uymprSXnQhafVgozoTtZtOye65L3f1Gnicuv7EFVhpWVX8-HJDP0ZwAIcsyhr5wqr7lXKXQ
 Content-Type: application/json
 
 {
-  "text": "Amazing comment",
-  "movieId": "b8bf6a62-af04-43dc-83c9-6cf1449f57cb"
+  "text": "Pew-pew-pew",
+  "movieId": "d652aacd-88d8-46ac-a908-2de0c85a23ad"
 }
 
 
 ###
 
-DELETE https://localhost:7102/api/Comment/4ebb1954-e770-45ad-b5d5-3d3c835c58de
+DELETE https://localhost:7102/api/Comment/d652aacd-88d8-46ac-a908-2de0c85a23ad
 Authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJuYW1laWQiOiJlMzdlYjA2NC05OTdjLTQwNzEtOWNkOS1hNzRkOGZmNzM3MGUiLCJ1bmlxdWVfbmFtZSI6IlRlc3QzIiwicm9sZSI6IlVzZXIiLCJuYmYiOjE3MDQyOTE5NzMsImV4cCI6MTcwNDg5Njc3MywiaWF0IjoxNzA0MjkxOTczLCJpc3MiOiJsb2NhbGhvc3QifQ.ZXMMKzj7Ak_ieZ6uymprSXnQhafVgozoTtZtOye65L3f1Gnicuv7EFVhpWVX8-HJDP0ZwAIcsyhr5wqr7lXKXQ

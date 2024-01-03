@@ -6,8 +6,10 @@ using Neo4j.Driver;
 
 namespace MoviesApi.Repository;
 
-public class WatchlistRepository(IDriver driver) : Repository(driver), IWatchlistRepository
+public class WatchlistRepository(IMovieRepository movieRepository, IDriver driver) : Repository(driver), IWatchlistRepository
 {
+    private IMovieRepository MovieRepository { get; } = movieRepository;
+    
     public async Task<IEnumerable<MovieDto>> GetAllMoviesOnWatchlist(Guid userId)
     {
         return await ExecuteAsync(async tx =>
@@ -17,6 +19,7 @@ public class WatchlistRepository(IDriver driver) : Repository(driver), IWatchlis
                                  MATCH (m:Movie)<-[:WATCHLIST]-(u:User {Id: $userId})
                                  OPTIONAL MATCH (m)<-[:PLAYED_IN]-(a:Actor)
                                  OPTIONAL MATCH (m)<-[r:REVIEWED]-(u:User)
+                                 OPTIONAl MATCH (m)<-[c:COMMENTED]-(u2:User)
                                  WITH m, COLLECT(
                                    CASE
                                      WHEN a IS NULL THEN null
@@ -29,7 +32,21 @@ public class WatchlistRepository(IDriver driver) : Repository(driver), IWatchlis
                                        PictureAbsoluteUri: a.PictureAbsoluteUri
                                      }
                                    END
-                                 ) AS Actors
+                                 ) AS Actors,
+                                 COLLECT(
+                                   CASE
+                                     WHEN u2 is NULL OR c is NULL THEN null
+                                     ELSE {
+                                       Id: c.Id,
+                                       MovieId: m.Id,
+                                       UserId: u2.Id,
+                                       Username: u2.Name,
+                                       Text: c.Text,
+                                       CreatedAt: c.CreatedAt,
+                                       IsEdited: c.IsEdited
+                                     }
+                                   END
+                                 ) AS Comments, AVG(r.score) AS AverageReviewScore
                                  RETURN {
                                    Id: m.Id,
                                    Title: m.Title,
@@ -40,7 +57,8 @@ public class WatchlistRepository(IDriver driver) : Repository(driver), IWatchlis
                                    ReleaseDate: m.ReleaseDate,
                                    MinimumAge: m.MinimumAge,
                                    Actors: Actors,
-                                   AverageReviewScore: 0
+                                   Comments: Comments,
+                                   AverageReviewScore: COALESCE(AverageReviewScore, 0)
                                  } AS MovieWithActors
                                  """;
 
@@ -57,41 +75,11 @@ public class WatchlistRepository(IDriver driver) : Repository(driver), IWatchlis
     {
         return await ExecuteAsync(async tx =>
         {
-            // language=Cypher
-            const string checkMovieExistsQuery = """
-                                                 MATCH (m:Movie {Id: $movieId})
-                                                 RETURN m
-                                                 """;
-
-            var movieExistsResult = await tx.RunAsync(checkMovieExistsQuery, new { movieId = movieId.ToString() });
-
-            try
-            {
-                await movieExistsResult.SingleAsync();
-            }
-            catch (InvalidOperationException)
-            {
+            if (!await MovieRepository.MovieExists(tx, movieId))
                 return QueryResult.NotFound;
-            }
 
-            // language=Cypher
-            const string checkIfWatchlistExists = """
-                                                  MATCH (:User { Id: $userId })-[r:WATCHLIST]->(:Movie { Id: $movieId })
-                                                  RETURN r
-                                                  """;
-
-            var watchlistExistsResult = await tx.RunAsync(checkIfWatchlistExists,
-                new { userId = userId.ToString(), movieId = movieId.ToString() });
-
-            try
-            {
-                await watchlistExistsResult.SingleAsync();
+            if (!await WishlistExists(tx, movieId, userId))
                 return QueryResult.EntityAlreadyExists;
-            }
-            catch (InvalidOperationException)
-            {
-                // ignored
-            }
             
             // language=Cypher
             const string createNewQuery = """
@@ -108,49 +96,35 @@ public class WatchlistRepository(IDriver driver) : Repository(driver), IWatchlis
     {
         return await ExecuteAsync(async tx =>
         {
-            // language=Cypher
-            const string checkMovieExistsQuery = """
-                                                 MATCH (m:Movie { Id: $movieId })
-                                                 RETURN m
-                                                 """;
-
-            var movieExistsResult = await tx.RunAsync(checkMovieExistsQuery, new { movieId = movieId.ToString() });
-
-            try
-            {
-                await movieExistsResult.SingleAsync();
-            }
-            catch (InvalidOperationException)
-            {
+            if (!await MovieRepository.MovieExists(tx, movieId))
                 return QueryResult.NotFound;
-            }
-            
-            // language=Cypher
-            const string checkIfWatchlistExists = """
-                                                  MATCH (:User { Id: $userId })-[r:WATCHLIST]->(:Movie { Id: $movieId })
-                                                  RETURN r
-                                                  """;
 
-            var watchlistExistsResult = await tx.RunAsync(checkIfWatchlistExists,
-                new { userId = userId.ToString(), movieId = movieId.ToString() });
-
-            try
-            {
-                await watchlistExistsResult.SingleAsync();
-            }
-            catch (InvalidOperationException)
-            {
+            if (! await WishlistExists(tx, movieId, userId))
                 return QueryResult.NotFound;
-            }
-            
+
             // language=Cypher
             const string removeFromWatchlistQuery = """
                                                     MATCH (:User { Id: $userId })-[r:WATCHLIST]->(:Movie { Id: $movieId })
                                                     DELETE r
                                                     """;
 
-            await tx.RunAsync(removeFromWatchlistQuery, new { userId = userId.ToString(), movieId = movieId.ToString() });
+            await tx.RunAsync(removeFromWatchlistQuery,
+                new { userId = userId.ToString(), movieId = movieId.ToString() });
             return QueryResult.Completed;
         });
+    }
+    
+    private static async Task<bool> WishlistExists(IAsyncQueryRunner tx, Guid movieId, Guid userId)
+    {
+        // language=Cypher
+        const string checkIfWatchlistExistsQuery = """
+                                                   MATCH (:User { Id: $userId })-[r:WATCHLIST]->(:Movie { Id: $movieId })
+                                                   WITH COUNT(r) > 0 AS watchlistExists
+                                                   RETURN watchlistExists
+                                                   """;
+        
+        var watchlistExistsCursor = await tx.RunAsync(checkIfWatchlistExistsQuery,
+            new { userId = userId.ToString(), movieId = movieId.ToString() });
+        return await watchlistExistsCursor.SingleAsync(record => record["watchlistExists"].As<bool>());
     }
 }

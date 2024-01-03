@@ -75,20 +75,14 @@ public class AccountRepository(IDriver driver) : Repository(driver), IAccountRep
         {
             // language=Cypher
             const string query = """
-                                 MATCH (a:User { Email: $Email })
-                                 RETURN a
+                                 MATCH (u:User { Email: $Email })
+                                 WITH COUNT(u) > 0  as node_exists
+                                 RETURN node_exists
                                  """;
 
             var accountCursor = await tx.RunAsync(query, new { Email = email });
-            try
-            {
-                await accountCursor.SingleAsync();
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            var result = await accountCursor.SingleAsync();
+            return result["node_exists"].As<bool>();
         });
     }
     

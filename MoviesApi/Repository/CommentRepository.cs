@@ -6,64 +6,10 @@ using Neo4j.Driver;
 
 namespace MoviesApi.Repository;
 
-public class CommentRepository(IDriver driver) : Repository(driver), ICommentRepository
+public class CommentRepository(IMovieRepository movieRepository, IDriver driver) : Repository(driver), ICommentRepository
 {
-    public async Task<IEnumerable<CommentDto>> GetMovieCommentsAsync(Guid movieId)
-    {
-        return await ExecuteAsync(async tx =>
-        {
-            // language=Cypher
-            const string query = """
-                                 MATCH (m:Movie { Id: $movieId })<-[r:COMMENTED]-(u:User)
-                                 RETURN {
-                                     Id: r.Id,
-                                     MovieId: m.Id,
-                                     UserId: u.Id,
-                                     Username: u.Name,
-                                     Text: r.Text,
-                                     CreatedAt: r.CreatedAt,
-                                     IsEdited: r.IsEdited
-                                 } AS Comment
-                                 """;
-
-            var result = await tx.RunAsync(query, new { movieId = movieId.ToString() });
-
-            return await result.ToListAsync(record =>
-            {
-                var comment = record["Comment"].As<IDictionary<string, object>>();
-                return comment.ConvertToCommentDto();
-            });
-        });
-    }
-
-    public async Task<IEnumerable<CommentDto>> GetUserCommentsAsync(Guid userId)
-    {
-        return await ExecuteAsync(async tx =>
-        {
-            // language=Cypher
-            const string query = """
-                                 MATCH (m:Movie)<-[r:COMMENTED]-(u:User { Id: $userId })
-                                 RETURN {
-                                     Id: r.Id,
-                                     MovieId: m.Id,
-                                     UserId: u.Id,
-                                     Username: u.Name,
-                                     Text: r.Text,
-                                     CreatedAt: r.CreatedAt,
-                                     IsEdited: r.IsEdited
-                                 } AS Comment
-                                 """;
-
-            var result = await tx.RunAsync(query, new { userId = userId.ToString() });
-
-            return await result.ToListAsync(record =>
-            {
-                var comment = record["Comment"].As<IDictionary<string, object>>();
-                return comment.ConvertToCommentDto();
-            });
-        });
-    }
-
+    private IMovieRepository MovieRepository { get; } = movieRepository;
+    
     public async Task<CommentDto?> GetCommentAsync(Guid commentId)
     {
         return await ExecuteAsync(async tx =>
@@ -104,24 +50,8 @@ public class CommentRepository(IDriver driver) : Repository(driver), ICommentRep
     {
         return await ExecuteAsync(async tx =>
         {
-            // language=Cypher
-            const string checkMovieExistsQuery = """
-                                                 MATCH (m:Movie {Id: $movieId})
-                                                 RETURN m
-                                                 """;
-            
-            var movieExistsResult = await tx.RunAsync(checkMovieExistsQuery,
-                new { movieId = upsertCommentDto.MovieId.ToString() });
-            
-            try
-            {
-                await movieExistsResult.SingleAsync();
-            }
-            catch (InvalidOperationException)
-            {
+            if (!await MovieRepository.MovieExists(tx, upsertCommentDto.MovieId))
                 return null;
-            }
-            
             
             // language=Cypher
             const string query = """
@@ -162,29 +92,12 @@ public class CommentRepository(IDriver driver) : Repository(driver), ICommentRep
     {
         return await ExecuteAsync(async tx =>
         {
-            // language=Cypher
-            const string checkIfCommentExistsQuery = """
-                                                     MATCH (:User { Id: $userId })-[r:COMMENTED]->(:Movie)
-                                                     WHERE r.Id = $commentId
-                                                     RETURN r
-                                                     """;
-
-            var commentExistsResult = await tx.RunAsync(checkIfCommentExistsQuery,
-                new { commentId = commentId.ToString(), userId = userId.ToString() });
-
-            try
-            {
-                await commentExistsResult.SingleAsync();
-            }
-            catch (InvalidOperationException)
-            {
+            if (!await CommentExists(tx, commentId, userId))
                 return null;
-            }
 
             // language=Cypher
             const string query = """
-                                 MATCH (u:User { Id: $userId })-[r:COMMENTED]->(m:Movie)
-                                 WHERE r.Id = $commentId
+                                 MATCH (u:User { Id: $userId })-[r:COMMENTED { Id: $commentId }]->(m:Movie)
                                  SET r.Text = $text, r.IsEdited = true
                                  RETURN {
                                      Id: r.Id,
@@ -213,33 +126,31 @@ public class CommentRepository(IDriver driver) : Repository(driver), ICommentRep
         // language=Cypher
         return await ExecuteAsync(async tx =>
         {
-            const string commentExistsQuery = """
-                                              MATCH (:User { Id: $userId })-[r:COMMENTED]->(:Movie)
-                                              WHERE r.Id = $commentId
-                                              RETURN r
-                                              """;
-
-            var commentExistsResult = await tx.RunAsync(commentExistsQuery,
-                new { commentId = commentId.ToString(), userId = userId.ToString() });
-
-            try
-            {
-                await commentExistsResult.SingleAsync();
-            }
-            catch (InvalidOperationException)
-            {
+            if (!await CommentExists(tx, commentId, userId))
                 return QueryResult.NotFound;
-            }
 
             // language=Cypher
             const string query = """
-                                 MATCH (:User { Id: $userId })-[r:COMMENTED]->(:Movie)
-                                 WHERE r.Id = $commentId
+                                 MATCH (:User { Id: $userId })-[r:COMMENTED { Id: $commentId }]->(:Movie)
                                  DELETE r
                                  """;
 
             await tx.RunAsync(query, new { commentId = commentId.ToString(), userId = userId.ToString() });
             return QueryResult.Completed;
         });
+    }
+
+    private static async Task<bool> CommentExists(IAsyncQueryRunner tx, Guid commentId, Guid userId)
+    {
+        // language=Cypher
+        const string query = """
+                             MATCH (:User { Id: $userId })-[r:COMMENTED { Id: $commentId }]->(:Movie)
+                             WITH COUNT(r) > 0 AS commentsExists
+                             RETURN commentsExists
+                             """;
+
+        var cursor = await tx.RunAsync(query,
+            new { commentId = commentId.ToString(), userId = userId.ToString() });
+        return await cursor.SingleAsync(record => record["commentsExists"].As<bool>());
     }
 }

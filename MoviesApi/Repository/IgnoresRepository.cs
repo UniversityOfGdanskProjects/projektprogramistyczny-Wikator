@@ -6,8 +6,10 @@ using Neo4j.Driver;
 
 namespace MoviesApi.Repository;
 
-public class IgnoresRepository(IDriver driver) : Repository(driver), IIgnoresRepository
+public class IgnoresRepository(IMovieRepository movieRepository, IDriver driver) : Repository(driver), IIgnoresRepository
 {
+    private IMovieRepository MovieRepository { get; } = movieRepository;
+
     public async Task<IEnumerable<MovieDto>> GetAllIgnoreMovies(Guid userId)
     {
         return await ExecuteAsync(async tx =>
@@ -51,41 +53,11 @@ public class IgnoresRepository(IDriver driver) : Repository(driver), IIgnoresRep
     {
         return await ExecuteAsync(async tx =>
         {
-            // language=Cypher
-            const string checkMovieExistsQuery = """
-                                                 MATCH (m:Movie { Id: $movieId })
-                                                 RETURN m
-                                                 """;
-
-            var movieExistsResult = await tx.RunAsync(checkMovieExistsQuery, new { movieId = movieId.ToString() });
-
-            try
-            {
-                await movieExistsResult.SingleAsync();
-            }
-            catch (InvalidOperationException)
-            {
+            if (!await MovieRepository.MovieExists(tx, movieId))
                 return QueryResult.NotFound;
-            }
             
-            // language=Cypher
-            const string movieIsIgnoredQuery = """
-                                               MATCH (:User { Id: $userId })-[r:IGNORES]->(:Movie { Id: $movieId })
-                                               RETURN r
-                                               """;
-
-            var movieIsIgnoredResult = await tx.RunAsync(movieIsIgnoredQuery,
-                new { userId = userId.ToString(), movieId = movieId.ToString() });
-
-            try
-            {
-                await movieIsIgnoredResult.SingleAsync();
+            if (await IgnoresExists(tx, movieId, userId))
                 return QueryResult.EntityAlreadyExists;
-            }
-            catch (InvalidOperationException)
-            {
-                // ignored
-            }
             
             // language=Cypher
             const string createNewQuery = """
@@ -104,41 +76,11 @@ public class IgnoresRepository(IDriver driver) : Repository(driver), IIgnoresRep
     {
         return await ExecuteAsync(async tx =>
         {
-            // language=Cypher
-            const string checkMovieExistsQuery = """
-                                                 MATCH (m:Movie { Id: $movieId })
-                                                 RETURN m
-                                                 """;
-
-            var movieExistsResult = await tx.RunAsync(checkMovieExistsQuery,
-                new { movieId = movieId.ToString() });
-
-            try
-            {
-                await movieExistsResult.SingleAsync();
-            }
-            catch (InvalidOperationException)
-            {
+            if (!await MovieRepository.MovieExists(tx, movieId))
                 return QueryResult.NotFound;
-            }
-            
-            // language=Cypher
-            const string movieIsIgnoredQuery = """
-                                               MATCH (u:User { Id: $userId })-[r:IGNORES]->(m:Movie { Id: $movieId })
-                                               RETURN r
-                                               """;
 
-            var movieIsIgnoredResult = await tx.RunAsync(movieIsIgnoredQuery,
-                new { userId = userId.ToString(), movieId = movieId.ToString() });
-
-            try
-            {
-                await movieIsIgnoredResult.SingleAsync();
-            }
-            catch (InvalidOperationException)
-            {
+            if (!await IgnoresExists(tx, movieId, userId))
                 return QueryResult.NotFound;
-            }
             
             // language=Cypher
             const string removeMovieFromIgnoredQuery = """
@@ -151,5 +93,19 @@ public class IgnoresRepository(IDriver driver) : Repository(driver), IIgnoresRep
             
             return QueryResult.Completed;
         });
+    }
+
+    private static async Task<bool> IgnoresExists(IAsyncQueryRunner tx, Guid movieId, Guid userId)
+    {
+        // language=Cypher
+        const string query = """
+                              MATCH (:User { Id: $userId })-[r:IGNORES]->(:Movie { Id: $movieId })
+                              WITH COUNT(r) > 0 AS IsIgnored
+                              RETURN IsIgnored
+                              """;
+
+        var cursor = await tx.RunAsync(query,
+            new { userId = userId.ToString(), movieId = movieId.ToString() });
+        return await cursor.SingleAsync(record => record["IsIgnored"].As<bool>());
     }
 }

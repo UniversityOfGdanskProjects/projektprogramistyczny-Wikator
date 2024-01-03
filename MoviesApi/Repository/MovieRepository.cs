@@ -228,8 +228,7 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 
 			try
 			{
-				var movie = await cursor.SingleAsync();
-				var publicId = movie["PicturePublicId"].As<string?>();
+				var publicId = await cursor.SingleAsync(record => record["PicturePublicId"].As<string?>());
 
 				if (publicId is not null && (await PhotoService.DeleteASync(publicId)).Error is not null)
 					return QueryResult.PhotoFailedToDelete;
@@ -245,6 +244,19 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 				return QueryResult.NotFound;
 			}
 		});
+	}
+
+	public async Task<bool> MovieExists(IAsyncQueryRunner tx, Guid movieId)
+	{
+		// language=Cypher
+		const string query = """
+		                                     MATCH (m:Movie {Id: $movieId})
+		                                     WITH COUNT(m) > 0 as movieExists
+		                                     RETURN movieExists
+		                                     """;
+
+		var cursor = await tx.RunAsync(query, new { movieId = movieId.ToString() });
+		return await cursor.SingleAsync(record => record["movieExists"].As<bool>());
 	}
 
 	public async Task<IEnumerable<MovieDto>> GetMovies(MovieQueryParams queryParams)
