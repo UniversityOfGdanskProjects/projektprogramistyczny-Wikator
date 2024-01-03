@@ -1,4 +1,5 @@
 ﻿using MoviesApi.DTOs;
+using MoviesApi.DTOs.Requests;
 using MoviesApi.Enums;
 using MoviesApi.Repository.Contracts;
 using Neo4j.Driver;

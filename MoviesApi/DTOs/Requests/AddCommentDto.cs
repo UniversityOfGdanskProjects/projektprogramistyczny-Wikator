@@ -1,8 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace MoviesApi.DTOs;
+namespace MoviesApi.DTOs.Requests;
 
-public class UpsertCommentDto
+public class AddCommentDto
 {
     [Required]
     public Guid MovieId { get; init; }

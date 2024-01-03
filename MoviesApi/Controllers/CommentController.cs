@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using MoviesApi.Controllers.Base;
 using MoviesApi.DTOs;
+using MoviesApi.DTOs.Requests;
 using MoviesApi.Enums;
 using MoviesApi.Extensions;
 using MoviesApi.Repository.Contracts;
@@ -14,9 +15,9 @@ public class CommentController(ICommentRepository commentRepository) : BaseApiCo
     private ICommentRepository CommentRepository { get; } = commentRepository;
     
     [HttpPost]
-    public async Task<IActionResult> AddCommentAsync(UpsertCommentDto upsertCommentDto)
+    public async Task<IActionResult> AddCommentAsync(AddCommentDto addCommentDto)
     {
-        var comment = await CommentRepository.AddCommentAsync(User.GetUserId(), upsertCommentDto);
+        var comment = await CommentRepository.AddCommentAsync(User.GetUserId(), addCommentDto);
 
         return comment switch
         {
@@ -26,9 +27,9 @@ public class CommentController(ICommentRepository commentRepository) : BaseApiCo
     }
     
     [HttpPut("{commentId:guid}/")]
-    public async Task<IActionResult> EditCommentAsync(Guid commentId, UpsertCommentDto upsertCommentDto)
+    public async Task<IActionResult> EditCommentAsync(Guid commentId, EditCommentDto editCommentDto)
     {
-        var comment = await CommentRepository.EditCommentAsync(commentId, User.GetUserId(), upsertCommentDto);
+        var comment = await CommentRepository.EditCommentAsync(commentId, User.GetUserId(), editCommentDto);
 
         return comment switch
         {

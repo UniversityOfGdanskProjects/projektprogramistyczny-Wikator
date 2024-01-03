@@ -1,4 +1,5 @@
 ﻿using MoviesApi.DTOs;
+using MoviesApi.DTOs.Responses;
 using Neo4j.Driver;
 
 namespace MoviesApi.Extensions;

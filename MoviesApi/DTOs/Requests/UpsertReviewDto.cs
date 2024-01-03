@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace MoviesApi.DTOs;
+namespace MoviesApi.DTOs.Requests;
 
 public class UpsertReviewDto
 {

@@ -1,6 +1,7 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 using MoviesApi.DTOs;
+using MoviesApi.DTOs.Requests;
 using MoviesApi.Enums;
 using MoviesApi.Models;
 using MoviesApi.Repository.Contracts;

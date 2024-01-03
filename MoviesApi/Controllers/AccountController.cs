@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Mvc;
 using MoviesApi.Controllers.Base;
 using MoviesApi.DTOs;
+using MoviesApi.DTOs.Requests;
+using MoviesApi.DTOs.Responses;
 using MoviesApi.Repository.Contracts;
 using MoviesApi.Services.Contracts;
 

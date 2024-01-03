@@ -1,4 +1,6 @@
 ﻿using MoviesApi.DTOs;
+using MoviesApi.DTOs.Requests;
+using MoviesApi.DTOs.Responses;
 using MoviesApi.Enums;
 using MoviesApi.Extensions;
 using MoviesApi.Repository.Contracts;
@@ -46,11 +48,11 @@ public class CommentRepository(IMovieRepository movieRepository, IDriver driver)
         });
     }
 
-    public async Task<CommentDto?> AddCommentAsync(Guid userId, UpsertCommentDto upsertCommentDto)
+    public async Task<CommentDto?> AddCommentAsync(Guid userId, AddCommentDto addCommentDto)
     {
         return await ExecuteAsync(async tx =>
         {
-            if (!await MovieRepository.MovieExists(tx, upsertCommentDto.MovieId))
+            if (!await MovieRepository.MovieExists(tx, addCommentDto.MovieId))
                 return null;
             
             // language=Cypher
@@ -74,9 +76,9 @@ public class CommentRepository(IMovieRepository movieRepository, IDriver driver)
                                  """;
             var cursor = await tx.RunAsync(query, new
             {
-                movieId = upsertCommentDto.MovieId.ToString(),
+                movieId = addCommentDto.MovieId.ToString(),
                 userId = userId.ToString(),
-                text = upsertCommentDto.Text,
+                text = addCommentDto.Text,
                 dateTime = DateTime.Now
             });
             
@@ -88,7 +90,7 @@ public class CommentRepository(IMovieRepository movieRepository, IDriver driver)
         });
     }
 
-    public async Task<CommentDto?> EditCommentAsync(Guid commentId, Guid userId, UpsertCommentDto upsertCommentDto)
+    public async Task<CommentDto?> EditCommentAsync(Guid commentId, Guid userId, EditCommentDto addCommentDto)
     {
         return await ExecuteAsync(async tx =>
         {
@@ -111,7 +113,7 @@ public class CommentRepository(IMovieRepository movieRepository, IDriver driver)
                                  """;
 
             var cursor = await tx.RunAsync(query, new
-                { userId = userId.ToString(), commentId = commentId.ToString(), text = upsertCommentDto.Text });
+                { userId = userId.ToString(), commentId = commentId.ToString(), text = addCommentDto.Text });
 
             return await cursor.SingleAsync(record =>
             {

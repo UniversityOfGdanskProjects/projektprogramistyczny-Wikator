@@ -1,4 +1,4 @@
-﻿namespace MoviesApi.DTOs;
+﻿namespace MoviesApi.DTOs.Responses;
 
 public class UserDto
 {

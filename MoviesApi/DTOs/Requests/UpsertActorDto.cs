@@ -1,4 +1,4 @@
-﻿namespace MoviesApi.DTOs;
+﻿namespace MoviesApi.DTOs.Requests;
 
 public class UpsertActorDto
 {

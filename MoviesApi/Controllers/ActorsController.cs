@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MoviesApi.Controllers.Base;
 using MoviesApi.DTOs;
+using MoviesApi.DTOs.Requests;
 using MoviesApi.Enums;
 using MoviesApi.Repository.Contracts;
 

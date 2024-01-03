@@ -1,4 +1,4 @@
-﻿namespace MoviesApi.DTOs;
+﻿namespace MoviesApi.DTOs.Responses;
 
 public record ActorDto(Guid Id, string FirstName, string LastName, DateOnly DateOfBirth, string? Biography,
     string? PictureUri);

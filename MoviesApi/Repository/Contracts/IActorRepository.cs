@@ -1,4 +1,6 @@
 ﻿using MoviesApi.DTOs;
+using MoviesApi.DTOs.Requests;
+using MoviesApi.DTOs.Responses;
 using MoviesApi.Enums;
 
 namespace MoviesApi.Repository.Contracts;
