@@ -23,12 +23,13 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 
 			                     MATCH (m:Movie)
 			                     WHERE NOT m.Id IN ignoredMovieIds AND toLower(m.Title) CONTAINS toLower($Title)
-			                     	AND ($Actor IS NULL OR EXISTS {
+			                     	AND ($Actor IS NULL OR $Actor = "" OR EXISTS {
 			                     	MATCH (m)<-[:PLAYED_IN]-(a:Actor)
 			                     	WHERE a.Id = $Actor
 			                     	})
 			                     OPTIONAL MATCH (m)<-[:PLAYED_IN]-(a:Actor)
 			                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(u:User)
+			                     OPTIONAl MATCH (m)<-[c:COMMENTED]-(u2:User)
 			                     WITH m, COLLECT(
 			                       CASE
 			                         WHEN a IS NULL THEN null
@@ -41,7 +42,21 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			                           PictureAbsoluteUri: m.PictureAbsoluteUri
 			                         }
 			                       END
-			                     ) AS Actors, AVG(r.score) AS AverageReviewScore
+			                     ) AS Actors, 
+			                     COLLECT(
+			                       CASE
+			                         WHEN u2 is NULL OR c is NULL THEN null
+			                         ELSE {
+			                           Id: c.Id,
+			                           MovieId: m.Id,
+			                           UserId: u2.Id,
+			                           Username: u2.Name,
+			                           Text: c.Text,
+			                           CreatedAt: c.CreatedAt,
+			                           IsEdited: c.IsEdited
+			                         }
+			                       END
+			                     ) AS Comments, AVG(r.score) AS AverageReviewScore
 			                     RETURN {
 			                       Id: m.Id,
 			                       Title: m.Title,
@@ -52,6 +67,7 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			                       ReleaseDate: m.ReleaseDate,
 			                       MinimumAge: m.MinimumAge,
 			                       Actors: Actors,
+			                       Comments: Comments,
 			                       AverageReviewScore: COALESCE(AverageReviewScore, 0)
 			                     } AS MovieWithActors
 			                     ORDER BY
@@ -122,6 +138,7 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 				                                  ReleaseDate: m.ReleaseDate,
 				                                  MinimumAge: m.MinimumAge,
 				                                  Actors: [],
+				                                  Comments: [],
 				                                  AverageReviewScore: 0
 				                                } AS MovieWithActors
 				                                """;
@@ -178,6 +195,7 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			                             ReleaseDate: m.ReleaseDate,
 			                             MinimumAge: m.MinimumAge,
 			                             Actors: Actors,
+			                             Comments: [],
 			                             AverageReviewScore: 0
 			                           } AS MovieWithActors
 			                           """;
@@ -238,11 +256,12 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 
 			                     MATCH (m:Movie)
 			                     WHERE toLower(m.Title) CONTAINS toLower($Title)
-			                     	AND $Actor IS NULL OR EXISTS {
+			                     	AND $Actor IS NULL OR $Actor = "" OR EXISTS {
 			                     		MATCH (m)<-[:PLAYED_IN]-(a:Actor { Id: $Actor })
 			                     	}
 			                     OPTIONAL MATCH (m)<-[:PLAYED_IN]-(a:Actor)
 			                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(u:User)
+			                     OPTIONAL MATCH (m)<-[c:COMMENTED]-(u2:User)
 			                     WITH m, COLLECT(
 			                       CASE
 			                         WHEN a IS NULL THEN null
@@ -255,7 +274,21 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			                           PictureAbsoluteUri: a.PictureAbsoluteUri
 			                         }
 			                       END
-			                     ) AS Actors, AVG(r.score) AS AverageReviewScore
+			                     ) AS Actors, 
+			                     COLLECT(
+			                       CASE
+			                         WHEN u2 is NULL OR c is NULL THEN null
+			                         ELSE {
+			                           Id: c.Id,
+			                           MovieId: m.Id,
+			                           UserId: u2.Id,
+			                           Username: u2.Name,
+			                           Text: c.Text,
+			                           CreatedAt: c.CreatedAt,
+			                           IsEdited: c.IsEdited
+			                         }
+			                       END
+			                     ) AS Comments, AVG(r.score) AS AverageReviewScore
 			                     RETURN {
 			                       Id: m.Id,
 			                       Title: m.Title,
@@ -266,6 +299,7 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			                       ReleaseDate: m.ReleaseDate,
 			                       MinimumAge: m.MinimumAge,
 			                       Actors: Actors,
+			                       Comments: Comments,
 			                       AverageReviewScore: COALESCE(AverageReviewScore, 0)
 			                     } AS MovieWithActors
 			                     ORDER BY

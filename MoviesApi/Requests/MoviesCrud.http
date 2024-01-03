@@ -6,7 +6,7 @@ GET https://localhost:7102/api/movies?title=mat
 
 ###
 
-GET https://localhost:7102/api/movies?SortBy=AverageReviewScore&SortOrder=Ascending&Actor=af48778f-9327-42de-bfb6-c20b5ac00e2f
+GET https://localhost:7102/api/movies?SortBy=title&SortOrder=Ascending
 
 ###
 

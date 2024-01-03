@@ -1,0 +1,25 @@
+﻿POST https://localhost:7102/api/Comment
+Authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJuYW1laWQiOiJlMzdlYjA2NC05OTdjLTQwNzEtOWNkOS1hNzRkOGZmNzM3MGUiLCJ1bmlxdWVfbmFtZSI6IlRlc3QzIiwicm9sZSI6IlVzZXIiLCJuYmYiOjE3MDQyOTE5NzMsImV4cCI6MTcwNDg5Njc3MywiaWF0IjoxNzA0MjkxOTczLCJpc3MiOiJsb2NhbGhvc3QifQ.ZXMMKzj7Ak_ieZ6uymprSXnQhafVgozoTtZtOye65L3f1Gnicuv7EFVhpWVX8-HJDP0ZwAIcsyhr5wqr7lXKXQ
+Content-Type: application/json
+
+{
+  "text": "Cool comment",
+  "movieId": "b8bf6a62-af04-43dc-83c9-6cf1449f57cb"
+}
+
+###
+
+PUT https://localhost:7102/api/Comment/f7747ad3-b0dd-49b5-ac95-9b2e6b95e311
+Authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJuYW1laWQiOiJlMzdlYjA2NC05OTdjLTQwNzEtOWNkOS1hNzRkOGZmNzM3MGUiLCJ1bmlxdWVfbmFtZSI6IlRlc3QzIiwicm9sZSI6IlVzZXIiLCJuYmYiOjE3MDQyOTE5NzMsImV4cCI6MTcwNDg5Njc3MywiaWF0IjoxNzA0MjkxOTczLCJpc3MiOiJsb2NhbGhvc3QifQ.ZXMMKzj7Ak_ieZ6uymprSXnQhafVgozoTtZtOye65L3f1Gnicuv7EFVhpWVX8-HJDP0ZwAIcsyhr5wqr7lXKXQ
+Content-Type: application/json
+
+{
+  "text": "Amazing comment",
+  "movieId": "b8bf6a62-af04-43dc-83c9-6cf1449f57cb"
+}
+
+
+###
+
+DELETE https://localhost:7102/api/Comment/4ebb1954-e770-45ad-b5d5-3d3c835c58de
+Authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJuYW1laWQiOiJlMzdlYjA2NC05OTdjLTQwNzEtOWNkOS1hNzRkOGZmNzM3MGUiLCJ1bmlxdWVfbmFtZSI6IlRlc3QzIiwicm9sZSI6IlVzZXIiLCJuYmYiOjE3MDQyOTE5NzMsImV4cCI6MTcwNDg5Njc3MywiaWF0IjoxNzA0MjkxOTczLCJpc3MiOiJsb2NhbGhvc3QifQ.ZXMMKzj7Ak_ieZ6uymprSXnQhafVgozoTtZtOye65L3f1Gnicuv7EFVhpWVX8-HJDP0ZwAIcsyhr5wqr7lXKXQ

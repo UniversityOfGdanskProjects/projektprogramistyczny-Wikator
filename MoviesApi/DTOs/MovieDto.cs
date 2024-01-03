@@ -10,4 +10,5 @@ public record MovieDto(
     DateOnly ReleaseDate,
     int MinimumAge,
     string? PictureUri,
-    IEnumerable<ActorDto> Actors);
+    IEnumerable<ActorDto> Actors,
+    IEnumerable<CommentDto> Comments);
