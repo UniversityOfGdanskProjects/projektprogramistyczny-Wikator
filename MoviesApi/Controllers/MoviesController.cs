@@ -15,6 +15,7 @@ public class MoviesController(IMovieRepository movieRepository) : BaseApiControl
 	[HttpGet]
 	public async Task<IActionResult> GetMovies([FromQuery] MovieQueryParams queryParams)
 	{
+		Console.WriteLine(queryParams.SortBy);
 		var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 		return userId switch
 		{

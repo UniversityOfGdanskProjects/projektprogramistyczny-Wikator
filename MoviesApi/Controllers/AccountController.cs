@@ -16,6 +16,9 @@ public class AccountController(ITokenService tokenService, IAccountRepository ac
 	[HttpPost("login")]
 	public async Task<ActionResult<UserDto>> Login(LoginDto loginDto)
 	{
+		if (!await AccountRepository.EmailExistsAsync(loginDto.Email))
+			return Unauthorized("Invalid username or password");
+		
 		var user = await AccountRepository.LoginAsync(loginDto);
 
 		return user switch

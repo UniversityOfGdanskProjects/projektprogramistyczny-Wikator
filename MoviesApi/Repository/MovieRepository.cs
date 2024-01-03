@@ -25,7 +25,7 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			                     WHERE NOT m.Id IN ignoredMovieIds AND toLower(m.Title) CONTAINS toLower($Title)
 			                     	AND ($Actor IS NULL OR EXISTS {
 			                     	MATCH (m)<-[:PLAYED_IN]-(a:Actor)
-			                     	WHERE ID(a) = $Actor
+			                     	WHERE a.Id = $Actor
 			                     	})
 			                     OPTIONAL MATCH (m)<-[:PLAYED_IN]-(a:Actor)
 			                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(u:User)
@@ -54,10 +54,17 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			                       Actors: Actors,
 			                       AverageReviewScore: COALESCE(AverageReviewScore, 0)
 			                     } AS MovieWithActors
+			                     ORDER BY
+			                     CASE WHEN $SortOrder = "Ascending" THEN MovieWithActors[$SortBy] ELSE null END ASC,
+			                     CASE WHEN $SortOrder = "Ascending" THEN null ELSE MovieWithActors[$SortBy] END DESC
 			                     """;
 			
 			var cursor = await tx.RunAsync(query,
-				new {userId = userId.ToString(), queryParams.Title, queryParams.Actor});
+				new
+				{
+					userId = userId.ToString(), queryParams.Title, Actor = queryParams.Actor.ToString(),
+					queryParams.SortBy, SortOrder = queryParams.SortOrder.ToString()
+				});
 			
 			return await cursor.ToListAsync(record =>
 			{
@@ -261,9 +268,16 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			                       Actors: Actors,
 			                       AverageReviewScore: COALESCE(AverageReviewScore, 0)
 			                     } AS MovieWithActors
+			                     ORDER BY
+			                     CASE WHEN $SortOrder = "Ascending" THEN MovieWithActors[$SortBy] ELSE null END ASC,
+			                     CASE WHEN $SortOrder = "Ascending" THEN null ELSE MovieWithActors[$SortBy] END DESC
 			                     """;
 			
-			var cursor = await tx.RunAsync(query, queryParams);
+			var cursor = await tx.RunAsync(query, new
+			{
+				queryParams.Title, Actor = queryParams.Actor.ToString(),
+				queryParams.SortBy, SortOrder = queryParams.SortOrder.ToString()
+			});
 			return await cursor.ToListAsync(record =>
 			{
 				var movieWithActorsDto = record["MovieWithActors"].As<IDictionary<string, object>>();
