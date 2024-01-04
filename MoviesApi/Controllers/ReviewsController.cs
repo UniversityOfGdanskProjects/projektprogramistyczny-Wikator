@@ -18,10 +18,12 @@ public class ReviewsController(IReviewRepository reviewRepository) : BaseApiCont
     {
         var review = await ReviewRepository.AddReview(User.GetUserId(), reviewDto);
     
-        return review switch
+        return review.Status switch
         {
-            null => BadRequest("Either the movie you are trying to review doesn't exists, or you already reviewed this movie"),
-            _ => Ok(review)
+            QueryResultStatus.RelatedEntityDoesNotExists => BadRequest("Movie you are trying to review does not exist"),
+            QueryResultStatus.EntityAlreadyExists => BadRequest("You already reviewed this movie"),
+            QueryResultStatus.Completed => Ok(review.Data),
+            _ => throw new Exception("Unexpected status returned")
         };
     }
 
@@ -30,11 +32,11 @@ public class ReviewsController(IReviewRepository reviewRepository) : BaseApiCont
     {
         var review = await ReviewRepository.UpdateReview(User.GetUserId(), id, reviewDto);
 
-        return review switch
+        return review.Status switch
         {
-            null => NotFound(
-                "Either the review you are trying to edit doesn't exist, or you don't have permission to edit it"),
-            _ => Ok(review)
+            QueryResultStatus.NotFound => NotFound("Review does not exist"),
+            QueryResultStatus.Completed => Ok(review.Data),
+            _ => throw new Exception("Unexpected status returned")
         };
     }
 
@@ -43,12 +45,11 @@ public class ReviewsController(IReviewRepository reviewRepository) : BaseApiCont
     {
         var result = await ReviewRepository.DeleteReview(User.GetUserId(), id);
 
-        return result switch
+        return result.Status switch
         {
-            QueryResult.NotFound => NotFound(
-                "Either the review you are trying to delete doesn't exist, or you don't have permission to delete it"),
-            QueryResult.Completed => NoContent(),
-            _ => throw new Exception("This shouldn't have happened")
+            QueryResultStatus.NotFound => NotFound("Review does not exist"),
+            QueryResultStatus.Completed => NoContent(),
+            _ => throw new Exception("Unexpected status returned")
         };
     }
 }

@@ -1,5 +1,4 @@
-﻿using MoviesApi.DTOs;
-using MoviesApi.DTOs.Responses;
+﻿using MoviesApi.DTOs.Responses;
 using MoviesApi.Enums;
 using MoviesApi.Repository.Contracts;
 using Neo4j.Driver;

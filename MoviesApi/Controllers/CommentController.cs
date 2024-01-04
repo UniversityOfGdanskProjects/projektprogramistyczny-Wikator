@@ -12,16 +12,30 @@ namespace MoviesApi.Controllers;
 public class CommentController(ICommentRepository commentRepository) : BaseApiController
 {
     private ICommentRepository CommentRepository { get; } = commentRepository;
+
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetComment(Guid id)
+    {
+        var comment = await CommentRepository.GetCommentAsync(id);
+
+        return comment switch
+        {
+            null => NotFound("Comment does not exist"),
+            _ => Ok(comment)
+        };
+    }
+    
     
     [HttpPost]
     public async Task<IActionResult> AddCommentAsync(AddCommentDto addCommentDto)
     {
         var comment = await CommentRepository.AddCommentAsync(User.GetUserId(), addCommentDto);
 
-        return comment switch
+        return comment.Status switch
         {
-            null => NotFound("Movie not found"),
-            _ => Ok(comment)
+            QueryResultStatus.RelatedEntityDoesNotExists => BadRequest("Movie does not exist"),
+            QueryResultStatus.Completed => CreatedAtAction(nameof(GetComment), new { id = comment.Data!.Id }, comment.Data),
+            _ => throw new Exception("This shouldn't have happened")
         };
     }
     
@@ -30,10 +44,11 @@ public class CommentController(ICommentRepository commentRepository) : BaseApiCo
     {
         var comment = await CommentRepository.EditCommentAsync(commentId, User.GetUserId(), editCommentDto);
 
-        return comment switch
+        return comment.Status switch
         {
-            null => BadRequest("Either the comment doesn't exist or you don't have permission to edit it"),
-            _ => Ok(comment)
+            QueryResultStatus.NotFound => NotFound("Either the comment doesn't exist or you don't have permission to edit it"),
+            QueryResultStatus.Completed => Ok(comment.Data),
+            _ => throw new Exception("This shouldn't have happened")
         };
     }
     
@@ -42,10 +57,11 @@ public class CommentController(ICommentRepository commentRepository) : BaseApiCo
     {
         var result = await CommentRepository.DeleteCommentAsync(commentId, User.GetUserId());
 
-        return result switch
+        return result.Status switch
         {
-            QueryResult.NotFound => NotFound("Either the comment doesn't exist or you don't have permission to delete it"),
-            _ => NoContent()
+            QueryResultStatus.NotFound => NotFound("Either the comment doesn't exist or you don't have permission to edit it"),
+            QueryResultStatus.Completed => NoContent(),
+            _ => throw new Exception("This shouldn't have happened")
         };
     }
 }

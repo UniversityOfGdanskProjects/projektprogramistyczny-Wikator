@@ -2,6 +2,7 @@
 using MoviesApi.DTOs.Responses;
 using MoviesApi.Enums;
 using MoviesApi.Extensions;
+using MoviesApi.Helpers;
 using MoviesApi.Repository.Contracts;
 using Neo4j.Driver;
 
@@ -11,16 +12,16 @@ public class ReviewRepository(IMovieRepository movieRepository, IDriver driver) 
 {
     private IMovieRepository MovieRepository { get; } = movieRepository;
     
-    public async Task<ReviewDto?> AddReview(Guid userId, AddReviewDto reviewDto)
+    public async Task<QueryResult<ReviewDto>> AddReview(Guid userId, AddReviewDto reviewDto)
     {
         return await ExecuteAsync(async tx =>
         {
             if (!await MovieRepository.MovieExists(tx, reviewDto.MovieId))
-                return null;
+                return new QueryResult<ReviewDto>(QueryResultStatus.RelatedEntityDoesNotExists, null);
 
             if (await ReviewExistsByMovieId(tx, reviewDto.MovieId, userId))
-                return null;
-            
+                return new QueryResult<ReviewDto>(QueryResultStatus.EntityAlreadyExists, null);
+
             // language=Cypher
             const string query = """
                                  MATCH (u:User { Id: $userId}), (m:Movie { Id: $movieId })
@@ -37,17 +38,19 @@ public class ReviewRepository(IMovieRepository movieRepository, IDriver driver) 
                 await tx.RunAsync(query,
                     new { userId = userId.ToString(), movieId = reviewDto.MovieId.ToString(), score = reviewDto.Score });
 
-            return await cursor.SingleAsync(record =>
+            var review = await cursor.SingleAsync(record =>
                 record["Review"].As<IDictionary<string, object>>().ConvertToReviewDto());
+
+            return new QueryResult<ReviewDto>(QueryResultStatus.Completed, review);
         });
     }
 
-    public async Task<ReviewDto?> UpdateReview(Guid userId, Guid reviewId, UpdateReviewDto reviewDto)
+    public async Task<QueryResult<ReviewDto>> UpdateReview(Guid userId, Guid reviewId, UpdateReviewDto reviewDto)
     {
         return await ExecuteAsync(async tx =>
         {
             if (!await ReviewExists(tx, reviewId, userId))
-                return null;
+                return new QueryResult<ReviewDto>(QueryResultStatus.NotFound, null);
 
             // language=Cypher
             const string query = """
@@ -68,8 +71,10 @@ public class ReviewRepository(IMovieRepository movieRepository, IDriver driver) 
                     score = reviewDto.Score
                 });
 
-            return await cursor.SingleAsync(record =>
+            var review = await cursor.SingleAsync(record =>
                 record["Review"].As<IDictionary<string, object>>().ConvertToReviewDto());
+
+            return new QueryResult<ReviewDto>(QueryResultStatus.Completed, review);
         });
     }
 
@@ -78,7 +83,7 @@ public class ReviewRepository(IMovieRepository movieRepository, IDriver driver) 
         return await ExecuteAsync(async tx =>
         {
             if (!await ReviewExists(tx, reviewId, userId))
-                return QueryResult.NotFound;
+                return new QueryResult(QueryResultStatus.NotFound);
 
             // language=Cypher
             const string query = """
@@ -87,7 +92,7 @@ public class ReviewRepository(IMovieRepository movieRepository, IDriver driver) 
                                  """;
 
             await tx.RunAsync(query, new { userId = userId.ToString(), reviewId = reviewId.ToString() });
-            return QueryResult.Completed;
+            return new QueryResult(QueryResultStatus.Completed);
         });
     }
 

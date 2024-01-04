@@ -2,6 +2,7 @@
 using MoviesApi.DTOs.Responses;
 using MoviesApi.Enums;
 using MoviesApi.Extensions;
+using MoviesApi.Helpers;
 using MoviesApi.Repository.Contracts;
 using MoviesApi.Services.Contracts;
 using Neo4j.Driver;
@@ -57,10 +58,11 @@ public class ActorRepository(IPhotoService photoService, IDriver driver) : Repos
                                  """;
         
             var cursor = await tx.RunAsync(query, new { id = id.ToString() });
-
+            
             try
             {
-                return await ConvertCursorToActorDto(cursor);
+                return await cursor.SingleAsync(record =>
+                    record["Actor"].As<Dictionary<string, object>>().ConvertToActorDto());
             }
             catch (InvalidOperationException)
             {
@@ -69,7 +71,7 @@ public class ActorRepository(IPhotoService photoService, IDriver driver) : Repos
         });
     }
 
-    public async Task<ActorDto?> CreateActor(UpsertActorDto actorDto)
+    public async Task<QueryResult<ActorDto>> CreateActor(UpsertActorDto actorDto)
     {
         return await ExecuteAsync(async tx =>
         {
@@ -85,8 +87,9 @@ public class ActorRepository(IPhotoService photoService, IDriver driver) : Repos
                     "file", actorDto.FileName ?? $"movie-{new Guid()}");
 
                 var uploadResult = await PhotoService.AddPhotoAsync(file);
+                
                 if (uploadResult.Error is not null)
-                    throw new Exception("Image failed to add");
+                    return new QueryResult<ActorDto>(QueryResultStatus.PhotoFailedToSave, null);
 
                 pictureAbsoluteUri = uploadResult.SecureUrl.AbsoluteUri;
                 picturePublicId = uploadResult.PublicId;
@@ -113,22 +116,38 @@ public class ActorRepository(IPhotoService photoService, IDriver driver) : Repos
                                       } As Actor
                                       """;
 
-            var actorCursor = await tx.RunAsync(actorQuery, new
+            var cursor = await tx.RunAsync(actorQuery, new
             {
                 actorDto.FirstName, actorDto.LastName, actorDto.DateOfBirth, actorDto.Biography,
                 PictureAbsoluteUri = pictureAbsoluteUri, PicturePublicId = picturePublicId
             });
 
-            return await ConvertCursorToActorDto(actorCursor);
+            var actor = await cursor.SingleAsync(record =>
+                record["Actor"].As<Dictionary<string, object>>().ConvertToActorDto());
+
+            return new QueryResult<ActorDto>(QueryResultStatus.Completed, actor);
         });
     }
 
-    public async Task<ActorDto?> UpdateActor(Guid id, UpsertActorDto actorDto)
+    public async Task<QueryResult<ActorDto>> UpdateActor(Guid id, UpsertActorDto actorDto)
     {
         return await ExecuteAsync(async tx =>
         {
             // language=Cypher
-            const string actorQuery = """
+            const string actorExistsQuery = """
+                                            MATCH (a:Actor {Id: $id})
+                                            WITH COUNT(a) > 0 AS actorExists
+                                            RETURN actorExists
+                                            """;
+
+            var actorExistsCursor = await tx.RunAsync(actorExistsQuery, new { id = id.ToString() });
+            
+            if (!await actorExistsCursor.SingleAsync(record => record["actorExists"].As<bool>()))
+                return new QueryResult<ActorDto>(QueryResultStatus.NotFound, null);
+            
+            
+            // language=Cypher
+            const string query = """
                                       MATCH (a:Actor {Id: $id})
                                       SET
                                         a.FirstName = $FirstName,
@@ -145,13 +164,15 @@ public class ActorRepository(IPhotoService photoService, IDriver driver) : Repos
                                       } As Actor
                                       """;
             
-            var actorCursor = await tx.RunAsync(actorQuery, new
+            var cursor = await tx.RunAsync(query, new
             {
                 id = id.ToString(), actorDto.FirstName, actorDto.LastName,
                 actorDto.DateOfBirth, actorDto.Biography
             });
-            
-            return await ConvertCursorToActorDto(actorCursor);
+
+            var actor = await cursor.SingleAsync(record =>
+                record["Actor"].As<IDictionary<string, object>>().ConvertToActorDto());
+            return new QueryResult<ActorDto>(QueryResultStatus.Completed, actor);
         });
     }
 
@@ -169,31 +190,17 @@ public class ActorRepository(IPhotoService photoService, IDriver driver) : Repos
                 var publicId = actor["PicturePublicId"].As<string?>();
 
                 if (publicId is not null && (await PhotoService.DeleteASync(publicId)).Error is not null)
-                    return QueryResult.PhotoFailedToDelete;
+                    return new QueryResult(QueryResultStatus.PhotoFailedToDelete);
                 
                 // language=Cypher
                 const string deleteQuery = "MATCH (a:Actor) WHERE Id(a) = $id DETACH DELETE a";
                 await tx.RunAsync(deleteQuery, new { id = id.ToString() });
-                return QueryResult.Completed;
+                return new QueryResult(QueryResultStatus.Completed);
             }
             catch (InvalidOperationException)
             {
-                return QueryResult.NotFound;
+                return new QueryResult(QueryResultStatus.NotFound);
             }
         });
-    }
-    
-    private static async Task<ActorDto?> ConvertCursorToActorDto(IResultCursor cursor)
-    {
-        try
-        {
-            var result = await cursor.SingleAsync();
-            var actor = result["Actor"].As<Dictionary<string, object>>();
-            return actor.ConvertToActorDto();
-        }
-        catch (InvalidOperationException)
-        {
-            return null;
-        }
     }
 }

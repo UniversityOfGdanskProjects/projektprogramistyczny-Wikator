@@ -27,12 +27,12 @@ public class WatchlistController(IWatchlistRepository watchlistRepository) : Bas
         var userId = User.GetUserId();
         var result = await WatchlistRepository.AddToWatchList(userId, movieId);
     
-        return result switch
+        return result.Status switch
         {
-            QueryResult.Completed => Ok(),
-            QueryResult.NotFound => NotFound("Movie not found"),
-            QueryResult.EntityAlreadyExists => BadRequest("Movie already in watchlist"),
-            _ => throw new Exception(nameof(result))
+            QueryResultStatus.Completed => Ok(),
+            QueryResultStatus.NotFound => NotFound("Movie not found"),
+            QueryResultStatus.EntityAlreadyExists => BadRequest("Movie already in watchlist"),
+            _ => throw new Exception(nameof(result.Status))
         };
     }
     
@@ -42,10 +42,10 @@ public class WatchlistController(IWatchlistRepository watchlistRepository) : Bas
         var userId = User.GetUserId();
         var result = await WatchlistRepository.RemoveFromWatchList(userId, movieId);
     
-        return result switch
+        return result.Status switch
         {
-            QueryResult.Completed => NoContent(),
-            QueryResult.NotFound => NotFound("Movie or watchlist not found"),
+            QueryResultStatus.Completed => NoContent(),
+            QueryResultStatus.NotFound => NotFound("Movie or watchlist not found"),
             _ => throw new Exception(nameof(result))
         };
     }

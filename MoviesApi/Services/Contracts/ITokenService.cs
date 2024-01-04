@@ -1,9 +1,8 @@
 ﻿using MoviesApi.Models;
 
-namespace MoviesApi.Services.Contracts
+namespace MoviesApi.Services.Contracts;
+
+public interface ITokenService
 {
-	public interface ITokenService
-	{
-		string CreateToken(User user);
-	}
+	string CreateToken(User user);
 }

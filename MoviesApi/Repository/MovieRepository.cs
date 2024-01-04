@@ -1,5 +1,4 @@
-﻿using MoviesApi.DTOs;
-using MoviesApi.DTOs.Requests;
+﻿using MoviesApi.DTOs.Requests;
 using MoviesApi.DTOs.Responses;
 using MoviesApi.Enums;
 using MoviesApi.Extensions;
@@ -92,7 +91,7 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 		});
 	}
 
-	public async Task<MovieDto?> AddMovie(AddMovieDto movieDto)
+	public async Task<QueryResult<MovieDto>> AddMovie(AddMovieDto movieDto)
 	{
 		return await ExecuteAsync(async tx =>
 		{
@@ -109,7 +108,7 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 
 				var uploadResult = await PhotoService.AddPhotoAsync(file);
 				if (uploadResult.Error is not null)
-					throw new Exception("Image failed to add");
+					return new QueryResult<MovieDto>(QueryResultStatus.PhotoFailedToSave, null);
 
 				pictureAbsoluteUri = uploadResult.SecureUrl.AbsoluteUri;
 				picturePublicId = uploadResult.PublicId;
@@ -154,7 +153,7 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 				var movieRecordWithoutActors = await movieCursorWithoutActors.SingleAsync();
 				var movieNodeWithoutActors = movieRecordWithoutActors["MovieWithActors"].As<IDictionary<string, object>>();
 
-				return movieNodeWithoutActors.ConvertToMovieDto();
+				return new QueryResult<MovieDto>(QueryResultStatus.Completed, movieNodeWithoutActors.ConvertToMovieDto());
 			}
 			
 			// language=Cypher
@@ -212,7 +211,7 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			var record = await movieCursor.SingleAsync();
 
 			var movieNode = record["MovieWithActors"].As<IDictionary<string, object>>();
-			return movieNode.ConvertToMovieDto();
+			return new QueryResult<MovieDto>(QueryResultStatus.Completed, movieNode.ConvertToMovieDto());
 		});
 	}
 
@@ -233,17 +232,17 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 				var publicId = await cursor.SingleAsync(record => record["PicturePublicId"].As<string?>());
 
 				if (publicId is not null && (await PhotoService.DeleteASync(publicId)).Error is not null)
-					return QueryResult.PhotoFailedToDelete;
+					return new QueryResult(QueryResultStatus.PhotoFailedToDelete);
 
 				// language=cypher
 				await tx.RunAsync("MATCH (m:Movie { Id: $movieId }) DETACH DELETE m",
 					new { movieId = movieId.ToString() });
 				
-				return QueryResult.Completed;
+				return new QueryResult(QueryResultStatus.Completed);
 			}
 			catch
 			{
-				return QueryResult.NotFound;
+				return new QueryResult(QueryResultStatus.NotFound);
 			}
 		});
 	}

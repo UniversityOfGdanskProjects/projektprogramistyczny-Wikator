@@ -1,7 +1,7 @@
-﻿using MoviesApi.DTOs;
-using MoviesApi.DTOs.Responses;
+﻿using MoviesApi.DTOs.Responses;
 using MoviesApi.Enums;
 using MoviesApi.Extensions;
+using MoviesApi.Helpers;
 using MoviesApi.Repository.Contracts;
 using Neo4j.Driver;
 
@@ -77,10 +77,10 @@ public class WatchlistRepository(IMovieRepository movieRepository, IDriver drive
         return await ExecuteAsync(async tx =>
         {
             if (!await MovieRepository.MovieExists(tx, movieId))
-                return QueryResult.NotFound;
+                return new QueryResult(QueryResultStatus.NotFound);
 
             if (!await WishlistExists(tx, movieId, userId))
-                return QueryResult.EntityAlreadyExists;
+                return new QueryResult(QueryResultStatus.EntityAlreadyExists);
             
             // language=Cypher
             const string createNewQuery = """
@@ -89,7 +89,7 @@ public class WatchlistRepository(IMovieRepository movieRepository, IDriver drive
                                           """;
             
             await tx.RunAsync(createNewQuery, new { userId = userId.ToString(), movieId = movieId.ToString() });
-            return QueryResult.Completed;
+            return new QueryResult(QueryResultStatus.Completed);
         });
     }
 
@@ -98,10 +98,10 @@ public class WatchlistRepository(IMovieRepository movieRepository, IDriver drive
         return await ExecuteAsync(async tx =>
         {
             if (!await MovieRepository.MovieExists(tx, movieId))
-                return QueryResult.NotFound;
+                return new QueryResult(QueryResultStatus.NotFound);
 
-            if (! await WishlistExists(tx, movieId, userId))
-                return QueryResult.NotFound;
+            if (!await WishlistExists(tx, movieId, userId))
+                return new QueryResult(QueryResultStatus.EntityAlreadyExists);
 
             // language=Cypher
             const string removeFromWatchlistQuery = """
@@ -111,7 +111,7 @@ public class WatchlistRepository(IMovieRepository movieRepository, IDriver drive
 
             await tx.RunAsync(removeFromWatchlistQuery,
                 new { userId = userId.ToString(), movieId = movieId.ToString() });
-            return QueryResult.Completed;
+            return new QueryResult(QueryResultStatus.Completed);
         });
     }
     

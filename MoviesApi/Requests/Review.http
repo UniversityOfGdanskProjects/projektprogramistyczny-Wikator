@@ -1,9 +1,0 @@
-﻿POST https://localhost:7102/api/Reviews
-Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJuYW1laWQiOiJlMzdlYjA2NC05OTdjLTQwNzEtOWNkOS1hNzRkOGZmNzM3MGUiLCJ1bmlxdWVfbmFtZSI6IlRlc3QzIiwicm9sZSI6IlVzZXIiLCJuYmYiOjE3MDQyODU5MDksImV4cCI6MTcwNDg5MDcwOSwiaWF0IjoxNzA0Mjg1OTA5LCJpc3MiOiJsb2NhbGhvc3QifQ.gVp4IsW4f2F-4dZAhjmtp-8AanvXs5CXGOxTvP7J2ezywF7oJxOEWaxnAVnf6wRKhH78bQFXUUu54MeLpdp03g
-
-
-{
-  "movieId": "75fe465a-aac4-4f48-99b9-cd41930a8b97",
-  "score": 2
-}

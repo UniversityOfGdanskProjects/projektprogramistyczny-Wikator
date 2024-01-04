@@ -1,14 +1,13 @@
-﻿using MoviesApi.DTOs;
-using MoviesApi.DTOs.Requests;
+﻿using MoviesApi.DTOs.Requests;
 using MoviesApi.DTOs.Responses;
-using MoviesApi.Enums;
+using MoviesApi.Helpers;
 
 namespace MoviesApi.Repository.Contracts;
 
 public interface ICommentRepository
 {
     Task<CommentDto?> GetCommentAsync(Guid commentId);
-    Task<CommentDto?> AddCommentAsync(Guid userId, AddCommentDto addCommentDto);
-    Task<CommentDto?> EditCommentAsync(Guid commentId, Guid userId, EditCommentDto addCommentDto);
+    Task<QueryResult<CommentDto>> AddCommentAsync(Guid userId, AddCommentDto addCommentDto);
+    Task<QueryResult<CommentDto>> EditCommentAsync(Guid commentId, Guid userId, EditCommentDto addCommentDto);
     Task<QueryResult> DeleteCommentAsync(Guid commentId, Guid userId);
 }

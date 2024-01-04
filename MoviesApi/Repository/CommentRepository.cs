@@ -1,8 +1,8 @@
-﻿using MoviesApi.DTOs;
-using MoviesApi.DTOs.Requests;
+﻿using MoviesApi.DTOs.Requests;
 using MoviesApi.DTOs.Responses;
 using MoviesApi.Enums;
 using MoviesApi.Extensions;
+using MoviesApi.Helpers;
 using MoviesApi.Repository.Contracts;
 using Neo4j.Driver;
 
@@ -48,12 +48,12 @@ public class CommentRepository(IMovieRepository movieRepository, IDriver driver)
         });
     }
 
-    public async Task<CommentDto?> AddCommentAsync(Guid userId, AddCommentDto addCommentDto)
+    public async Task<QueryResult<CommentDto>> AddCommentAsync(Guid userId, AddCommentDto addCommentDto)
     {
         return await ExecuteAsync(async tx =>
         {
             if (!await MovieRepository.MovieExists(tx, addCommentDto.MovieId))
-                return null;
+                return new QueryResult<CommentDto>(QueryResultStatus.RelatedEntityDoesNotExists, null);
             
             // language=Cypher
             const string query = """
@@ -82,20 +82,22 @@ public class CommentRepository(IMovieRepository movieRepository, IDriver driver)
                 dateTime = DateTime.Now
             });
             
-            return await cursor.SingleAsync(record =>
+            var comment = await cursor.SingleAsync(record =>
             {
                 var comment = record["Comment"].As<IDictionary<string, object>>();
                 return comment.ConvertToCommentDto();
             });
+
+            return new QueryResult<CommentDto>(QueryResultStatus.Completed, comment);
         });
     }
 
-    public async Task<CommentDto?> EditCommentAsync(Guid commentId, Guid userId, EditCommentDto addCommentDto)
+    public async Task<QueryResult<CommentDto>> EditCommentAsync(Guid commentId, Guid userId, EditCommentDto addCommentDto)
     {
         return await ExecuteAsync(async tx =>
         {
             if (!await CommentExists(tx, commentId, userId))
-                return null;
+                return new QueryResult<CommentDto>(QueryResultStatus.NotFound, null);
 
             // language=Cypher
             const string query = """
@@ -115,11 +117,13 @@ public class CommentRepository(IMovieRepository movieRepository, IDriver driver)
             var cursor = await tx.RunAsync(query, new
                 { userId = userId.ToString(), commentId = commentId.ToString(), text = addCommentDto.Text });
 
-            return await cursor.SingleAsync(record =>
+            var comment = await cursor.SingleAsync(record =>
             {
                 var comment = record["Comment"].As<IDictionary<string, object>>();
                 return comment.ConvertToCommentDto();
             });
+
+            return new QueryResult<CommentDto>(QueryResultStatus.Completed, comment);
         });
     }
 
@@ -129,7 +133,7 @@ public class CommentRepository(IMovieRepository movieRepository, IDriver driver)
         return await ExecuteAsync(async tx =>
         {
             if (!await CommentExists(tx, commentId, userId))
-                return QueryResult.NotFound;
+                return new QueryResult(QueryResultStatus.NotFound);
 
             // language=Cypher
             const string query = """
@@ -138,7 +142,7 @@ public class CommentRepository(IMovieRepository movieRepository, IDriver driver)
                                  """;
 
             await tx.RunAsync(query, new { commentId = commentId.ToString(), userId = userId.ToString() });
-            return QueryResult.Completed;
+            return new QueryResult(QueryResultStatus.Completed);
         });
     }
 

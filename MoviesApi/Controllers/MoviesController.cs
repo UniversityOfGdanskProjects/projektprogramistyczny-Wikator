@@ -27,21 +27,25 @@ public class MoviesController(IMovieRepository movieRepository) : BaseApiControl
 	public async Task<IActionResult> CreateMovie(AddMovieDto movieDto)
 	{
 		var movie = await MovieRepository.AddMovie(movieDto);
-			
-		if (movie is null)
-			return BadRequest("The movie could not be created.");
 
-		return CreatedAtAction(nameof(GetMovies), movie);
+		return movie.Status switch
+		{
+			QueryResultStatus.PhotoFailedToSave => BadRequest("Photo failed to save, please try again in few minutes"),
+			QueryResultStatus.Completed => CreatedAtAction(nameof(GetMovies), movie.Data),
+			_ => throw new Exception("Unexpected status returned")
+		};
 	}
 
 	[HttpDelete("{id:guid}")]
 	public async Task<IActionResult> DeleteMovie(Guid id)
 	{
-		return await MovieRepository.DeleteMovie(id) switch
+		var result = await MovieRepository.DeleteMovie(id);
+		
+		return result.Status switch
 		{
-			QueryResult.NotFound => NotFound("Movie does not exist"),
-			QueryResult.PhotoFailedToDelete => BadRequest("Photo failed to delete"),
-			QueryResult.Completed => NoContent(),
+			QueryResultStatus.NotFound => NotFound("Movie does not exist"),
+			QueryResultStatus.PhotoFailedToDelete => BadRequest("Photo failed to delete, please try again in few minutes"),
+			QueryResultStatus.Completed => NoContent(),
 			_ => throw new Exception("This shouldn't have happened")
 		};
 	}

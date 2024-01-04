@@ -7,4 +7,5 @@ public record CommentDto(
     string Username,
     string Text,
     DateTime CreatedAt,
-    bool IsEdited);
+    bool IsEdited
+    );

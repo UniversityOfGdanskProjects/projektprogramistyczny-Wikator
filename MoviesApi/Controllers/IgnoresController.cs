@@ -27,11 +27,11 @@ public class IgnoresController(IIgnoresRepository ignoresRepository) : BaseApiCo
         var userId = User.GetUserId();
         var result = await IgnoresRepository.IgnoreMovie(userId, movieId);
 
-        return result switch
+        return result.Status switch
         {
-            QueryResult.Completed => Ok(),
-            QueryResult.NotFound => NotFound("Movie not found"),
-            QueryResult.EntityAlreadyExists => BadRequest("Movie is already ignored"),
+            QueryResultStatus.Completed => Ok(),
+            QueryResultStatus.NotFound => NotFound("Movie not found"),
+            QueryResultStatus.EntityAlreadyExists => BadRequest("Movie is already ignored"),
             _ => throw new Exception(nameof(result))
         };
     }
@@ -42,10 +42,11 @@ public class IgnoresController(IIgnoresRepository ignoresRepository) : BaseApiCo
         var userId = User.GetUserId();
         var result = await IgnoresRepository.RemoveIgnoreMovie(userId, movieId);
 
-        return result switch
+        return result.Status switch
         {
-            QueryResult.Completed => NoContent(),
-            QueryResult.NotFound => NotFound("Movie does not exist in ignore list"),
+            QueryResultStatus.Completed => NoContent(),
+            QueryResultStatus.NotFound => NotFound("Movie does not exist"),
+            QueryResultStatus.RelationDoesNotExist => BadRequest("This movie is not on your ignored list"),
             _ => throw new Exception(nameof(result))
         };
     }

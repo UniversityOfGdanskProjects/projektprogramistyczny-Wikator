@@ -1,5 +1,4 @@
-﻿using MoviesApi.DTOs;
-using MoviesApi.DTOs.Responses;
+﻿using MoviesApi.DTOs.Responses;
 
 namespace MoviesApi.Repository.Contracts;
 

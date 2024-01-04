@@ -35,10 +35,13 @@ public class ActorsController(IActorRepository actorRepository) : BaseApiControl
     {
         var newActor = await ActorRepository.CreateActor(actorDto);
 
-        if (newActor is null)
-            return BadRequest("Something went wrong when creating actor");
-
-        return Ok(newActor);
+        return newActor.Status switch
+        {
+            QueryResultStatus.PhotoFailedToSave => BadRequest("Photo failed to save, please try again in few minutes"),
+            QueryResultStatus.Completed => CreatedAtAction(nameof(GetActor), new { id = newActor.Data!.Id },
+                newActor.Data),
+            _ => throw new Exception("Unexpected status returned")
+        };
     }
     
     [HttpPut("{id:guid}")]
@@ -46,10 +49,11 @@ public class ActorsController(IActorRepository actorRepository) : BaseApiControl
     {
         var updatedActor = await ActorRepository.UpdateActor(id, actorDto);
 
-        return updatedActor switch
+        return updatedActor.Status switch
         {
-            null => NotFound($"Actor with id {id} was not found"),
-            _ => Ok(updatedActor)
+            QueryResultStatus.NotFound => NotFound($"Actor with id {id} was not found"),
+            QueryResultStatus.Completed => Ok(updatedActor.Data),
+            _ => throw new Exception("Unexpected status returned")
         };
     }
     
@@ -58,12 +62,12 @@ public class ActorsController(IActorRepository actorRepository) : BaseApiControl
     {
         var deleted = await ActorRepository.DeleteActor(id);
 
-        return deleted switch
+        return deleted.Status switch
         {
-            QueryResult.NotFound => NotFound($"Actor with id {id} was not found"),
-            QueryResult.PhotoFailedToDelete => BadRequest("Something went wrong when deleting photo"),
-            QueryResult.Completed => NoContent(),
-            _ => throw new Exception("This shouldn't have happened")
+            QueryResultStatus.NotFound => NotFound($"Actor with id {id} was not found"),
+            QueryResultStatus.PhotoFailedToDelete => BadRequest("Failed to delete photo, please try again in few minutes"),
+            QueryResultStatus.Completed => NoContent(),
+            _ => throw new Exception("Unexpected status returned")
         };
     }
 }
