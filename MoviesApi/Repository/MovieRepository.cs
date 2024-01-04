@@ -230,7 +230,7 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			try
 			{
 				var publicId = await cursor.SingleAsync(record => record["PicturePublicId"].As<string?>());
-
+				
 				if (publicId is not null && (await PhotoService.DeleteASync(publicId)).Error is not null)
 					return new QueryResult(QueryResultStatus.PhotoFailedToDelete);
 

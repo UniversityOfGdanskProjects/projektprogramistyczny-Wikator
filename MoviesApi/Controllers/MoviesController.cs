@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using MoviesApi.Controllers.Base;
 using MoviesApi.DTOs.Requests;
 using MoviesApi.Enums;
+using MoviesApi.Exceptions;
 using MoviesApi.Helpers;
 using MoviesApi.Repository.Contracts;
 
@@ -30,7 +31,7 @@ public class MoviesController(IMovieRepository movieRepository) : BaseApiControl
 
 		return movie.Status switch
 		{
-			QueryResultStatus.PhotoFailedToSave => BadRequest("Photo failed to save, please try again in few minutes"),
+			QueryResultStatus.PhotoFailedToSave => throw new PhotoServiceException("Photo failed to save, please try again in few minutes"),
 			QueryResultStatus.Completed => CreatedAtAction(nameof(GetMovies), movie.Data),
 			_ => throw new Exception("Unexpected status returned")
 		};
@@ -44,7 +45,7 @@ public class MoviesController(IMovieRepository movieRepository) : BaseApiControl
 		return result.Status switch
 		{
 			QueryResultStatus.NotFound => NotFound("Movie does not exist"),
-			QueryResultStatus.PhotoFailedToDelete => BadRequest("Photo failed to delete, please try again in few minutes"),
+			QueryResultStatus.PhotoFailedToDelete => throw new PhotoServiceException("Photo failed to delete, please try again in few minutes"),
 			QueryResultStatus.Completed => NoContent(),
 			_ => throw new Exception("This shouldn't have happened")
 		};

@@ -2,6 +2,7 @@
 using MoviesApi.Controllers.Base;
 using MoviesApi.DTOs.Requests;
 using MoviesApi.Enums;
+using MoviesApi.Exceptions;
 using MoviesApi.Repository.Contracts;
 
 namespace MoviesApi.Controllers;
@@ -37,7 +38,7 @@ public class ActorsController(IActorRepository actorRepository) : BaseApiControl
 
         return newActor.Status switch
         {
-            QueryResultStatus.PhotoFailedToSave => BadRequest("Photo failed to save, please try again in few minutes"),
+            QueryResultStatus.PhotoFailedToSave => throw new PhotoServiceException("Photo failed to save, please try again in few minutes"),
             QueryResultStatus.Completed => CreatedAtAction(nameof(GetActor), new { id = newActor.Data!.Id },
                 newActor.Data),
             _ => throw new Exception("Unexpected status returned")
@@ -65,7 +66,7 @@ public class ActorsController(IActorRepository actorRepository) : BaseApiControl
         return deleted.Status switch
         {
             QueryResultStatus.NotFound => NotFound($"Actor with id {id} was not found"),
-            QueryResultStatus.PhotoFailedToDelete => BadRequest("Failed to delete photo, please try again in few minutes"),
+            QueryResultStatus.PhotoFailedToDelete => throw new PhotoServiceException("Failed to delete photo, please try again in few minutes"),
             QueryResultStatus.Completed => NoContent(),
             _ => throw new Exception("Unexpected status returned")
         };
