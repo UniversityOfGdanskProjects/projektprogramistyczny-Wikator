@@ -8,3 +8,4 @@ global using Microsoft.AspNetCore.Mvc;
 global using MoviesApi.Enums;
 global using MoviesApi.Exceptions;
 global using MoviesApi.Helpers;
+global using MoviesApi.Services.Contracts;

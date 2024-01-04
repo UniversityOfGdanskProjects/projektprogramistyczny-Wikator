@@ -15,7 +15,7 @@ public class AccountController(ITokenService tokenService, IAccountRepository ac
 		
 		
 	[HttpPost("login")]
-	public async Task<ActionResult<UserDto>> Login(LoginDto loginDto)
+	public async Task<IActionResult> Login(LoginDto loginDto)
 	{
 		if (!await AccountRepository.EmailExistsAsync(loginDto.Email))
 			return Unauthorized("Invalid username or password");
@@ -25,16 +25,16 @@ public class AccountController(ITokenService tokenService, IAccountRepository ac
 		return user switch
 		{
 			null => Unauthorized("Invalid username or password"),
-			_ => new UserDto
+			_ => Ok(new UserDto
 			{
 				Name = user.Name,
 				Token = TokenService.CreateToken(user)
-			}
+			})
 		};
 	}
 
 	[HttpPost("register")]
-	public async Task<ActionResult<UserDto>> Register(RegisterDto registerDto)
+	public async Task<IActionResult> Register(RegisterDto registerDto)
 	{
 		if (await AccountRepository.EmailExistsAsync(registerDto.Email))
 			return BadRequest("Email is taken");
@@ -44,11 +44,11 @@ public class AccountController(ITokenService tokenService, IAccountRepository ac
 		return user switch
 		{
 			null => BadRequest("There was an error when creating new user"),
-			_ => new UserDto
+			_ => Ok(new UserDto
 			{
 				Name = user.Name,
 				Token = TokenService.CreateToken(user)
-			}
+			})
 		};
 	}
 

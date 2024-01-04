@@ -114,7 +114,7 @@ public class ActorsControllerTests
     }
     
     [Fact]
-    public async Task Put_Returns_New_Actor_If_Successful()
+    public async Task Put_Returns_Updated_Actor_If_Successful()
     {
         // Arrange
         var actorsRepository = new Mock<IActorRepository>();
