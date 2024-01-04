@@ -15,6 +15,7 @@ public class LogUserActivity : IAsyncActionFilter
         
         var userId = resultContext.HttpContext.User.GetUserId();
         var driver = resultContext.HttpContext.RequestServices.GetRequiredService<IDriver>();
+        
         // language=Cypher
         const string query = """
                              MATCH (u:User { Id: $userId })

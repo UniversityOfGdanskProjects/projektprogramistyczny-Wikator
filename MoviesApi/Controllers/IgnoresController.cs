@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using MoviesApi.Controllers.Base;
 using MoviesApi.Enums;
 using MoviesApi.Extensions;
@@ -6,12 +7,13 @@ using MoviesApi.Repository.Contracts;
 
 namespace MoviesApi.Controllers;
 
+[Authorize]
 public class IgnoresController(IIgnoresRepository ignoresRepository) : BaseApiController
 {
     private IIgnoresRepository IgnoresRepository { get; } = ignoresRepository;
     
     [HttpGet]
-    public async Task<IActionResult> GetAllMoviesOnWatchlist()
+    public async Task<IActionResult> GetAllIgnoredMovies()
     {
         var userId = User.GetUserId();
         var movies = await IgnoresRepository.GetAllIgnoreMovies(userId);
@@ -20,7 +22,7 @@ public class IgnoresController(IIgnoresRepository ignoresRepository) : BaseApiCo
     }
     
     [HttpPost("{movieId:guid}")]
-    public async Task<IActionResult> AddToWatchList(Guid movieId)
+    public async Task<IActionResult> IgnoreMovie(Guid movieId)
     {
         var userId = User.GetUserId();
         var result = await IgnoresRepository.IgnoreMovie(userId, movieId);
@@ -35,7 +37,7 @@ public class IgnoresController(IIgnoresRepository ignoresRepository) : BaseApiCo
     }
     
     [HttpDelete("{movieId:guid}")]
-    public async Task<IActionResult> RemoveFromWatchList(Guid movieId)
+    public async Task<IActionResult> RemoveMovieFromIgnored(Guid movieId)
     {
         var userId = User.GetUserId();
         var result = await IgnoresRepository.RemoveIgnoreMovie(userId, movieId);

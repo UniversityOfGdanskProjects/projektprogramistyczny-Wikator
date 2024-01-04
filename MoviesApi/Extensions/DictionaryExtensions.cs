@@ -1,5 +1,4 @@
-﻿using MoviesApi.DTOs;
-using MoviesApi.DTOs.Responses;
+﻿using MoviesApi.DTOs.Responses;
 using Neo4j.Driver;
 
 namespace MoviesApi.Extensions;
@@ -41,5 +40,13 @@ public static class DictionaryExtensions
             Text: commentData["Text"].As<string>(),
             CreatedAt: commentData["CreatedAt"].As<DateTime>(),
             IsEdited: commentData["IsEdited"].As<bool>()
+        );
+
+    public static ReviewDto ConvertToReviewDto(this IDictionary<string, object> reviewData) =>
+        new(
+            Id: Guid.Parse(reviewData["Id"].As<string>()),
+            UserId: Guid.Parse(reviewData["UserId"].As<string>()),
+            MovieId: Guid.Parse(reviewData["MovieId"].As<string>()),
+            Score: reviewData["Score"].As<int>()
         );
 }

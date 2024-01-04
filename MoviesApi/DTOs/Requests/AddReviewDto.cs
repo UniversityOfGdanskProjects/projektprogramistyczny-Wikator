@@ -2,7 +2,7 @@
 
 namespace MoviesApi.DTOs.Requests;
 
-public class UpsertReviewDto
+public class AddReviewDto
 {
     public Guid MovieId { get; init; }
     
