@@ -3,6 +3,7 @@ using Microsoft.IdentityModel.Tokens;
 using MoviesApi.Extensions;
 using System.Text;
 using MoviesApi.Configurations;
+using MoviesApi.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,6 +32,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+
+app.UseMiddleware<ExceptionMiddleware>();
 
 app.UseHttpsRedirection();
 
