@@ -4,19 +4,22 @@ using MoviesApi.Controllers.Base;
 using MoviesApi.Enums;
 using MoviesApi.Extensions;
 using MoviesApi.Repository.Contracts;
+using MoviesApi.Services.Contracts;
 
 namespace MoviesApi.Controllers;
 
 [Authorize]
-public class WatchlistController(IWatchlistRepository watchlistRepository) : BaseApiController
+public class WatchlistController(IWatchlistRepository watchlistRepository, IUserClaimsProvider userClaimsProvider)
+    : BaseApiController
 {
     private IWatchlistRepository WatchlistRepository { get; } = watchlistRepository;
-    
+    private IUserClaimsProvider UserClaimsProvider { get; } = userClaimsProvider;
+
     [HttpGet]
     public async Task<IActionResult> GetAllMoviesOnWatchlist()
     {
-        var userId = User.GetUserId();
-        var movies = await WatchlistRepository.GetAllMoviesOnWatchlist(userId);
+        var movies = await WatchlistRepository
+            .GetAllMoviesOnWatchlist(UserClaimsProvider.GetUserId(User));
     
         return Ok(movies);
     }
@@ -24,12 +27,11 @@ public class WatchlistController(IWatchlistRepository watchlistRepository) : Bas
     [HttpPost("{movieId:guid}")]
     public async Task<IActionResult> AddToWatchList(Guid movieId)
     {
-        var userId = User.GetUserId();
-        var result = await WatchlistRepository.AddToWatchList(userId, movieId);
+        var result = await WatchlistRepository.AddToWatchList(UserClaimsProvider.GetUserId(User), movieId);
     
         return result.Status switch
         {
-            QueryResultStatus.Completed => Ok(),
+            QueryResultStatus.Completed => NoContent(),
             QueryResultStatus.NotFound => NotFound("Movie not found"),
             QueryResultStatus.EntityAlreadyExists => BadRequest("Movie already in watchlist"),
             _ => throw new Exception(nameof(result.Status))
@@ -39,8 +41,7 @@ public class WatchlistController(IWatchlistRepository watchlistRepository) : Bas
     [HttpDelete("{movieId:guid}")]
     public async Task<IActionResult> RemoveFromWatchList(Guid movieId)
     {
-        var userId = User.GetUserId();
-        var result = await WatchlistRepository.RemoveFromWatchList(userId, movieId);
+        var result = await WatchlistRepository.RemoveFromWatchList(UserClaimsProvider.GetUserId(User), movieId);
     
         return result.Status switch
         {

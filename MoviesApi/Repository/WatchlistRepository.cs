@@ -101,7 +101,7 @@ public class WatchlistRepository(IMovieRepository movieRepository, IDriver drive
                 return new QueryResult(QueryResultStatus.NotFound);
 
             if (!await WishlistExists(tx, movieId, userId))
-                return new QueryResult(QueryResultStatus.EntityAlreadyExists);
+                return new QueryResult(QueryResultStatus.NotFound);
 
             // language=Cypher
             const string removeFromWatchlistQuery = """

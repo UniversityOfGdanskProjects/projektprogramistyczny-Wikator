@@ -4,19 +4,21 @@ using MoviesApi.Controllers.Base;
 using MoviesApi.Enums;
 using MoviesApi.Extensions;
 using MoviesApi.Repository.Contracts;
+using MoviesApi.Services.Contracts;
 
 namespace MoviesApi.Controllers;
 
 [Authorize]
-public class IgnoresController(IIgnoresRepository ignoresRepository) : BaseApiController
+public class IgnoresController(IIgnoresRepository ignoresRepository, IUserClaimsProvider userClaimsProvider)
+    : BaseApiController
 {
     private IIgnoresRepository IgnoresRepository { get; } = ignoresRepository;
-    
+    private IUserClaimsProvider UserClaimsProvider { get; } = userClaimsProvider;
+
     [HttpGet]
     public async Task<IActionResult> GetAllIgnoredMovies()
     {
-        var userId = User.GetUserId();
-        var movies = await IgnoresRepository.GetAllIgnoreMovies(userId);
+        var movies = await IgnoresRepository.GetAllIgnoreMovies(UserClaimsProvider.GetUserId(User));
 
         return Ok(movies);
     }
@@ -24,8 +26,7 @@ public class IgnoresController(IIgnoresRepository ignoresRepository) : BaseApiCo
     [HttpPost("{movieId:guid}")]
     public async Task<IActionResult> IgnoreMovie(Guid movieId)
     {
-        var userId = User.GetUserId();
-        var result = await IgnoresRepository.IgnoreMovie(userId, movieId);
+        var result = await IgnoresRepository.IgnoreMovie(UserClaimsProvider.GetUserId(User), movieId);
 
         return result.Status switch
         {
@@ -39,8 +40,7 @@ public class IgnoresController(IIgnoresRepository ignoresRepository) : BaseApiCo
     [HttpDelete("{movieId:guid}")]
     public async Task<IActionResult> RemoveMovieFromIgnored(Guid movieId)
     {
-        var userId = User.GetUserId();
-        var result = await IgnoresRepository.RemoveIgnoreMovie(userId, movieId);
+        var result = await IgnoresRepository.RemoveIgnoreMovie(UserClaimsProvider.GetUserId(User), movieId);
 
         return result.Status switch
         {

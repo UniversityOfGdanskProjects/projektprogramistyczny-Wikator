@@ -23,6 +23,7 @@ public static class ApplicationServiceExtensions
 		services.AddSingleton(GraphDatabase.Driver(server, AuthTokens.Basic(userName, password)));
 		services.AddScoped<IPhotoService, PhotoService>();
 		services.AddScoped<LogUserActivity>();
+		services.AddScoped<IUserClaimsProvider, UserClaimsProvider>();
 		services.AddScoped<IMovieRepository, MovieRepository>();
 		services.AddScoped<IActorRepository, ActorRepository>();
 		services.AddScoped<IAccountRepository, AccountRepository>();

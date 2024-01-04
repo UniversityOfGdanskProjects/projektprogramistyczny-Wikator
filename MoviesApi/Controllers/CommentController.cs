@@ -5,13 +5,16 @@ using MoviesApi.DTOs.Requests;
 using MoviesApi.Enums;
 using MoviesApi.Extensions;
 using MoviesApi.Repository.Contracts;
+using MoviesApi.Services.Contracts;
 
 namespace MoviesApi.Controllers;
 
 [Authorize]
-public class CommentController(ICommentRepository commentRepository) : BaseApiController
+public class CommentController(ICommentRepository commentRepository, IUserClaimsProvider userClaimsProvider)
+    : BaseApiController
 {
     private ICommentRepository CommentRepository { get; } = commentRepository;
+    private IUserClaimsProvider UserClaimsProvider { get; } = userClaimsProvider;
 
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetComment(Guid id)
@@ -29,7 +32,8 @@ public class CommentController(ICommentRepository commentRepository) : BaseApiCo
     [HttpPost]
     public async Task<IActionResult> AddCommentAsync(AddCommentDto addCommentDto)
     {
-        var comment = await CommentRepository.AddCommentAsync(User.GetUserId(), addCommentDto);
+        var comment = await CommentRepository
+            .AddCommentAsync(UserClaimsProvider.GetUserId(User), addCommentDto);
 
         return comment.Status switch
         {
@@ -42,7 +46,8 @@ public class CommentController(ICommentRepository commentRepository) : BaseApiCo
     [HttpPut("{commentId:guid}/")]
     public async Task<IActionResult> EditCommentAsync(Guid commentId, EditCommentDto editCommentDto)
     {
-        var comment = await CommentRepository.EditCommentAsync(commentId, User.GetUserId(), editCommentDto);
+        var comment = await CommentRepository
+            .EditCommentAsync(commentId, UserClaimsProvider.GetUserId(User), editCommentDto);
 
         return comment.Status switch
         {
@@ -55,7 +60,8 @@ public class CommentController(ICommentRepository commentRepository) : BaseApiCo
     [HttpDelete("{commentId:guid}/")]
     public async Task<IActionResult> DeleteCommentAsync(Guid commentId)
     {
-        var result = await CommentRepository.DeleteCommentAsync(commentId, User.GetUserId());
+        var result = await CommentRepository
+            .DeleteCommentAsync(commentId, UserClaimsProvider.GetUserId(User));
 
         return result.Status switch
         {

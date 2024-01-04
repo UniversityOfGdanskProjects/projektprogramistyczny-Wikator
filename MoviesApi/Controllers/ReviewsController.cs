@@ -5,18 +5,21 @@ using MoviesApi.DTOs.Requests;
 using MoviesApi.Enums;
 using MoviesApi.Extensions;
 using MoviesApi.Repository.Contracts;
+using MoviesApi.Services.Contracts;
 
 namespace MoviesApi.Controllers;
 
 [Authorize]
-public class ReviewsController(IReviewRepository reviewRepository) : BaseApiController
+public class ReviewsController(IReviewRepository reviewRepository, IUserClaimsProvider claimsProvider) : BaseApiController
 {
     private IReviewRepository ReviewRepository { get; } = reviewRepository;
-    
+    private IUserClaimsProvider UserClaimsProvider { get; } = claimsProvider;
+
     [HttpPost]
     public async Task<IActionResult> CreateReview(AddReviewDto reviewDto)
     {
-        var review = await ReviewRepository.AddReview(User.GetUserId(), reviewDto);
+        var review = await ReviewRepository
+            .AddReview(UserClaimsProvider.GetUserId(User), reviewDto);
     
         return review.Status switch
         {
@@ -30,7 +33,8 @@ public class ReviewsController(IReviewRepository reviewRepository) : BaseApiCont
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> UpdateReview(Guid id, UpdateReviewDto reviewDto)
     {
-        var review = await ReviewRepository.UpdateReview(User.GetUserId(), id, reviewDto);
+        var review = await ReviewRepository
+            .UpdateReview(UserClaimsProvider.GetUserId(User), id, reviewDto);
 
         return review.Status switch
         {
@@ -43,7 +47,7 @@ public class ReviewsController(IReviewRepository reviewRepository) : BaseApiCont
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> DeleteReview(Guid id)
     {
-        var result = await ReviewRepository.DeleteReview(User.GetUserId(), id);
+        var result = await ReviewRepository.DeleteReview(UserClaimsProvider.GetUserId(User), id);
 
         return result.Status switch
         {

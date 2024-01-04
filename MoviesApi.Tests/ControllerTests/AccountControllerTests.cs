@@ -2,7 +2,7 @@
 
 namespace MoviesApi.Tests.ControllerTests;
 
-public class AccountControllerTest
+public class AccountControllerTests
 {
     [Fact]
     public async Task Login_Returns_Unauthorized_If_Email_Does_Not_Exist()
@@ -59,7 +59,7 @@ public class AccountControllerTest
                 Email: "Test",
                 Id: new Guid(),
                 Role: Role.User
-            ));;
+            ));
         var controller = new AccountController(new Mock<ITokenService>().Object, accountRepository.Object);
         
         // Act
@@ -86,7 +86,7 @@ public class AccountControllerTest
                 Email: "Test",
                 Id: new Guid(),
                 Role: Role.User
-            ));;
+            ));
         var controller = new AccountController(new Mock<ITokenService>().Object, accountRepository.Object);
         
         // Act
