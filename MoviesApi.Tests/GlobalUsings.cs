@@ -1,0 +1,10 @@
+global using Xunit;
+global using Moq;
+global using MoviesApi.DTOs.Responses;
+global using MoviesApi.DTOs.Requests;
+global using MoviesApi.Repository.Contracts;
+global using MoviesApi.Controllers;
+global using Microsoft.AspNetCore.Mvc;
+global using MoviesApi.Enums;
+global using MoviesApi.Exceptions;
+global using MoviesApi.Helpers;
