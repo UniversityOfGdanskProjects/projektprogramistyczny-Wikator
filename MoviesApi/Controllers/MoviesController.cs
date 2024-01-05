@@ -23,6 +23,13 @@ public class MoviesController(IMovieRepository movieRepository) : BaseApiControl
 			_ => Ok(await MovieRepository.GetMoviesExcludingIgnored(Guid.Parse(userId), queryParams))
 		};
 	}
+	
+	[HttpGet("{id:guid}")]
+	public async Task<IActionResult> GetMovies(Guid id)
+	{
+		var movie = await MovieRepository.GetMovieDetails(id);
+		return movie is null ? NotFound() : Ok(movie);
+	}
 
 	[HttpPost]
 	public async Task<IActionResult> CreateMovie(AddMovieDto movieDto)

@@ -28,52 +28,18 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			                     	MATCH (m)<-[:PLAYED_IN]-(a:Actor)
 			                     	WHERE a.Id = $Actor
 			                     	})
-			                     OPTIONAL MATCH (m)<-[:PLAYED_IN]-(a:Actor)
 			                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(u:User)
-			                     OPTIONAl MATCH (m)<-[c:COMMENTED]-(u2:User)
-			                     WITH m, COLLECT(
-			                       CASE
-			                         WHEN a IS NULL THEN null
-			                         ELSE {
-			                           Id: a.Id,
-			                           FirstName: a.FirstName,
-			                           LastName: a.LastName,
-			                           DateOfBirth: a.DateOfBirth,
-			                           Biography: a.Biography,
-			                           PictureAbsoluteUri: m.PictureAbsoluteUri
-			                         }
-			                       END
-			                     ) AS Actors, 
-			                     COLLECT(
-			                       CASE
-			                         WHEN u2 is NULL OR c is NULL THEN null
-			                         ELSE {
-			                           Id: c.Id,
-			                           MovieId: m.Id,
-			                           UserId: u2.Id,
-			                           Username: u2.Name,
-			                           Text: c.Text,
-			                           CreatedAt: c.CreatedAt,
-			                           IsEdited: c.IsEdited
-			                         }
-			                       END
-			                     ) AS Comments, AVG(r.score) AS AverageReviewScore
+			                     WITH m, AVG(r.score) AS AverageReviewScore
 			                     RETURN {
 			                       Id: m.Id,
 			                       Title: m.Title,
-			                       Description: m.Description,
-			                       InTheaters: m.InTheaters,
-			                       TrailerAbsoluteUri: m.TrailerAbsoluteUri,
 			                       PictureAbsoluteUri: m.PictureAbsoluteUri,
-			                       ReleaseDate: m.ReleaseDate,
 			                       MinimumAge: m.MinimumAge,
-			                       Actors: Actors,
-			                       Comments: Comments,
 			                       AverageReviewScore: COALESCE(AverageReviewScore, 0)
-			                     } AS MovieWithActors
+			                     } AS Movies
 			                     ORDER BY
-			                     CASE WHEN $SortOrder = "Ascending" THEN MovieWithActors[$SortBy] ELSE null END ASC,
-			                     CASE WHEN $SortOrder = "Ascending" THEN null ELSE MovieWithActors[$SortBy] END DESC
+			                     CASE WHEN $SortOrder = "Ascending" THEN CASE WHEN $SortBy IS NULL OR $SortBy = "Popularity" THEN m.Popularity ELSE MovieWithActors[$SortBy] END ELSE null END ASC,
+			                     CASE WHEN $SortOrder = "Ascending" THEN null ELSE CASE WHEN $SortBy IS NULL OR $SortBy = "Popularity" THEN m.Popularity ELSE MovieWithActors[$SortBy] END END DESC
 			                     """;
 			
 			var cursor = await tx.RunAsync(query,
@@ -91,7 +57,7 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 		});
 	}
 
-	public async Task<QueryResult<MovieDto>> AddMovie(AddMovieDto movieDto)
+	public async Task<QueryResult<MovieDetailsDto>> AddMovie(AddMovieDto movieDto)
 	{
 		return await ExecuteWriteAsync(async tx =>
 		{
@@ -108,7 +74,7 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 
 				var uploadResult = await PhotoService.AddPhotoAsync(file);
 				if (uploadResult.Error is not null)
-					return new QueryResult<MovieDto>(QueryResultStatus.PhotoFailedToSave, null);
+					return new QueryResult<MovieDetailsDto>(QueryResultStatus.PhotoFailedToSave, null);
 
 				pictureAbsoluteUri = uploadResult.SecureUrl.AbsoluteUri;
 				picturePublicId = uploadResult.PublicId;
@@ -127,7 +93,8 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 				                                  InTheaters: $InTheaters,
 				                                  ReleaseDate: $ReleaseDate,
 				                                  MinimumAge: $MinimumAge,
-				                                  TrailerAbsoluteUri: $TrailerAbsoluteUri
+				                                  TrailerAbsoluteUri: $TrailerAbsoluteUri,
+				                                  Popularity: 0
 				                                })
 				                                RETURN {
 				                                  Id: m.Id,
@@ -153,7 +120,7 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 				var movieRecordWithoutActors = await movieCursorWithoutActors.SingleAsync();
 				var movieNodeWithoutActors = movieRecordWithoutActors["MovieWithActors"].As<IDictionary<string, object>>();
 
-				return new QueryResult<MovieDto>(QueryResultStatus.Completed, movieNodeWithoutActors.ConvertToMovieDto());
+				return new QueryResult<MovieDetailsDto>(QueryResultStatus.Completed, movieNodeWithoutActors.ConvertToMovieDetailsDto());
 			}
 			
 			// language=Cypher
@@ -211,7 +178,7 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			var record = await movieCursor.SingleAsync();
 
 			var movieNode = record["MovieWithActors"].As<IDictionary<string, object>>();
-			return new QueryResult<MovieDto>(QueryResultStatus.Completed, movieNode.ConvertToMovieDto());
+			return new QueryResult<MovieDetailsDto>(QueryResultStatus.Completed, movieNode.ConvertToMovieDetailsDto());
 		});
 	}
 
@@ -260,21 +227,17 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 		return await cursor.SingleAsync(record => record["movieExists"].As<bool>());
 	}
 
-	public async Task<IEnumerable<MovieDto>> GetMovies(MovieQueryParams queryParams)
+	public async Task<MovieDetailsDto?> GetMovieDetails(Guid movieId)
 	{
-		return await ExecuteReadAsync(async tx =>
+		return await ExecuteWriteAsync(async tx =>
 		{
 			// language=Cypher
 			const string query = """
-
-			                     MATCH (m:Movie)
-			                     WHERE toLower(m.Title) CONTAINS toLower($Title)
-			                     	AND $Actor IS NULL OR $Actor = "" OR EXISTS {
-			                     		MATCH (m)<-[:PLAYED_IN]-(a:Actor { Id: $Actor })
-			                     	}
+			                     MATCH (m:Movie { Id: $movieId })
 			                     OPTIONAL MATCH (m)<-[:PLAYED_IN]-(a:Actor)
 			                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(u:User)
 			                     OPTIONAL MATCH (m)<-[c:COMMENTED]-(u2:User)
+			                     SET m.Popularity = m.Popularity + 1
 			                     WITH m, COLLECT(
 			                       CASE
 			                         WHEN a IS NULL THEN null
@@ -315,9 +278,40 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			                       Comments: Comments,
 			                       AverageReviewScore: COALESCE(AverageReviewScore, 0)
 			                     } AS MovieWithActors
+			                     """;
+			
+			var cursor = await tx.RunAsync(query, new
+			{  movieId = movieId.ToString() });
+			return await cursor.SingleAsync(record =>
+				record["MovieWithActors"].As<IDictionary<string, object>>().ConvertToMovieDetailsDto());
+		});
+	}
+
+	public async Task<IEnumerable<MovieDto>> GetMovies(MovieQueryParams queryParams)
+	{
+		return await ExecuteReadAsync(async tx =>
+		{
+			// language=Cypher
+			const string query = """
+			                     MATCH (m:Movie)
+			                     WHERE toLower(m.Title) CONTAINS toLower($Title)
+			                     	AND $Actor IS NULL OR $Actor = "" OR EXISTS {
+			                     		MATCH (m)<-[:PLAYED_IN]-(a:Actor { Id: $Actor })
+			                     	}
+			                     OPTIONAL MATCH (m)<-[:PLAYED_IN]-(a:Actor)
+			                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(u:User)
+			                     OPTIONAL MATCH (m)<-[c:COMMENTED]-(u2:User)
+			                     WITH m, AVG(r.score) AS AverageReviewScore
+			                     RETURN {
+			                       Id: m.Id,
+			                       Title: m.Title,
+			                       PictureAbsoluteUri: m.PictureAbsoluteUri,
+			                       MinimumAge: m.MinimumAge,
+			                       AverageReviewScore: COALESCE(AverageReviewScore, 0)
+			                     } AS MovieWithActors
 			                     ORDER BY
-			                     CASE WHEN $SortOrder = "Ascending" THEN MovieWithActors[$SortBy] ELSE null END ASC,
-			                     CASE WHEN $SortOrder = "Ascending" THEN null ELSE MovieWithActors[$SortBy] END DESC
+			                     CASE WHEN $SortOrder = "Ascending" THEN CASE WHEN $SortBy IS NULL OR $SortBy = "Popularity" THEN m.Popularity ELSE MovieWithActors[$SortBy] END ELSE null END ASC,
+			                     CASE WHEN $SortOrder = "Ascending" THEN null ELSE CASE WHEN $SortBy IS NULL OR $SortBy = "Popularity" THEN m.Popularity ELSE MovieWithActors[$SortBy] END END DESC
 			                     """;
 			
 			var cursor = await tx.RunAsync(query, new

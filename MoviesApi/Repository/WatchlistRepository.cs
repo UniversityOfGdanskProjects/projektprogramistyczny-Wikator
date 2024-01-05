@@ -11,7 +11,7 @@ public class WatchlistRepository(IMovieRepository movieRepository, IDriver drive
 {
     private IMovieRepository MovieRepository { get; } = movieRepository;
     
-    public async Task<IEnumerable<MovieDto>> GetAllMoviesOnWatchlist(Guid userId)
+    public async Task<IEnumerable<MovieDetailsDto>> GetAllMoviesOnWatchlist(Guid userId)
     {
         return await ExecuteReadAsync(async tx =>
         {
@@ -67,7 +67,7 @@ public class WatchlistRepository(IMovieRepository movieRepository, IDriver drive
             return await result.ToListAsync(record =>
             {
                 var movieWithActorsDto = record["MovieWithActors"].As<IDictionary<string, object>>();
-                return movieWithActorsDto.ConvertToMovieDto();
+                return movieWithActorsDto.ConvertToMovieDetailsDto();
             });
         });
     }

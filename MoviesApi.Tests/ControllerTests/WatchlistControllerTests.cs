@@ -10,7 +10,7 @@ public class WatchlistControllerTests
         // Arrange
         var watchlistRepository = new Mock<IWatchlistRepository>();
         watchlistRepository.Setup(x => x.GetAllMoviesOnWatchlist(It.IsAny<Guid>()))
-            .ReturnsAsync(new List<MovieDto>());
+            .ReturnsAsync(new List<MovieDetailsDto>());
         var userClaimsProvider = new Mock<IUserClaimsProvider>();
         userClaimsProvider.Setup(x => x.GetUserId(It.IsAny<ClaimsPrincipal>()))
             .Returns(new Guid());
@@ -29,7 +29,7 @@ public class WatchlistControllerTests
         // Arrange
         var watchlistRepository = new Mock<IWatchlistRepository>();
         watchlistRepository.Setup(x => x.GetAllMoviesOnWatchlist(It.IsAny<Guid>()))
-            .ReturnsAsync(new List<MovieDto>());
+            .ReturnsAsync(new List<MovieDetailsDto>());
         var userClaimsProvider = new Mock<IUserClaimsProvider>();
         userClaimsProvider.Setup(x => x.GetUserId(It.IsAny<ClaimsPrincipal>()))
             .Returns(new Guid());
@@ -39,7 +39,7 @@ public class WatchlistControllerTests
         var result = await controller.GetAllMoviesOnWatchlist();
         
         // Assert
-        Assert.IsType<List<MovieDto>>(((OkObjectResult)result).Value);
+        Assert.IsType<List<MovieDetailsDto>>(((OkObjectResult)result).Value);
     }
     
     [Fact]

@@ -3,7 +3,9 @@ using Microsoft.IdentityModel.Tokens;
 using MoviesApi.Extensions;
 using System.Text;
 using MoviesApi.Configurations;
+using MoviesApi.DatabaseSetup;
 using MoviesApi.Middleware;
+using Neo4j.Driver;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -41,5 +43,11 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
+
+using var scope = app.Services.CreateScope();
+var services = scope.ServiceProvider;
+var driver = services.GetRequiredService<IDriver>();
+var setup = new Setup(driver);
+await setup.SetupJobs();
 
 app.Run();

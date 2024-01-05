@@ -5,7 +5,7 @@ namespace MoviesApi.Extensions;
 
 public static class DictionaryExtensions
 {
-    public static MovieDto ConvertToMovieDto(this IDictionary<string, object> movie) =>
+    public static MovieDetailsDto ConvertToMovieDetailsDto(this IDictionary<string, object> movie) =>
         new(
             Id: Guid.Parse(movie["Id"].As<string>()),
             Title: movie["Title"].As<string>(),
@@ -18,6 +18,15 @@ public static class DictionaryExtensions
             MinimumAge: movie["MinimumAge"].As<int>(),
             Actors: movie["Actors"].As<List<IDictionary<string, object>>>().Select(ConvertToActorDto),
             Comments: movie["Comments"].As<List<IDictionary<string, object>>>().Select(ConvertToCommentDto)
+        );
+    
+    public static MovieDto ConvertToMovieDto(this IDictionary<string, object> movie) =>
+        new(
+            Id: Guid.Parse(movie["Id"].As<string>()),
+            Title: movie["Title"].As<string>(),
+            AverageScore: movie["AverageReviewScore"].As<double>(),
+            PictureUri: movie["PictureAbsoluteUri"].As<string?>(),
+            MinimumAge: movie["MinimumAge"].As<int>()
         );
 
 

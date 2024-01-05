@@ -1,7 +1,12 @@
 ﻿GET https://localhost:7102/api/movies
-Authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJuYW1laWQiOiI5YWQ2NDQwNC0xYWJmLTQ3ZjEtODE4OC03YTcyM2E5MzM3NDUiLCJ1bmlxdWVfbmFtZSI6IlRlc3QzIiwicm9sZSI6IlVzZXIiLCJuYmYiOjE3MDQ0NDc5MDksImV4cCI6MTcwNTA1MjcwOSwiaWF0IjoxNzA0NDQ3OTA5LCJpc3MiOiJsb2NhbGhvc3QifQ.NK5SalO1aPTSMMZ9Xkiez9JrZqKjUZMPKwufBWAd9jbDZXtc4KYXQlrZxwZCiziw9XH6p7ITRXGDqG4peMTcSw###
 
-GET https://localhost:7102/api/movies?title=mat
+###
+
+GET https://localhost:7102/api/movies/abc1eb6d-bb6a-4bca-ba63-79a65a16086c
+
+###
+
+GET https://localhost:7102/api/movies?sortOrder=Descending
 
 ###
 
@@ -13,7 +18,7 @@ POST https://localhost:7102/api/movies
 Content-Type: application/json
 
 {
-    "title": "bac",
+    "title": "aac",
     "inTheaters": false,
     "minimumAge": 13,
     "releaseDate": "1999-03-31",

@@ -11,7 +11,7 @@ public class IgnoresRepository(IMovieRepository movieRepository, IDriver driver)
 {
     private IMovieRepository MovieRepository { get; } = movieRepository;
 
-    public async Task<IEnumerable<MovieDto>> GetAllIgnoreMovies(Guid userId)
+    public async Task<IEnumerable<MovieDetailsDto>> GetAllIgnoreMovies(Guid userId)
     {
         return await ExecuteReadAsync(async tx =>
         {
@@ -45,7 +45,7 @@ public class IgnoresRepository(IMovieRepository movieRepository, IDriver driver)
             return await result.ToListAsync(record =>
             {
                 var movieWithActorsDto = record["MovieWithActors"].As<IDictionary<string, object>>();
-                return movieWithActorsDto.ConvertToMovieDto();
+                return movieWithActorsDto.ConvertToMovieDetailsDto();
             });
         });
     }
