@@ -41,6 +41,12 @@ var app = builder.Build();
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseMiddleware<UserExistsInDatabaseMiddleware>();
 
+app.UseCors(b => b
+	.AllowAnyHeader()
+	.AllowAnyMethod()
+	.AllowCredentials()
+	.WithOrigins("http://localhost:3000"));
+
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
