@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc.Filters;
-using MoviesApi.Extensions;
 using MoviesApi.Services.Contracts;
 using Neo4j.Driver;
 

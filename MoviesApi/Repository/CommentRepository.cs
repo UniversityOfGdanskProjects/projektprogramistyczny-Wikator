@@ -14,7 +14,7 @@ public class CommentRepository(IMovieRepository movieRepository, IDriver driver)
     
     public async Task<CommentDto?> GetCommentAsync(Guid commentId)
     {
-        return await ExecuteAsync(async tx =>
+        return await ExecuteReadAsync(async tx =>
         {
             // language=Cypher
             const string query = """
@@ -50,7 +50,7 @@ public class CommentRepository(IMovieRepository movieRepository, IDriver driver)
 
     public async Task<QueryResult<CommentDto>> AddCommentAsync(Guid userId, AddCommentDto addCommentDto)
     {
-        return await ExecuteAsync(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             if (!await MovieRepository.MovieExists(tx, addCommentDto.MovieId))
                 return new QueryResult<CommentDto>(QueryResultStatus.RelatedEntityDoesNotExists, null);
@@ -94,7 +94,7 @@ public class CommentRepository(IMovieRepository movieRepository, IDriver driver)
 
     public async Task<QueryResult<CommentDto>> EditCommentAsync(Guid commentId, Guid userId, EditCommentDto addCommentDto)
     {
-        return await ExecuteAsync(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             if (!await CommentExists(tx, commentId, userId))
                 return new QueryResult<CommentDto>(QueryResultStatus.NotFound, null);
@@ -130,7 +130,7 @@ public class CommentRepository(IMovieRepository movieRepository, IDriver driver)
     public async Task<QueryResult> DeleteCommentAsync(Guid commentId, Guid userId)
     {
         // language=Cypher
-        return await ExecuteAsync(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             if (!await CommentExists(tx, commentId, userId))
                 return new QueryResult(QueryResultStatus.NotFound);

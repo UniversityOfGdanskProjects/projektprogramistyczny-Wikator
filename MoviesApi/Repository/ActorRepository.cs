@@ -15,7 +15,7 @@ public class ActorRepository(IPhotoService photoService, IDriver driver) : Repos
     
     public async Task<IEnumerable<ActorDto>> GetAllActors()
     {
-        return await ExecuteAsync(async tx =>
+        return await ExecuteReadAsync(async tx =>
         {
             // language=Cypher
             const string query = """
@@ -42,7 +42,7 @@ public class ActorRepository(IPhotoService photoService, IDriver driver) : Repos
 
     public async Task<ActorDto?> GetActor(Guid id)
     {
-        return await ExecuteAsync(async tx =>
+        return await ExecuteReadAsync(async tx =>
         {
             // language=Cypher
             const string query = """
@@ -73,7 +73,7 @@ public class ActorRepository(IPhotoService photoService, IDriver driver) : Repos
 
     public async Task<QueryResult<ActorDto>> CreateActor(UpsertActorDto actorDto)
     {
-        return await ExecuteAsync(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             string? pictureAbsoluteUri = null;
             string? picturePublicId = null;
@@ -131,7 +131,7 @@ public class ActorRepository(IPhotoService photoService, IDriver driver) : Repos
 
     public async Task<QueryResult<ActorDto>> UpdateActor(Guid id, UpsertActorDto actorDto)
     {
-        return await ExecuteAsync(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             // language=Cypher
             const string actorExistsQuery = """
@@ -178,7 +178,7 @@ public class ActorRepository(IPhotoService photoService, IDriver driver) : Repos
 
     public async Task<QueryResult> DeleteActor(Guid id)
     {
-        return await ExecuteAsync(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             // language=Cypher
             const string matchQuery = "MATCH (a:Actor) WHERE a.Id = $id RETURN a.PicturePublicId AS PicturePublicId";

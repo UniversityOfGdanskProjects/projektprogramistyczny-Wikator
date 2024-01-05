@@ -9,7 +9,7 @@ public class UserRepository(IDriver driver) : Repository(driver), IUserRepositor
 {
     public async Task<IEnumerable<MemberDto>> GetUsersByMostActiveAsync(Guid? userId)
     {
-        return await ExecuteAsync(async tx =>
+        return await ExecuteReadAsync(async tx =>
         {
             // language=Cypher
             const string query = """

@@ -6,18 +6,15 @@ public abstract class Repository(IDriver driver)
 {
     private IDriver Driver { get; } = driver;
     
-    protected async Task<T> ExecuteAsync<T>(Func<IAsyncSession, Task<T>> query)
+    protected async Task<T> ExecuteReadAsync<T>(Func<IAsyncQueryRunner, Task<T>> query)
     {
         await using var session = Driver.AsyncSession();
-        
-        try
-        {
-            return await query(session);
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-            throw;
-        }
+        return await session.ExecuteReadAsync(query);
+    }
+    
+    protected async Task<T> ExecuteWriteAsync<T>(Func<IAsyncQueryRunner, Task<T>> query)
+    {
+        await using var session = Driver.AsyncSession();
+        return await session.ExecuteWriteAsync(query);
     }
 }

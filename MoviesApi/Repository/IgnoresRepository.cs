@@ -13,7 +13,7 @@ public class IgnoresRepository(IMovieRepository movieRepository, IDriver driver)
 
     public async Task<IEnumerable<MovieDto>> GetAllIgnoreMovies(Guid userId)
     {
-        return await ExecuteAsync(async tx =>
+        return await ExecuteReadAsync(async tx =>
         {
             // language=Cypher
             const string query = """
@@ -52,7 +52,7 @@ public class IgnoresRepository(IMovieRepository movieRepository, IDriver driver)
 
     public async Task<QueryResult> IgnoreMovie(Guid userId, Guid movieId)
     {
-        return await ExecuteAsync(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             if (!await MovieRepository.MovieExists(tx, movieId))
                 return new QueryResult(QueryResultStatus.NotFound);
@@ -75,7 +75,7 @@ public class IgnoresRepository(IMovieRepository movieRepository, IDriver driver)
 
     public async Task<QueryResult> RemoveIgnoreMovie(Guid userId, Guid movieId)
     {
-        return await ExecuteAsync(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             if (!await MovieRepository.MovieExists(tx, movieId))
                 return new QueryResult(QueryResultStatus.NotFound);

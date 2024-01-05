@@ -15,7 +15,7 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 	
 	public async Task<IEnumerable<MovieDto>> GetMoviesExcludingIgnored(Guid userId, MovieQueryParams queryParams)
 	{
-		return await ExecuteAsync(async tx =>
+		return await ExecuteReadAsync(async tx =>
 		{
 			// language=Cypher
 			const string query = """
@@ -93,7 +93,7 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 
 	public async Task<QueryResult<MovieDto>> AddMovie(AddMovieDto movieDto)
 	{
-		return await ExecuteAsync(async tx =>
+		return await ExecuteWriteAsync(async tx =>
 		{
 			string? pictureAbsoluteUri = null;
 			string? picturePublicId = null;
@@ -217,7 +217,7 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 
 	public async Task<QueryResult> DeleteMovie(Guid movieId)
 	{
-		return await ExecuteAsync(async tx =>
+		return await ExecuteWriteAsync(async tx =>
 		{
 			// language=cypher
 			const string movieExistsAsync = """
@@ -262,7 +262,7 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 
 	public async Task<IEnumerable<MovieDto>> GetMovies(MovieQueryParams queryParams)
 	{
-		return await ExecuteAsync(async tx =>
+		return await ExecuteReadAsync(async tx =>
 		{
 			// language=Cypher
 			const string query = """

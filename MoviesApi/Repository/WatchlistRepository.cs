@@ -13,7 +13,7 @@ public class WatchlistRepository(IMovieRepository movieRepository, IDriver drive
     
     public async Task<IEnumerable<MovieDto>> GetAllMoviesOnWatchlist(Guid userId)
     {
-        return await ExecuteAsync(async tx =>
+        return await ExecuteReadAsync(async tx =>
         {
             // language=Cypher
             const string query = """
@@ -74,12 +74,12 @@ public class WatchlistRepository(IMovieRepository movieRepository, IDriver drive
 
     public async Task<QueryResult> AddToWatchList(Guid userId, Guid movieId)
     {
-        return await ExecuteAsync(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             if (!await MovieRepository.MovieExists(tx, movieId))
                 return new QueryResult(QueryResultStatus.NotFound);
 
-            if (!await WishlistExists(tx, movieId, userId))
+            if (!await WatchlistExists(tx, movieId, userId))
                 return new QueryResult(QueryResultStatus.EntityAlreadyExists);
             
             // language=Cypher
@@ -95,12 +95,12 @@ public class WatchlistRepository(IMovieRepository movieRepository, IDriver drive
 
     public async Task<QueryResult> RemoveFromWatchList(Guid userId, Guid movieId)
     {
-        return await ExecuteAsync(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             if (!await MovieRepository.MovieExists(tx, movieId))
                 return new QueryResult(QueryResultStatus.NotFound);
 
-            if (!await WishlistExists(tx, movieId, userId))
+            if (!await WatchlistExists(tx, movieId, userId))
                 return new QueryResult(QueryResultStatus.NotFound);
 
             // language=Cypher
@@ -115,7 +115,7 @@ public class WatchlistRepository(IMovieRepository movieRepository, IDriver drive
         });
     }
     
-    private static async Task<bool> WishlistExists(IAsyncQueryRunner tx, Guid movieId, Guid userId)
+    private static async Task<bool> WatchlistExists(IAsyncQueryRunner tx, Guid movieId, Guid userId)
     {
         // language=Cypher
         const string checkIfWatchlistExistsQuery = """

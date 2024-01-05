@@ -14,7 +14,7 @@ public class ReviewRepository(IMovieRepository movieRepository, IDriver driver) 
     
     public async Task<QueryResult<ReviewDto>> AddReview(Guid userId, AddReviewDto reviewDto)
     {
-        return await ExecuteAsync(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             if (!await MovieRepository.MovieExists(tx, reviewDto.MovieId))
                 return new QueryResult<ReviewDto>(QueryResultStatus.RelatedEntityDoesNotExists, null);
@@ -47,7 +47,7 @@ public class ReviewRepository(IMovieRepository movieRepository, IDriver driver) 
 
     public async Task<QueryResult<ReviewDto>> UpdateReview(Guid userId, Guid reviewId, UpdateReviewDto reviewDto)
     {
-        return await ExecuteAsync(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             if (!await ReviewExists(tx, reviewId, userId))
                 return new QueryResult<ReviewDto>(QueryResultStatus.NotFound, null);
@@ -80,7 +80,7 @@ public class ReviewRepository(IMovieRepository movieRepository, IDriver driver) 
 
     public async Task<QueryResult> DeleteReview(Guid userId, Guid reviewId)
     {
-        return await ExecuteAsync(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             if (!await ReviewExists(tx, reviewId, userId))
                 return new QueryResult(QueryResultStatus.NotFound);

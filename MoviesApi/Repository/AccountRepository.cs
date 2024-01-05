@@ -12,7 +12,7 @@ public class AccountRepository(IDriver driver) : Repository(driver), IAccountRep
 {
     public async Task<User?> RegisterAsync(RegisterDto registerDto)
     {
-        return await ExecuteAsync(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             using HMACSHA512 hmac = new();
             var passwordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(registerDto.Password));
@@ -45,7 +45,7 @@ public class AccountRepository(IDriver driver) : Repository(driver), IAccountRep
 
     public async Task<User?> LoginAsync(LoginDto loginDto)
     {
-        return await ExecuteAsync(async tx =>
+        return await ExecuteReadAsync(async tx =>
         {
             // language=Cypher
             const string query = """
@@ -71,7 +71,7 @@ public class AccountRepository(IDriver driver) : Repository(driver), IAccountRep
 
     public async Task<bool> EmailExistsAsync(string email)
     {
-        return await ExecuteAsync(async tx =>
+        return await ExecuteReadAsync(async tx =>
         {
             // language=Cypher
             const string query = """
