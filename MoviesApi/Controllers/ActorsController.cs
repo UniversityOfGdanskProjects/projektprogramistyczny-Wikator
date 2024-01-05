@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using MoviesApi.Controllers.Base;
 using MoviesApi.DTOs.Requests;
 using MoviesApi.Enums;
@@ -7,12 +8,14 @@ using MoviesApi.Repository.Contracts;
 
 namespace MoviesApi.Controllers;
 
+[Authorize(Policy = "RequireAdminRole")]
 public class ActorsController(IActorRepository actorRepository) : BaseApiController
 {
     private IActorRepository ActorRepository { get; } = actorRepository;
 
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<IActionResult> GetAll()
     {
         var actors = await ActorRepository.GetAllActors();
@@ -20,6 +23,7 @@ public class ActorsController(IActorRepository actorRepository) : BaseApiControl
     }
     
     [HttpGet("{id:guid}")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetActor(Guid id)
     {
         var actor = await ActorRepository.GetActor(id);

@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MoviesApi.Controllers.Base;
 using MoviesApi.DTOs.Requests;
@@ -9,11 +10,13 @@ using MoviesApi.Repository.Contracts;
 
 namespace MoviesApi.Controllers;
 
+[Authorize(Policy = "RequireAdminRole")]
 public class MoviesController(IMovieRepository movieRepository) : BaseApiController
 {
 	private IMovieRepository MovieRepository { get; } = movieRepository;
 		
 	[HttpGet]
+	[AllowAnonymous]
 	public async Task<IActionResult> GetMovies([FromQuery] MovieQueryParams queryParams)
 	{
 		var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -25,6 +28,7 @@ public class MoviesController(IMovieRepository movieRepository) : BaseApiControl
 	}
 	
 	[HttpGet("{id:guid}")]
+	[AllowAnonymous]
 	public async Task<IActionResult> GetMovies(Guid id)
 	{
 		var movie = await MovieRepository.GetMovieDetails(id);

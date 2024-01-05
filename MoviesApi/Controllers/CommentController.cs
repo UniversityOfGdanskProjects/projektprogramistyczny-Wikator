@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using MoviesApi.Controllers.Base;
 using MoviesApi.DTOs.Requests;
 using MoviesApi.Enums;
-using MoviesApi.Extensions;
 using MoviesApi.Repository.Contracts;
 using MoviesApi.Services.Contracts;
 

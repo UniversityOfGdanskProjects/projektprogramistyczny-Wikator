@@ -31,6 +31,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 		};
 	});
 
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("RequireAdminRole", policy => policy.RequireRole("Admin"));
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -49,5 +52,6 @@ var services = scope.ServiceProvider;
 var driver = services.GetRequiredService<IDriver>();
 var setup = new Setup(driver);
 await setup.SetupJobs();
+await setup.CreateAdmin(app.Configuration);
 
 app.Run();
