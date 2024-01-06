@@ -25,11 +25,7 @@ public class AccountController(ITokenService tokenService, IAccountRepository ac
 		return user switch
 		{
 			null => Unauthorized("Invalid username or password"),
-			_ => Ok(new UserDto
-			{
-				Name = user.Name,
-				Token = TokenService.CreateToken(user)
-			})
+			_ => Ok(new UserDto(user.Name, user.Role, TokenService.CreateToken(user)))
 		};
 	}
 
@@ -44,11 +40,7 @@ public class AccountController(ITokenService tokenService, IAccountRepository ac
 		return user switch
 		{
 			null => BadRequest("There was an error when creating new user"),
-			_ => Ok(new UserDto
-			{
-				Name = user.Name,
-				Token = TokenService.CreateToken(user)
-			})
+			_ => Ok(new UserDto(user.Name, user.Role, TokenService.CreateToken(user)))
 		};
 	}
 

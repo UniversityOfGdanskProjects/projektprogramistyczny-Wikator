@@ -1,7 +1,3 @@
 ﻿namespace MoviesApi.DTOs.Responses;
 
-public class UserDto
-{
-	public required string Name { get; init; }
-	public required string Token { get; init; }
-}
+public record UserDto(string Name, string Role, string Token);

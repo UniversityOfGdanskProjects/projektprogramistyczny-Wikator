@@ -58,7 +58,7 @@ public class AccountControllerTests
                 Name: "Test",
                 Email: "Test",
                 Id: new Guid(),
-                Role: Role.User
+                Role: "User"
             ));
         var controller = new AccountController(new Mock<ITokenService>().Object, accountRepository.Object);
         
@@ -85,7 +85,7 @@ public class AccountControllerTests
                 Name: "Test",
                 Email: "Test",
                 Id: new Guid(),
-                Role: Role.User
+                Role: "User"
             ));
         var controller = new AccountController(new Mock<ITokenService>().Object, accountRepository.Object);
         
@@ -133,7 +133,7 @@ public class AccountControllerTests
                 Name: "Test",
                 Email: "Test",
                 Id: new Guid(),
-                Role: Role.User
+                Role: "User"
             ));
         var controller = new AccountController(new Mock<ITokenService>().Object, accountRepository.Object);
         
@@ -161,7 +161,7 @@ public class AccountControllerTests
                 Name: "Test",
                 Email: "Test",
                 Id: new Guid(),
-                Role: Role.User
+                Role: "User"
             ));
         var controller = new AccountController(new Mock<ITokenService>().Object, accountRepository.Object);
         

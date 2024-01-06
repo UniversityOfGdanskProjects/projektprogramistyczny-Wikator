@@ -92,6 +92,6 @@ public class AccountRepository(IDriver driver) : Repository(driver), IAccountRep
             Id: Guid.Parse(node["id"].As<string>()),
             Email: node["email"].As<string>(),
             Name: node["name"].As<string>(),
-            Role: (Role)Enum.Parse(typeof(Role), node["role"].As<string>())
+            Role: node["role"].As<string>()
         );
 }
