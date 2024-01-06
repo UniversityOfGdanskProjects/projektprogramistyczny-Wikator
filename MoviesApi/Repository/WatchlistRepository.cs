@@ -79,7 +79,7 @@ public class WatchlistRepository(IMovieRepository movieRepository, IDriver drive
             if (!await MovieRepository.MovieExists(tx, movieId))
                 return new QueryResult(QueryResultStatus.NotFound);
 
-            if (!await WatchlistExists(tx, movieId, userId))
+            if (await WatchlistExists(tx, movieId, userId))
                 return new QueryResult(QueryResultStatus.EntityAlreadyExists);
             
             // language=Cypher
