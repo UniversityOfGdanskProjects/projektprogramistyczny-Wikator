@@ -11,32 +11,20 @@ public class IgnoresRepository(IMovieRepository movieRepository, IDriver driver)
 {
     private IMovieRepository MovieRepository { get; } = movieRepository;
 
-    public async Task<IEnumerable<MovieDetailsDto>> GetAllIgnoreMovies(Guid userId)
+    public async Task<IEnumerable<MovieDto>> GetAllIgnoreMovies(Guid userId)
     {
         return await ExecuteReadAsync(async tx =>
         {
             // language=Cypher
             const string query = """
-                                 MATCH (m:Movie)<-[:WATCHLIST]-(u:User { Id: $userId })
-                                 OPTIONAL MATCH (m)<-[:IGNORES]-(a:Actor)
-                                 OPTIONAL MATCH (m)<-[r:REVIEWED]-(u:User)
-                                 WITH m, COLLECT(
-                                   CASE
-                                     WHEN a IS NULL THEN null
-                                     ELSE {
-                                       Id: a.Id,
-                                       FirstName: a.FirstName,
-                                       LastName: a.LastName,
-                                       DateOfBirth: a.DateOfBirth,
-                                       Biography: a.Biography
-                                     }
-                                   END
-                                 ) AS Actors, AVG(r.score) AS AverageReviewScore
+                                 MATCH (m:Movie)<-[:IGNORES]-(u:User { Id: $userId })
+                                 OPTIONAL MATCH (m)<-[r:REVIEWED]-(:User)
+                                 WITH m, AVG(r.Score) AS AverageReviewScore
                                  RETURN {
                                    Id: m.Id,
                                    Title: m.Title,
-                                   Description: m.Description,
-                                   Actors: Actors,
+                                   PictureAbsoluteUri: m.PictureAbsoluteUri,
+                                   MinimumAge: m.MinimumAge,
                                    AverageReviewScore: COALESCE(AverageReviewScore, 0)
                                  } AS MovieWithActors
                                  """;
@@ -45,7 +33,7 @@ public class IgnoresRepository(IMovieRepository movieRepository, IDriver driver)
             return await result.ToListAsync(record =>
             {
                 var movieWithActorsDto = record["MovieWithActors"].As<IDictionary<string, object>>();
-                return movieWithActorsDto.ConvertToMovieDetailsDto();
+                return movieWithActorsDto.ConvertToMovieDto();
             });
         });
     }
