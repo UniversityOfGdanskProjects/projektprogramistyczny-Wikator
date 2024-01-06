@@ -29,7 +29,7 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			                     	WHERE a.Id = $Actor
 			                     	})
 			                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(u:User)
-			                     WITH m, AVG(r.score) AS AverageReviewScore
+			                     WITH m, AVG(r.Score) AS AverageReviewScore
 			                     RETURN {
 			                       Id: m.Id,
 			                       Title: m.Title,
@@ -264,7 +264,7 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			                           IsEdited: c.IsEdited
 			                         }
 			                       END
-			                     ) AS Comments, AVG(r.score) AS AverageReviewScore
+			                     ) AS Comments, AVG(r.Score) AS AverageReviewScore
 			                     RETURN {
 			                       Id: m.Id,
 			                       Title: m.Title,
@@ -299,7 +299,7 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			                     		MATCH (m)<-[:PLAYED_IN]-(a:Actor { Id: $Actor })
 			                     	}
 			                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(u:User)
-			                     WITH m, AVG(r.score) AS AverageReviewScore
+			                     WITH m, AVG(r.Score) AS AverageReviewScore
 			                     RETURN {
 			                       Id: m.Id,
 			                       Title: m.Title,
