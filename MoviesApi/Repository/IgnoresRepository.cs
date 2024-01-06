@@ -68,7 +68,7 @@ public class IgnoresRepository(IMovieRepository movieRepository, IDriver driver)
             if (!await MovieRepository.MovieExists(tx, movieId))
                 return new QueryResult(QueryResultStatus.NotFound);
             
-            if (await IgnoresExists(tx, movieId, userId))
+            if (!await IgnoresExists(tx, movieId, userId))
                 return new QueryResult(QueryResultStatus.RelationDoesNotExist);
             
             // language=Cypher
