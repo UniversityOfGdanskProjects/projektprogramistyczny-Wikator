@@ -28,7 +28,7 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			                     	MATCH (m)<-[:PLAYED_IN]-(a:Actor)
 			                     	WHERE a.Id = $Actor
 			                     	})
-			                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(u:User)
+			                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(:User)
 			                     WITH m, AVG(r.Score) AS AverageReviewScore
 			                     RETURN {
 			                       Id: m.Id,
@@ -235,8 +235,8 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			const string query = """
 			                     MATCH (m:Movie { Id: $movieId })
 			                     OPTIONAL MATCH (m)<-[:PLAYED_IN]-(a:Actor)
-			                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(u:User)
-			                     OPTIONAL MATCH (m)<-[c:COMMENTED]-(u2:User)
+			                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(:User)
+			                     OPTIONAL MATCH (m)<-[c:COMMENTED]-(u:User)
 			                     SET m.Popularity = m.Popularity + 1
 			                     WITH m, COLLECT(
 			                       CASE
@@ -257,8 +257,8 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			                         ELSE {
 			                           Id: c.Id,
 			                           MovieId: m.Id,
-			                           UserId: u2.Id,
-			                           Username: u2.Name,
+			                           UserId: u.Id,
+			                           Username: u.Name,
 			                           Text: c.Text,
 			                           CreatedAt: c.CreatedAt,
 			                           IsEdited: c.IsEdited
@@ -298,7 +298,7 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			                     	AND $Actor IS NULL OR $Actor = "" OR EXISTS {
 			                     		MATCH (m)<-[:PLAYED_IN]-(a:Actor { Id: $Actor })
 			                     	}
-			                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(u:User)
+			                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(:User)
 			                     WITH m, AVG(r.Score) AS AverageReviewScore
 			                     RETURN {
 			                       Id: m.Id,
