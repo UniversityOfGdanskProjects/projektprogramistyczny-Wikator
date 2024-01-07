@@ -258,7 +258,7 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			                     ) AS Actors, 
 			                     COLLECT(
 			                       CASE
-			                         WHEN u2 is NULL OR c is NULL THEN null
+			                         WHEN u is NULL OR c is NULL THEN null
 			                         ELSE {
 			                           Id: c.Id,
 			                           MovieId: m.Id,
