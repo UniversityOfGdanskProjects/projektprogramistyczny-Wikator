@@ -10,5 +10,6 @@ public record MovieDetailsDto(
     DateOnly ReleaseDate,
     int MinimumAge,
     string? PictureUri,
+    bool OnWatchlist,
     IEnumerable<ActorDto> Actors,
     IEnumerable<CommentDto> Comments);

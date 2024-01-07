@@ -58,6 +58,7 @@ public class WatchlistRepository(IMovieRepository movieRepository, IDriver drive
                                    ReleaseDate: m.ReleaseDate,
                                    MinimumAge: m.MinimumAge,
                                    Actors: Actors,
+                                   OnWatchlist: true,
                                    Comments: Comments,
                                    AverageReviewScore: COALESCE(AverageReviewScore, 0)
                                  } AS MovieWithActors

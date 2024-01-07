@@ -22,7 +22,7 @@ public class MoviesController(IMovieRepository movieRepository) : BaseApiControl
 		var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 		return userId switch
 		{
-			null => Ok(await MovieRepository.GetMovies(queryParams)),
+			null => Ok(await MovieRepository.GetMoviesWhenNotLoggedIn(queryParams)),
 			_ => Ok(await MovieRepository.GetMoviesExcludingIgnored(Guid.Parse(userId), queryParams))
 		};
 	}
@@ -31,7 +31,13 @@ public class MoviesController(IMovieRepository movieRepository) : BaseApiControl
 	[AllowAnonymous]
 	public async Task<IActionResult> GetMovies(Guid id)
 	{
-		var movie = await MovieRepository.GetMovieDetails(id);
+		var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+		var movie = userId switch
+		{
+			null => await MovieRepository.GetMovieDetails(id),
+			_ =>await MovieRepository.GetMovieDetails(id, Guid.Parse(userId))
+		};
+		
 		return movie is null ? NotFound() : Ok(movie);
 	}
 

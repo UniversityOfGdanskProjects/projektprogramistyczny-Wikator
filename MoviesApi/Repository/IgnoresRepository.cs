@@ -19,12 +19,14 @@ public class IgnoresRepository(IMovieRepository movieRepository, IDriver driver)
             const string query = """
                                  MATCH (m:Movie)<-[:IGNORES]-(u:User { Id: $userId })
                                  OPTIONAL MATCH (m)<-[r:REVIEWED]-(:User)
-                                 WITH m, AVG(r.Score) AS AverageReviewScore
+                                 OPTIONAL MATCH (m)<-[w:WATCHLIST]-(:User { Id: $userId })
+                                 WITH m, AVG(r.Score) AS AverageReviewScore, COUNT(w) > 0 AS OnWatchlist
                                  RETURN {
                                    Id: m.Id,
                                    Title: m.Title,
                                    PictureAbsoluteUri: m.PictureAbsoluteUri,
                                    MinimumAge: m.MinimumAge,
+                                   OnWatchlist: OnWatchlist,
                                    AverageReviewScore: COALESCE(AverageReviewScore, 0)
                                  } AS MovieWithActors
                                  """;

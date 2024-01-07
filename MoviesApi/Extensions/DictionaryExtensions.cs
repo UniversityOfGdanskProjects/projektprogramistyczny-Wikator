@@ -16,6 +16,7 @@ public static class DictionaryExtensions
             PictureUri: movie["PictureAbsoluteUri"].As<string?>(),
             ReleaseDate: DateOnly.FromDateTime(movie["ReleaseDate"].As<DateTime>()) ,
             MinimumAge: movie["MinimumAge"].As<int>(),
+            OnWatchlist: movie["OnWatchlist"].As<bool>(),
             Actors: movie["Actors"].As<List<IDictionary<string, object>>>().Select(ConvertToActorDto),
             Comments: movie["Comments"].As<List<IDictionary<string, object>>>().Select(ConvertToCommentDto)
         );
@@ -26,6 +27,7 @@ public static class DictionaryExtensions
             Title: movie["Title"].As<string>(),
             AverageScore: movie["AverageReviewScore"].As<double>(),
             PictureUri: movie["PictureAbsoluteUri"].As<string?>(),
+            OnWatchlist: movie["OnWatchlist"].As<bool>(),
             MinimumAge: movie["MinimumAge"].As<int>()
         );
 
