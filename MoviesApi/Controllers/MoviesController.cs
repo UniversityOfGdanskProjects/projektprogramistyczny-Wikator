@@ -5,6 +5,7 @@ using MoviesApi.Controllers.Base;
 using MoviesApi.DTOs.Requests;
 using MoviesApi.Enums;
 using MoviesApi.Exceptions;
+using MoviesApi.Extensions;
 using MoviesApi.Helpers;
 using MoviesApi.Repository.Contracts;
 
@@ -20,11 +21,17 @@ public class MoviesController(IMovieRepository movieRepository) : BaseApiControl
 	public async Task<IActionResult> GetMovies([FromQuery] MovieQueryParams queryParams)
 	{
 		var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-		return userId switch
+		var pagedList = userId switch
 		{
-			null => Ok(await MovieRepository.GetMoviesWhenNotLoggedIn(queryParams)),
-			_ => Ok(await MovieRepository.GetMoviesExcludingIgnored(Guid.Parse(userId), queryParams))
+			null => await MovieRepository.GetMoviesWhenNotLoggedIn(queryParams),
+			_ => await MovieRepository.GetMoviesExcludingIgnored(Guid.Parse(userId), queryParams)
 		};
+
+		PaginationHeader paginationHeader = new(pagedList.CurrentPage, pagedList.PageSize, pagedList.TotalCount,
+			pagedList.TotalPages);
+		
+		Response.AddPaginationHeader(paginationHeader);
+		return Ok(pagedList);
 	}
 	
 	[HttpGet("{id:guid}")]

@@ -8,4 +8,6 @@ public class MovieQueryParams
     public Guid? Actor { get; init; }
     public string? SortBy { get; init; }
     public SortOrder SortOrder { get; init; } = SortOrder.Ascending;
+    public int PageNumber { get; init; } = 1;
+    public int PageSize { get; init; } = 6;
 }

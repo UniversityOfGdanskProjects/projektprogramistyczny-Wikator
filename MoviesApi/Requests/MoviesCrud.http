@@ -1,4 +1,5 @@
-﻿GET https://localhost:7102/api/movies
+﻿GET https://localhost:7102/api/movies?pageNumber=2&pageSize=3
+Authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJuYW1laWQiOiI4NzY4MzM0ZS0zN2RmLTQ4ZDYtOWQyMy0yMmRiNzJlYzQ2NjMiLCJ1bmlxdWVfbmFtZSI6IiIsInJvbGUiOiJVc2VyIiwibmJmIjoxNzA0NzMyNDIzLCJleHAiOjE3MDUzMzcyMjMsImlhdCI6MTcwNDczMjQyMywiaXNzIjoibG9jYWxob3N0In0.9OTqxvlUYlCkE0B0QDxxzU4pt6oAneiGHMarU832zxfjXjvZhcDJf6qDygtwGFqIIOFf66GMQRfY_i-aw-B6mg
 
 ###
 

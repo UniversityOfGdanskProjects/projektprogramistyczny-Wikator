@@ -13,7 +13,7 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 {
 	private IPhotoService PhotoService { get; } = photoService;
 	
-	public async Task<IEnumerable<MovieDto>> GetMoviesExcludingIgnored(Guid userId, MovieQueryParams queryParams)
+	public async Task<PagedList<MovieDto>> GetMoviesExcludingIgnored(Guid userId, MovieQueryParams queryParams)
 	{
 		return await ExecuteReadAsync(async tx =>
 		{
@@ -42,20 +42,43 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			                     ORDER BY
 			                     CASE WHEN $SortOrder = "Ascending" THEN CASE WHEN $SortBy IS NULL OR $SortBy = "Popularity" THEN m.Popularity ELSE Movies[$SortBy] END ELSE null END ASC,
 			                     CASE WHEN $SortOrder = "Ascending" THEN null ELSE CASE WHEN $SortBy IS NULL OR $SortBy = "Popularity" THEN m.Popularity ELSE Movies[$SortBy] END END DESC
+			                     SKIP $Skip
+			                     LIMIT $Limit
 			                     """;
 			
 			var cursor = await tx.RunAsync(query,
 				new
 				{
 					userId = userId.ToString(), queryParams.Title, Actor = queryParams.Actor.ToString(),
-					queryParams.SortBy, SortOrder = queryParams.SortOrder.ToString()
+					queryParams.SortBy, SortOrder = queryParams.SortOrder.ToString(), Skip = (queryParams.PageNumber - 1) * queryParams.PageSize,
+					Limit = queryParams.PageSize
 				});
 			
-			return await cursor.ToListAsync(record =>
+			var items = await cursor.ToListAsync(record =>
 			{
 				var movieWithActorsDto = record["Movies"].As<IDictionary<string, object>>();
 				return movieWithActorsDto.ConvertToMovieDto();
 			});
+			
+			// language=Cypher
+			const string totalCountQuery = """
+			                               MATCH (ignoredMovie:Movie)<-[:IGNORES]-(u:User { Id: $userId })
+			                               WITH COLLECT(ignoredMovie.Id) AS ignoredMovieIds
+			                               
+			                               MATCH (m:Movie)
+			                               WHERE NOT m.Id IN ignoredMovieIds AND toLower(m.Title) CONTAINS toLower($Title)
+			                               	AND ($Actor IS NULL OR $Actor = "" OR EXISTS {
+			                               	MATCH (m)<-[:PLAYED_IN]-(a:Actor)
+			                               	WHERE a.Id = $Actor
+			                               	})
+			                               WITH COUNT(m) as TotalCount
+			                               RETURN TotalCount
+			                               """;
+
+			var totalCountCursor = await tx.RunAsync(totalCountQuery,
+				new { userId = userId.ToString(), queryParams.Title, Actor = queryParams.Actor.ToString()});
+			var totalCount = await totalCountCursor.SingleAsync(record => record["TotalCount"].As<int>());
+			return new PagedList<MovieDto>(items, queryParams.PageNumber, queryParams.PageSize, totalCount);
 		});
 	}
 
@@ -293,7 +316,7 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 		});
 	}
 
-	public async Task<IEnumerable<MovieDto>> GetMoviesWhenNotLoggedIn(MovieQueryParams queryParams)
+	public async Task<PagedList<MovieDto>> GetMoviesWhenNotLoggedIn(MovieQueryParams queryParams)
 	{
 		return await ExecuteReadAsync(async tx =>
 		{
@@ -317,18 +340,39 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			                     ORDER BY
 			                     CASE WHEN $SortOrder = "Ascending" THEN CASE WHEN $SortBy IS NULL OR $SortBy = "Popularity" THEN m.Popularity ELSE Movies[$SortBy] END ELSE null END ASC,
 			                     CASE WHEN $SortOrder = "Ascending" THEN null ELSE CASE WHEN $SortBy IS NULL OR $SortBy = "Popularity" THEN m.Popularity ELSE Movies[$SortBy] END END DESC
+			                     SKIP $Skip
+			                     LIMIT $Limit
 			                     """;
 			
 			var cursor = await tx.RunAsync(query, new
 			{
 				queryParams.Title, Actor = queryParams.Actor.ToString(),
-				queryParams.SortBy, SortOrder = queryParams.SortOrder.ToString()
+				queryParams.SortBy, SortOrder = queryParams.SortOrder.ToString(),
+				Skip = (queryParams.PageNumber - 1) * queryParams.PageSize,
+				Limit = queryParams.PageSize
 			});
-			return await cursor.ToListAsync(record =>
+			
+			var items = await cursor.ToListAsync(record =>
 			{
 				var movieWithActorsDto = record["Movies"].As<IDictionary<string, object>>();
 				return movieWithActorsDto.ConvertToMovieDto();
 			});
+			
+			// language=Cypher
+			const string totalCountQuery = """
+			                               MATCH (m:Movie)
+			                               WHERE toLower(m.Title) CONTAINS toLower($Title)
+			                               AND $Actor IS NULL OR $Actor = "" OR EXISTS {
+			                               	MATCH (m)<-[:PLAYED_IN]-(a:Actor { Id: $Actor })
+			                               }
+			                               WITH COUNT(m) as TotalCount
+			                               RETURN TotalCount
+			                               """;
+
+			var totalCountCursor = await tx.RunAsync(totalCountQuery,
+				new {queryParams.Title, Actor = queryParams.Actor.ToString()});
+			var totalCount = await totalCountCursor.SingleAsync(record => record["TotalCount"].As<int>());
+			return new PagedList<MovieDto>(items, queryParams.PageNumber, queryParams.PageSize, totalCount);
 		});
 	}
 }
