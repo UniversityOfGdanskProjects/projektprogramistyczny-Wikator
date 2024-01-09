@@ -26,7 +26,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 		{
 			ValidateIssuerSigningKey = true,
 			IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenKey)),
-			ValidIssuer = "localhost",
+			ValidIssuer = "https://moviesapiwebtest.azurewebsites.net",
 			ValidateAudience = false
 		};
 	});
@@ -39,7 +39,6 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 
 app.UseMiddleware<ExceptionMiddleware>();
-app.UseMiddleware<UserExistsInDatabaseMiddleware>();
 
 app.UseCors(b => b
 	.AllowAnyHeader()
@@ -49,6 +48,8 @@ app.UseCors(b => b
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
+app.UseMiddleware<UserExistsInDatabaseMiddleware>();
 app.UseAuthorization();
 
 app.MapControllers();

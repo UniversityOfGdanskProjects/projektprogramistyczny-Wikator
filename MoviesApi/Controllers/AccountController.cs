@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using MoviesApi.Controllers.Base;
 using MoviesApi.DTOs.Requests;
 using MoviesApi.DTOs.Responses;
@@ -13,7 +12,7 @@ public class AccountController(ITokenService tokenService, IAccountRepository ac
 	private ITokenService TokenService { get; } = tokenService;
 	private IAccountRepository AccountRepository { get; } = accountRepository;
 		
-		
+	
 	[HttpPost("login")]
 	public async Task<IActionResult> Login(LoginDto loginDto)
 	{
@@ -25,7 +24,7 @@ public class AccountController(ITokenService tokenService, IAccountRepository ac
 		return user switch
 		{
 			null => Unauthorized("Invalid username or password"),
-			_ => Ok(new UserDto(user.Name, user.Role, TokenService.CreateToken(user)))
+			_ => Ok(new UserDto(user.Id, user.Name, user.Role, TokenService.CreateToken(user)))
 		};
 	}
 
@@ -40,14 +39,7 @@ public class AccountController(ITokenService tokenService, IAccountRepository ac
 		return user switch
 		{
 			null => BadRequest("There was an error when creating new user"),
-			_ => Ok(new UserDto(user.Name, user.Role, TokenService.CreateToken(user)))
+			_ => Ok(new UserDto(user.Id, user.Name, user.Role, TokenService.CreateToken(user)))
 		};
-	}
-
-	[Authorize]
-	[HttpGet("test")]
-	public string Test()
-	{
-		return "Hello from test";
 	}
 }

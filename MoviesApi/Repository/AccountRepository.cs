@@ -1,7 +1,6 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 using MoviesApi.DTOs.Requests;
-using MoviesApi.Enums;
 using MoviesApi.Models;
 using MoviesApi.Repository.Contracts;
 using Neo4j.Driver;

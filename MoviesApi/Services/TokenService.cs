@@ -25,7 +25,7 @@ public class TokenService : ITokenService
 		[
 			new Claim(JwtRegisteredClaimNames.NameId, user.Id.ToString()),
 			new Claim(JwtRegisteredClaimNames.UniqueName, user.Name),
-			new Claim(ClaimTypes.Role, user.Role.ToString())
+			new Claim(ClaimTypes.Role, user.Role)
 		];
 
 		SigningCredentials credentials = new(_key, SecurityAlgorithms.HmacSha512Signature);
@@ -35,7 +35,7 @@ public class TokenService : ITokenService
 			Subject = new ClaimsIdentity(claims),
 			Expires = DateTime.UtcNow.AddDays(7),
 			SigningCredentials = credentials,
-			Issuer = "localhost"
+			Issuer = "https://moviesapiwebtest.azurewebsites.net"
 		};
 
 		var tokenHandler = new JwtSecurityTokenHandler();
