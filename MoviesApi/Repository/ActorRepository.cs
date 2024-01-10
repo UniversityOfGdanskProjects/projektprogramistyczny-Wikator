@@ -60,7 +60,7 @@ public class ActorRepository : IActorRepository
         }
     }
 
-    public async Task<ActorDto> CreateActor(IAsyncQueryRunner tx, UpsertActorDto actorDto, string? pictureAbsoluteUri, string? picturePublicId)
+    public async Task<ActorDto> CreateActor(IAsyncQueryRunner tx, AddActorDto actorDto, string? pictureAbsoluteUri, string? picturePublicId)
     {
         // language=Cypher
         const string query = """
@@ -93,16 +93,18 @@ public class ActorRepository : IActorRepository
             record["Actor"].As<Dictionary<string, object>>().ConvertToActorDto());
     }
 
-    public async Task<ActorDto> UpdateActor(IAsyncQueryRunner tx, Guid id, UpsertActorDto actorDto)
+    public async Task<ActorDto> UpdateActor(IAsyncQueryRunner tx, Guid id, UpdateActorDto actorDto, string? pictureAbsoluteUri, string? picturePublicId)
     {
         // language=Cypher
         const string query = """
                                   MATCH (a:Actor {Id: $id})
                                   SET
-                                    a.FirstName = $FirstName,
-                                    a.LastName = $LastName,
-                                    a.DateOfBirth = $DateOfBirth,
-                                    a.Biography = $Biography
+                                    a.FirstName = coalesce($FirstName, a.FirstName),
+                                    a.LastName = coalesce($LastName, a.LastName),
+                                    a.DateOfBirth = coalesce($DateOfBirth, a.DateOfBirth),
+                                    a.Biography = $Biography,
+                                    a.PictureAbsoluteUri = $PictureAbsoluteUri,
+                                    a.PicturePublicId = $PicturePublicId
                                   RETURN {
                                     Id: a.Id,
                                     FirstName: a.FirstName,
@@ -116,7 +118,8 @@ public class ActorRepository : IActorRepository
         var cursor = await tx.RunAsync(query, new
         {
             id = id.ToString(), actorDto.FirstName, actorDto.LastName,
-            actorDto.DateOfBirth, actorDto.Biography
+            actorDto.DateOfBirth, actorDto.Biography, PictureAbsoluteUri = pictureAbsoluteUri,
+            PicturePublicId = picturePublicId
         });
 
         return await cursor.SingleAsync(record =>

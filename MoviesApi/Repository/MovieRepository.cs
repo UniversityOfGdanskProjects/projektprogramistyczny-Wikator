@@ -197,7 +197,7 @@ public class MovieRepository : IMovieRepository
 		// language=cypher
 		const string movieExistsAsync = """
 		                                  MATCH (m:Movie { Id: $movieId })
-		                                  DELETE m
+		                                  DETACH DELETE m
 		                                """;
 
 		await tx.RunAsync(movieExistsAsync, new { movieId = movieId.ToString() });

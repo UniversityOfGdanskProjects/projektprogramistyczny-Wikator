@@ -45,7 +45,7 @@ public class ActorsController(IDriver driver, IPhotoService photoService, IActor
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateActor(UpsertActorDto actorDto)
+    public async Task<IActionResult> CreateActor(AddActorDto actorDto)
     {
         return await ExecuteWriteAsync<IActionResult>(async tx =>
         {
@@ -75,14 +75,42 @@ public class ActorsController(IDriver driver, IPhotoService photoService, IActor
     }
     
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> UpdateActor(Guid id, UpsertActorDto actorDto)
+    public async Task<IActionResult> UpdateActor(Guid id, UpdateActorDto actorDto)
     {
         return await ExecuteWriteAsync<IActionResult>(async tx =>
         {
             if (!await ActorRepository.ActorExists(tx, id))
                 return NotFound($"Actor with id {id} was not found");
             
-            var actor = await ActorRepository.UpdateActor(tx, id, actorDto);
+            string? pictureAbsoluteUri = null;
+            string? picturePublicId = null;
+
+            if (actorDto.FileContent is not null)
+            {
+                var publicId = await ActorRepository.GetPublicId(tx, id);
+                if (publicId is not null)
+                {
+                    var deletionResult = await PhotoService.DeleteAsync(publicId);
+                    if (deletionResult.Error is not null)
+                        throw new PhotoServiceException("Failed to delete photo, please try again in few minutes");
+                }
+                
+                var file = new FormFile(
+                    new MemoryStream(actorDto.FileContent),
+                    0,
+                    actorDto.FileContent.Length,
+                    "file", actorDto.FileName ?? $"movie-{new Guid()}"
+                );
+
+                var uploadResult = await PhotoService.AddPhotoAsync(file);
+                if (uploadResult.Error is not null)
+                    throw new PhotoServiceException("Photo failed to save, please try again in few minutes");
+
+                pictureAbsoluteUri = uploadResult.SecureUrl.AbsoluteUri;
+                picturePublicId = uploadResult.PublicId;
+            }
+            
+            var actor = await ActorRepository.UpdateActor(tx, id, actorDto, pictureAbsoluteUri, picturePublicId);
             return Ok(actor);
         });
     }

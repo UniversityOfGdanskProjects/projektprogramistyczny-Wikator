@@ -8,8 +8,8 @@ public interface IActorRepository
 {
     Task<IEnumerable<ActorDto>> GetAllActors(IAsyncQueryRunner tx);
     Task<ActorDto?> GetActor(IAsyncQueryRunner tx, Guid id);
-    Task<ActorDto> CreateActor(IAsyncQueryRunner tx, UpsertActorDto actor, string? pictureAbsoluteUri, string? picturePublicId);
-    Task<ActorDto> UpdateActor(IAsyncQueryRunner tx, Guid id, UpsertActorDto actor);
+    Task<ActorDto> CreateActor(IAsyncQueryRunner tx, AddActorDto actor, string? pictureAbsoluteUri, string? picturePublicId);
+    Task<ActorDto> UpdateActor(IAsyncQueryRunner tx, Guid id, UpdateActorDto actor, string? pictureAbsoluteUri, string? picturePublicId);
     Task DeleteActor(IAsyncQueryRunner tx, Guid id);
     Task<bool> ActorExists(IAsyncQueryRunner tx, Guid id);
     Task<string?> GetPublicId(IAsyncQueryRunner tx, Guid actorId);
