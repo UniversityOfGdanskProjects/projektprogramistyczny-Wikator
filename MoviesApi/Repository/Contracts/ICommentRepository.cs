@@ -1,13 +1,14 @@
 ﻿using MoviesApi.DTOs.Requests;
 using MoviesApi.DTOs.Responses;
-using MoviesApi.Helpers;
+using Neo4j.Driver;
 
 namespace MoviesApi.Repository.Contracts;
 
 public interface ICommentRepository
 {
-    Task<CommentDto?> GetCommentAsync(Guid commentId);
-    Task<QueryResult<CommentDto>> AddCommentAsync(Guid userId, AddCommentDto addCommentDto);
-    Task<QueryResult<CommentDto>> EditCommentAsync(Guid commentId, Guid userId, EditCommentDto addCommentDto);
-    Task<QueryResult> DeleteCommentAsync(Guid commentId, Guid userId);
+    Task<CommentDto?> GetCommentAsync(IAsyncQueryRunner tx, Guid commentId);
+    Task<CommentDto> AddCommentAsync(IAsyncQueryRunner tx, Guid userId, AddCommentDto addCommentDto);
+    Task<CommentDto> EditCommentAsync(IAsyncQueryRunner tx, Guid commentId, Guid userId, EditCommentDto addCommentDto);
+    Task DeleteCommentAsync(IAsyncQueryRunner tx, Guid commentId, Guid userId);
+    Task<bool> CommentExists(IAsyncQueryRunner tx, Guid commentId, Guid userId);
 }

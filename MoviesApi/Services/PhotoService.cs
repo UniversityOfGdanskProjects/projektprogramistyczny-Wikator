@@ -38,7 +38,7 @@ public class PhotoService(IOptions<CloudinarySettings> config) : IPhotoService
         return uploadResult;
     }
 
-    public async Task<DeletionResult> DeleteASync(string publicId)
+    public async Task<DeletionResult> DeleteAsync(string publicId)
     {
         return await Cloudinary.DestroyAsync(new DeletionParams(publicId));
     }

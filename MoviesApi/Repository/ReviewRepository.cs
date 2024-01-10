@@ -1,102 +1,72 @@
 ﻿using MoviesApi.DTOs.Requests;
 using MoviesApi.DTOs.Responses;
-using MoviesApi.Enums;
 using MoviesApi.Extensions;
-using MoviesApi.Helpers;
 using MoviesApi.Repository.Contracts;
 using Neo4j.Driver;
 
 namespace MoviesApi.Repository;
 
-public class ReviewRepository(IMovieRepository movieRepository, IDriver driver) : Repository(driver), IReviewRepository
+public class ReviewRepository : IReviewRepository
 {
-    private IMovieRepository MovieRepository { get; } = movieRepository;
-    
-    public async Task<QueryResult<ReviewDto>> AddReview(Guid userId, AddReviewDto reviewDto)
+    public async Task<ReviewDto> AddReview(IAsyncQueryRunner tx, Guid userId, AddReviewDto reviewDto)
     {
-        return await ExecuteWriteAsync(async tx =>
-        {
-            if (!await MovieRepository.MovieExists(tx, reviewDto.MovieId))
-                return new QueryResult<ReviewDto>(QueryResultStatus.RelatedEntityDoesNotExists, null);
+        // language=Cypher
+        const string query = """
+                             MATCH (u:User { Id: $userId}), (m:Movie { Id: $movieId })
+                             CREATE (u)-[r:REVIEWED { Id: randomUUID(), Score: $score}]->(m)
+                             RETURN {
+                               Id: r.Id,
+                               UserId: u.Id,
+                               MovieId: m.Id,
+                               Score: r.Score
+                             } AS Review
+                             """;
 
-            if (await ReviewExistsByMovieId(tx, reviewDto.MovieId, userId))
-                return new QueryResult<ReviewDto>(QueryResultStatus.EntityAlreadyExists, null);
+        var cursor =
+            await tx.RunAsync(query,
+                new { userId = userId.ToString(), movieId = reviewDto.MovieId.ToString(), score = reviewDto.Score });
 
-            // language=Cypher
-            const string query = """
-                                 MATCH (u:User { Id: $userId}), (m:Movie { Id: $movieId })
-                                 CREATE (u)-[r:REVIEWED { Id: randomUUID(), Score: $score}]->(m)
-                                 RETURN {
-                                   Id: r.Id,
-                                   UserId: u.Id,
-                                   MovieId: m.Id,
-                                   Score: r.Score
-                                 } AS Review
-                                 """;
-
-            var cursor =
-                await tx.RunAsync(query,
-                    new { userId = userId.ToString(), movieId = reviewDto.MovieId.ToString(), score = reviewDto.Score });
-
-            var review = await cursor.SingleAsync(record =>
-                record["Review"].As<IDictionary<string, object>>().ConvertToReviewDto());
-
-            return new QueryResult<ReviewDto>(QueryResultStatus.Completed, review);
-        });
+        return await cursor.SingleAsync(record =>
+            record["Review"].As<IDictionary<string, object>>().ConvertToReviewDto());
     }
 
-    public async Task<QueryResult<ReviewDto>> UpdateReview(Guid userId, Guid reviewId, UpdateReviewDto reviewDto)
+    public async Task<ReviewDto> UpdateReview(IAsyncQueryRunner tx, Guid userId, Guid reviewId, UpdateReviewDto reviewDto)
     {
-        return await ExecuteWriteAsync(async tx =>
-        {
-            if (!await ReviewExists(tx, reviewId, userId))
-                return new QueryResult<ReviewDto>(QueryResultStatus.NotFound, null);
+        // language=Cypher
+        const string query = """
+                             MATCH(u:User { Id: $userId })-[r:REVIEWED { Id: $id }]->(m:Movie)
+                             SET r.Score = $score
+                             RETURN {
+                               Id: r.Id,
+                               UserId: u.Id,
+                               MovieId: m.Id,
+                               Score: r.Score
+                             } AS Review
+                             """;
 
-            // language=Cypher
-            const string query = """
-                                 MATCH(u:User { Id: $userId })-[r:REVIEWED { Id: $id }]->(m:Movie)
-                                 SET r.Score = $score
-                                 RETURN {
-                                   Id: r.Id,
-                                   UserId: u.Id,
-                                   MovieId: m.Id,
-                                   Score: r.Score
-                                 } AS Review
-                                 """;
+        var cursor = await tx.RunAsync(query,
+            new
+            {
+                id = reviewId.ToString(), userId = userId.ToString(),
+                score = reviewDto.Score
+            });
 
-            var cursor = await tx.RunAsync(query,
-                new
-                {
-                    id = reviewId.ToString(), userId = userId.ToString(),
-                    score = reviewDto.Score
-                });
-
-            var review = await cursor.SingleAsync(record =>
-                record["Review"].As<IDictionary<string, object>>().ConvertToReviewDto());
-
-            return new QueryResult<ReviewDto>(QueryResultStatus.Completed, review);
-        });
+        return await cursor.SingleAsync(record =>
+            record["Review"].As<IDictionary<string, object>>().ConvertToReviewDto());
     }
 
-    public async Task<QueryResult> DeleteReview(Guid userId, Guid reviewId)
+    public async Task DeleteReview(IAsyncQueryRunner tx, Guid userId, Guid reviewId)
     {
-        return await ExecuteWriteAsync(async tx =>
-        {
-            if (!await ReviewExists(tx, reviewId, userId))
-                return new QueryResult(QueryResultStatus.NotFound);
+        // language=Cypher
+        const string query = """
+                             MATCH (:User { Id: $userId })-[r:REVIEWED { Id: $reviewId }]->(:Movie)
+                             DELETE r
+                             """;
 
-            // language=Cypher
-            const string query = """
-                                 MATCH (:User { Id: $userId })-[r:REVIEWED { Id: $reviewId }]->(:Movie)
-                                 DELETE r
-                                 """;
-
-            await tx.RunAsync(query, new { userId = userId.ToString(), reviewId = reviewId.ToString() });
-            return new QueryResult(QueryResultStatus.Completed);
-        });
+        await tx.RunAsync(query, new { userId = userId.ToString(), reviewId = reviewId.ToString() });
     }
 
-    private static async Task<bool> ReviewExists(IAsyncQueryRunner tx, Guid id, Guid userId)
+    public async Task<bool> ReviewExists(IAsyncQueryRunner tx, Guid id, Guid userId)
     {
         // language=Cypher
         const string query = """
@@ -108,7 +78,7 @@ public class ReviewRepository(IMovieRepository movieRepository, IDriver driver) 
         return await cursor.SingleAsync(record => record["reviewExists"].As<bool>());
     }
 
-    private static async Task<bool> ReviewExistsByMovieId(IAsyncQueryRunner tx, Guid movieId, Guid userId)
+    public async Task<bool> ReviewExistsByMovieId(IAsyncQueryRunner tx, Guid movieId, Guid userId)
     {
         // language=Cypher
         const string query = """

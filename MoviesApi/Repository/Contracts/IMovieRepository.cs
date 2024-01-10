@@ -8,9 +8,10 @@ namespace MoviesApi.Repository.Contracts;
 public interface IMovieRepository
 {
 	Task<bool> MovieExists(IAsyncQueryRunner tx, Guid movieId);
-	Task<MovieDetailsDto?> GetMovieDetails(Guid movieId, Guid? userId = null);
-	Task<PagedList<MovieDto>> GetMoviesWhenNotLoggedIn(MovieQueryParams queryParams);
-	Task<PagedList<MovieDto>> GetMoviesExcludingIgnored(Guid userId, MovieQueryParams queryParams);
-	Task<QueryResult<MovieDetailsDto>> AddMovie(AddMovieDto movieDto);
-	Task<QueryResult> DeleteMovie(Guid movieId);
+	Task<MovieDetailsDto?> GetMovieDetails(IAsyncQueryRunner tx,Guid movieId, Guid? userId = null);
+	Task<PagedList<MovieDto>> GetMoviesWhenNotLoggedIn(IAsyncQueryRunner tx,MovieQueryParams queryParams);
+	Task<PagedList<MovieDto>> GetMoviesExcludingIgnored(IAsyncQueryRunner tx,Guid userId, MovieQueryParams queryParams);
+	Task<MovieDetailsDto> AddMovie(IAsyncQueryRunner tx,AddMovieDto movieDto, string? pictureAbsoluteUri, string? picturePublicId);
+	Task DeleteMovie(IAsyncQueryRunner tx,Guid movieId);
+	Task<string?> GetPublicId(IAsyncQueryRunner tx, Guid movieId);
 }

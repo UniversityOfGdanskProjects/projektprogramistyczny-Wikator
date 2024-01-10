@@ -1,12 +1,14 @@
 ﻿using MoviesApi.DTOs.Requests;
 using MoviesApi.DTOs.Responses;
-using MoviesApi.Helpers;
+using Neo4j.Driver;
 
 namespace MoviesApi.Repository.Contracts;
 
 public interface IReviewRepository
 {
-    public Task<QueryResult<ReviewDto>> AddReview(Guid userId, AddReviewDto reviewDto);
-    public Task<QueryResult<ReviewDto>> UpdateReview(Guid userId, Guid reviewId, UpdateReviewDto reviewDto);
-    public Task<QueryResult> DeleteReview(Guid userId, Guid reviewId);
+    public Task<ReviewDto> AddReview(IAsyncQueryRunner tx, Guid userId, AddReviewDto reviewDto);
+    public Task<ReviewDto> UpdateReview(IAsyncQueryRunner tx, Guid userId, Guid reviewId, UpdateReviewDto reviewDto);
+    public Task DeleteReview(IAsyncQueryRunner tx, Guid userId, Guid reviewId);
+    Task<bool> ReviewExists(IAsyncQueryRunner tx, Guid id, Guid userId);
+    Task<bool> ReviewExistsByMovieId(IAsyncQueryRunner tx, Guid movieId, Guid userId);
 }

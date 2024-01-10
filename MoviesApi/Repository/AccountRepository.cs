@@ -7,44 +7,41 @@ using Neo4j.Driver;
 
 namespace MoviesApi.Repository;
 
-public class AccountRepository(IDriver driver) : Repository(driver), IAccountRepository
+public class AccountRepository : IAccountRepository
 {
-    public async Task<User?> RegisterAsync(RegisterDto registerDto)
+    public async Task<User?> RegisterAsync(IAsyncQueryRunner tx, RegisterDto registerDto)
     {
-        return await ExecuteWriteAsync(async tx =>
+        using HMACSHA512 hmac = new();
+        var passwordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(registerDto.Password));
+        var passwordSalt = hmac.Key;
+
+        // language=Cypher
+        const string query = """
+                             CREATE (a:User {
+                               Id: randomUUID(),
+                               Name: $Name,
+                               Email: $Email,
+                               PasswordHash: $PasswordHash,
+                               PasswordSalt: $PasswordSalt,
+                               Role: "User",
+                               LastActive: datetime()
+                             })
+                             RETURN a.Name as name, a.Email as email, a.Role as role, a.Id as id
+                             """;
+
+        var cursor = await tx.RunAsync(query, new
         {
-            using HMACSHA512 hmac = new();
-            var passwordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(registerDto.Password));
-            var passwordSalt = hmac.Key;
-
-            // language=Cypher
-            const string query = """
-                                 CREATE (a:User {
-                                   Id: randomUUID(),
-                                   Name: $Name,
-                                   Email: $Email,
-                                   PasswordHash: $PasswordHash,
-                                   PasswordSalt: $PasswordSalt,
-                                   Role: "User",
-                                   LastActive: datetime()
-                                 })
-                                 RETURN a.Name as name, a.Email as email, a.Role as role, a.Id as id
-                                 """;
-
-            var cursor = await tx.RunAsync(query, new
-            {
-                registerDto.Name, registerDto.Email,
-                PasswordHash = Convert.ToBase64String(passwordHash), PasswordSalt = Convert.ToBase64String(passwordSalt)
-            });
-            var node = await cursor.SingleAsync();
-
-            return GetUserFromNode(node);
+            registerDto.Name, registerDto.Email,
+            PasswordHash = Convert.ToBase64String(passwordHash), PasswordSalt = Convert.ToBase64String(passwordSalt)
         });
+        var node = await cursor.SingleAsync();
+
+        return GetUserFromNode(node);
     }
 
-    public async Task<User?> LoginAsync(LoginDto loginDto)
+    public async Task<User?> LoginAsync(IAsyncQueryRunner tx, LoginDto loginDto)
     {
-        return await ExecuteReadAsync(async tx =>
+        try
         {
             // language=Cypher
             const string query = """
@@ -65,24 +62,25 @@ public class AccountRepository(IDriver driver) : Repository(driver), IAccountRep
             var storedHash = Convert.FromBase64String(storedPasswordHash);
 
             return computedHash.Where((t, i) => t != storedHash[i]).Any() ? null : GetUserFromNode(node);
-        });
+        }
+        catch (InvalidOperationException)
+        {
+            return null;
+        }
     }
 
-    public async Task<bool> EmailExistsAsync(string email)
+    public async Task<bool> EmailExistsAsync(IAsyncQueryRunner tx, string email)
     {
-        return await ExecuteReadAsync(async tx =>
-        {
-            // language=Cypher
-            const string query = """
-                                 MATCH (u:User { Email: $Email })
-                                 WITH COUNT(u) > 0  as node_exists
-                                 RETURN node_exists
-                                 """;
+        // language=Cypher
+        const string query = """
+                             MATCH (u:User { Email: $Email })
+                             WITH COUNT(u) > 0  as node_exists
+                             RETURN node_exists
+                             """;
 
-            var accountCursor = await tx.RunAsync(query, new { Email = email });
-            var result = await accountCursor.SingleAsync();
-            return result["node_exists"].As<bool>();
-        });
+        var accountCursor = await tx.RunAsync(query, new { Email = email });
+        var result = await accountCursor.SingleAsync();
+        return result["node_exists"].As<bool>();
     }
     
     private static User GetUserFromNode(IRecord node) =>

@@ -1,12 +1,13 @@
 ﻿using MoviesApi.DTOs.Responses;
-using MoviesApi.Helpers;
+using Neo4j.Driver;
 
 namespace MoviesApi.Repository.Contracts;
 
 public interface IIgnoresRepository
 {
-    Task<IEnumerable<MovieDto>> GetAllIgnoreMovies(Guid userId);
+    Task<IEnumerable<MovieDto>> GetAllIgnoreMovies(IAsyncQueryRunner tx, Guid userId);
     
-    Task<QueryResult> IgnoreMovie(Guid userId, Guid movieId);
-    Task<QueryResult> RemoveIgnoreMovie(Guid userId, Guid movieId);
+    Task IgnoreMovie(IAsyncQueryRunner tx, Guid userId, Guid movieId);
+    Task RemoveIgnoreMovie(IAsyncQueryRunner tx, Guid userId, Guid movieId);
+    Task<bool> IgnoresExists(IAsyncQueryRunner tx, Guid movieId, Guid userId);
 }

@@ -2,71 +2,84 @@
 using Microsoft.AspNetCore.Mvc;
 using MoviesApi.Controllers.Base;
 using MoviesApi.DTOs.Requests;
-using MoviesApi.Enums;
 using MoviesApi.Repository.Contracts;
 using MoviesApi.Services.Contracts;
+using Neo4j.Driver;
 
 namespace MoviesApi.Controllers;
 
 [Authorize]
-public class CommentController(ICommentRepository commentRepository, IUserClaimsProvider userClaimsProvider)
-    : BaseApiController
+public class CommentController(IDriver driver, IMovieRepository movieRepository, ICommentRepository commentRepository,
+    IUserClaimsProvider userClaimsProvider) : BaseApiController(driver)
 {
     private ICommentRepository CommentRepository { get; } = commentRepository;
+    private IMovieRepository MovieRepository { get; } = movieRepository;
     private IUserClaimsProvider UserClaimsProvider { get; } = userClaimsProvider;
+    
 
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetComment(Guid id)
     {
-        var comment = await CommentRepository.GetCommentAsync(id);
-
-        return comment switch
+        return await ExecuteReadAsync<IActionResult>(async tx =>
         {
-            null => NotFound("Comment does not exist"),
-            _ => Ok(comment)
-        };
+            var comment = await CommentRepository.GetCommentAsync(tx, id);
+
+            return comment switch
+            {
+                null => NotFound("Comment does not exist"),
+                _ => Ok(comment)
+            };
+        });
     }
     
     
     [HttpPost]
     public async Task<IActionResult> AddCommentAsync(AddCommentDto addCommentDto)
     {
-        var comment = await CommentRepository
-            .AddCommentAsync(UserClaimsProvider.GetUserId(User), addCommentDto);
-
-        return comment.Status switch
+        return await ExecuteWriteAsync<IActionResult>(async tx =>
         {
-            QueryResultStatus.RelatedEntityDoesNotExists => BadRequest("Movie does not exist"),
-            QueryResultStatus.Completed => CreatedAtAction(nameof(GetComment), new { id = comment.Data!.Id }, comment.Data),
-            _ => throw new Exception("This shouldn't have happened")
-        };
+            if (!await MovieRepository.MovieExists(tx, addCommentDto.MovieId))
+                return BadRequest("Movie you are trying to comment on does not exist");
+
+            var userId = UserClaimsProvider.GetUserId(User);
+
+            if (await CommentRepository.CommentExists(tx, addCommentDto.MovieId, userId))
+                return BadRequest("You already commented on this movie");
+
+            var comment = await CommentRepository.AddCommentAsync(tx, userId, addCommentDto);
+            return CreatedAtAction(nameof(GetComment), new { id = comment.Id }, comment);
+        });
     }
     
     [HttpPut("{commentId:guid}/")]
     public async Task<IActionResult> EditCommentAsync(Guid commentId, EditCommentDto editCommentDto)
     {
-        var comment = await CommentRepository
-            .EditCommentAsync(commentId, UserClaimsProvider.GetUserId(User), editCommentDto);
-
-        return comment.Status switch
+        return await ExecuteWriteAsync<IActionResult>(async tx =>
         {
-            QueryResultStatus.NotFound => NotFound("Either the comment doesn't exist or you don't have permission to edit it"),
-            QueryResultStatus.Completed => Ok(comment.Data),
-            _ => throw new Exception("This shouldn't have happened")
-        };
+            var userId = UserClaimsProvider.GetUserId(User);
+            
+            if (!await CommentRepository.CommentExists(tx, commentId, userId))
+                return NotFound("Either the comment doesn't exist or you don't have permission to edit it");
+
+            var comment =
+                await CommentRepository.EditCommentAsync(tx, commentId, userId,
+                    editCommentDto);
+            return Ok(comment);
+        });
     }
     
     [HttpDelete("{commentId:guid}/")]
     public async Task<IActionResult> DeleteCommentAsync(Guid commentId)
     {
-        var result = await CommentRepository
-            .DeleteCommentAsync(commentId, UserClaimsProvider.GetUserId(User));
-
-        return result.Status switch
+        return await ExecuteWriteAsync<IActionResult>(async tx =>
         {
-            QueryResultStatus.NotFound => NotFound("Either the comment doesn't exist or you don't have permission to edit it"),
-            QueryResultStatus.Completed => NoContent(),
-            _ => throw new Exception("This shouldn't have happened")
-        };
+            var userId = UserClaimsProvider.GetUserId(User);
+
+            if (!await CommentRepository.CommentExists(tx, commentId, UserClaimsProvider.GetUserId(User)))
+                return NotFound("Either the comment doesn't exist or you don't have permission to delete it");
+
+            await CommentRepository.DeleteCommentAsync(tx, commentId, userId);
+            return NoContent();
+        });
     }
 }

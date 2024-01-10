@@ -1,52 +1,67 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MoviesApi.Controllers.Base;
-using MoviesApi.Enums;
 using MoviesApi.Repository.Contracts;
 using MoviesApi.Services.Contracts;
+using Neo4j.Driver;
 
 namespace MoviesApi.Controllers;
 
 [Authorize]
-public class WatchlistController(IWatchlistRepository watchlistRepository, IUserClaimsProvider userClaimsProvider)
-    : BaseApiController
+public class WatchlistController(IDriver driver, IWatchlistRepository watchlistRepository,
+    IMovieRepository movieRepository, IUserClaimsProvider userClaimsProvider)
+    : BaseApiController(driver)
 {
     private IWatchlistRepository WatchlistRepository { get; } = watchlistRepository;
+    private IMovieRepository MovieRepository { get; } = movieRepository;
     private IUserClaimsProvider UserClaimsProvider { get; } = userClaimsProvider;
+    
 
     [HttpGet]
     public async Task<IActionResult> GetAllMoviesOnWatchlist()
     {
-        var movies = await WatchlistRepository
-            .GetAllMoviesOnWatchlist(UserClaimsProvider.GetUserId(User));
-    
-        return Ok(movies);
+        return await ExecuteReadAsync(async tx =>
+        {
+            var movies = await WatchlistRepository
+                .GetAllMoviesOnWatchlist(tx, UserClaimsProvider.GetUserId(User));
+
+            return Ok(movies);
+        });
     }
     
     [HttpPost("{movieId:guid}")]
     public async Task<IActionResult> AddToWatchList(Guid movieId)
     {
-        var result = await WatchlistRepository.AddToWatchList(UserClaimsProvider.GetUserId(User), movieId);
-    
-        return result.Status switch
+        return await ExecuteWriteAsync<IActionResult>(async tx =>
         {
-            QueryResultStatus.Completed => NoContent(),
-            QueryResultStatus.NotFound => NotFound("Movie not found"),
-            QueryResultStatus.EntityAlreadyExists => BadRequest("Movie already in watchlist"),
-            _ => throw new Exception(nameof(result.Status))
-        };
+            if (!await MovieRepository.MovieExists(tx, movieId))
+                return NotFound("Movie does not exist found");
+
+            var userId = UserClaimsProvider.GetUserId(User);
+
+            if (await WatchlistRepository.WatchlistExists(tx, movieId, userId))
+                return BadRequest("Movie already in watchlist");
+
+            await WatchlistRepository.AddToWatchList(tx, userId, movieId);
+            return NoContent();
+        });
     }
     
     [HttpDelete("{movieId:guid}")]
     public async Task<IActionResult> RemoveFromWatchList(Guid movieId)
     {
-        var result = await WatchlistRepository.RemoveFromWatchList(UserClaimsProvider.GetUserId(User), movieId);
-    
-        return result.Status switch
+        return await ExecuteWriteAsync<IActionResult>(async tx =>
         {
-            QueryResultStatus.Completed => NoContent(),
-            QueryResultStatus.NotFound => NotFound("Movie or watchlist not found"),
-            _ => throw new Exception(nameof(result))
-        };
+            if (!await MovieRepository.MovieExists(tx, movieId))
+                return NotFound("Movie does not exist");
+
+            var userId = UserClaimsProvider.GetUserId(User);
+
+            if (!await WatchlistRepository.WatchlistExists(tx, movieId, userId))
+                return BadRequest("This movie is not on your watchlist");
+
+            await WatchlistRepository.RemoveFromWatchList(tx, userId, movieId);
+            return NoContent();
+        });
     }
 }
