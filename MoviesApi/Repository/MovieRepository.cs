@@ -324,9 +324,9 @@ public class MovieRepository(IPhotoService photoService, IDriver driver) : Repos
 			const string query = """
 			                     MATCH (m:Movie)
 			                     WHERE toLower(m.Title) CONTAINS toLower($Title)
-			                     	AND $Actor IS NULL OR $Actor = "" OR EXISTS {
+			                     	AND ($Actor IS NULL OR $Actor = "" OR EXISTS {
 			                     		MATCH (m)<-[:PLAYED_IN]-(a:Actor { Id: $Actor })
-			                     	}
+			                     	})
 			                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(:User)
 			                     WITH m, AVG(r.Score) AS AverageReviewScore
 			                     RETURN {
