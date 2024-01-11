@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc.Filters;
-using MoviesApi.Services.Contracts;
+using MoviesApi.Extensions;
 using Neo4j.Driver;
 
 namespace MoviesApi.Helpers
@@ -14,10 +14,8 @@ namespace MoviesApi.Helpers
                 return;
 
             var driver = resultContext.HttpContext.RequestServices.GetRequiredService<IDriver>();
-            var claimsProvider = resultContext.HttpContext.RequestServices.GetRequiredService<IUserClaimsProvider>();
-            var userId = claimsProvider.GetUserId(resultContext.HttpContext.User);
-
-
+            var userId = resultContext.HttpContext.User.GetUserId();
+            
             _ = LogUserActivityInBackground(driver, userId);
         }
 

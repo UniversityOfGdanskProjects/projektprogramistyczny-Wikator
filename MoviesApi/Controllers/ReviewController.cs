@@ -2,20 +2,19 @@
 using Microsoft.AspNetCore.Mvc;
 using MoviesApi.Controllers.Base;
 using MoviesApi.DTOs.Requests;
+using MoviesApi.Extensions;
 using MoviesApi.Repository.Contracts;
-using MoviesApi.Services.Contracts;
 using Neo4j.Driver;
 
 namespace MoviesApi.Controllers;
 
 [Authorize]
 [Route("api/[controller]")]
-public class ReviewController(IDriver driver, IMovieRepository movieRepository, IReviewRepository reviewRepository,
-    IUserClaimsProvider claimsProvider) : BaseApiController(driver)
+public class ReviewController(IDriver driver, IMovieRepository movieRepository,
+    IReviewRepository reviewRepository) : BaseApiController(driver)
 {
     private IReviewRepository ReviewRepository { get; } = reviewRepository;
     private IMovieRepository MovieRepository { get; } = movieRepository;
-    private IUserClaimsProvider UserClaimsProvider { get; } = claimsProvider;
     
 
     [HttpPost]
@@ -26,7 +25,7 @@ public class ReviewController(IDriver driver, IMovieRepository movieRepository, 
             if (!await MovieRepository.MovieExists(tx, reviewDto.MovieId))
                 return BadRequest("Movie you are trying to review does not exist");
 
-            var userId = UserClaimsProvider.GetUserId(User);
+            var userId = User.GetUserId();
 
             if (await ReviewRepository.ReviewExistsByMovieId(tx, reviewDto.MovieId, userId))
                 return BadRequest("You already reviewed this movie");
@@ -41,7 +40,7 @@ public class ReviewController(IDriver driver, IMovieRepository movieRepository, 
     {
         return await ExecuteWriteAsync<IActionResult>(async tx =>
         {
-            var userId = UserClaimsProvider.GetUserId(User);
+            var userId = User.GetUserId();
 
             if (!await ReviewRepository.ReviewExists(tx, id, userId))
                 return NotFound("Review does not exist, or you don't have permission to edit it");
@@ -56,7 +55,7 @@ public class ReviewController(IDriver driver, IMovieRepository movieRepository, 
     {
         return await ExecuteWriteAsync<IActionResult>(async tx =>
         {
-            var userId = UserClaimsProvider.GetUserId(User);
+            var userId = User.GetUserId();
 
             if (!await ReviewRepository.ReviewExists(tx, id, userId))
                 return NotFound("Review does not exist, or you don't have permission to delete it");

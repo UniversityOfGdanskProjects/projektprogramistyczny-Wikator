@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MoviesApi.Controllers.Base;
+using MoviesApi.Extensions;
 using MoviesApi.Repository.Contracts;
-using MoviesApi.Services.Contracts;
 using Neo4j.Driver;
 
 namespace MoviesApi.Controllers;
@@ -10,12 +10,10 @@ namespace MoviesApi.Controllers;
 [Authorize]
 [Route("api/movie")]
 public class IgnoredController(IDriver driver, IIgnoresRepository ignoresRepository,
-    IUserClaimsProvider userClaimsProvider, IMovieRepository movieRepository)
-    : BaseApiController(driver)
+    IMovieRepository movieRepository) : BaseApiController(driver)
 {
     private IIgnoresRepository IgnoresRepository { get; } = ignoresRepository;
     private IMovieRepository MovieRepository { get; } = movieRepository;
-    private IUserClaimsProvider UserClaimsProvider { get; } = userClaimsProvider;
 
     
     [HttpGet("ignored")]
@@ -23,7 +21,7 @@ public class IgnoredController(IDriver driver, IIgnoresRepository ignoresReposit
     {
         return await ExecuteReadAsync(async tx =>
         {
-            var movies = await IgnoresRepository.GetAllIgnoreMovies(tx, UserClaimsProvider.GetUserId(User));
+            var movies = await IgnoresRepository.GetAllIgnoreMovies(tx, User.GetUserId());
             return Ok(movies);
         });
     }
@@ -36,7 +34,7 @@ public class IgnoredController(IDriver driver, IIgnoresRepository ignoresReposit
             if (!await MovieRepository.MovieExists(tx, movieId))
                 return NotFound("Movie does not exist");
 
-            var userId = UserClaimsProvider.GetUserId(User);
+            var userId = User.GetUserId();
 
             if (await IgnoresRepository.IgnoresExists(tx, movieId, userId))
                 return BadRequest("Movie is already ignored");
@@ -54,7 +52,7 @@ public class IgnoredController(IDriver driver, IIgnoresRepository ignoresReposit
             if (!await MovieRepository.MovieExists(tx, movieId))
                 return NotFound("Movie does not exist");
 
-            var userId = UserClaimsProvider.GetUserId(User);
+            var userId = User.GetUserId();
 
             if (!await IgnoresRepository.IgnoresExists(tx, movieId, userId))
                 return BadRequest("Movie is not on your ignored list");

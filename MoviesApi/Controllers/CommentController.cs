@@ -2,20 +2,19 @@
 using Microsoft.AspNetCore.Mvc;
 using MoviesApi.Controllers.Base;
 using MoviesApi.DTOs.Requests;
+using MoviesApi.Extensions;
 using MoviesApi.Repository.Contracts;
-using MoviesApi.Services.Contracts;
 using Neo4j.Driver;
 
 namespace MoviesApi.Controllers;
 
 [Authorize]
 [Route("api/[controller]")]
-public class CommentController(IDriver driver, IMovieRepository movieRepository, ICommentRepository commentRepository,
-    IUserClaimsProvider userClaimsProvider) : BaseApiController(driver)
+public class CommentController(IDriver driver, IMovieRepository movieRepository,
+    ICommentRepository commentRepository) : BaseApiController(driver)
 {
     private ICommentRepository CommentRepository { get; } = commentRepository;
     private IMovieRepository MovieRepository { get; } = movieRepository;
-    private IUserClaimsProvider UserClaimsProvider { get; } = userClaimsProvider;
     
 
     [HttpGet("{id:guid}")]
@@ -42,7 +41,7 @@ public class CommentController(IDriver driver, IMovieRepository movieRepository,
             if (!await MovieRepository.MovieExists(tx, addCommentDto.MovieId))
                 return BadRequest("Movie you are trying to comment on does not exist");
 
-            var userId = UserClaimsProvider.GetUserId(User);
+            var userId = User.GetUserId();
 
             if (await CommentRepository.CommentExists(tx, addCommentDto.MovieId, userId))
                 return BadRequest("You already commented on this movie");
@@ -57,7 +56,7 @@ public class CommentController(IDriver driver, IMovieRepository movieRepository,
     {
         return await ExecuteWriteAsync<IActionResult>(async tx =>
         {
-            var userId = UserClaimsProvider.GetUserId(User);
+            var userId = User.GetUserId();
             
             if (!await CommentRepository.CommentExists(tx, commentId, userId))
                 return NotFound("Either the comment doesn't exist or you don't have permission to edit it");
@@ -74,9 +73,9 @@ public class CommentController(IDriver driver, IMovieRepository movieRepository,
     {
         return await ExecuteWriteAsync<IActionResult>(async tx =>
         {
-            var userId = UserClaimsProvider.GetUserId(User);
+            var userId = User.GetUserId();
 
-            if (!await CommentRepository.CommentExists(tx, commentId, UserClaimsProvider.GetUserId(User)))
+            if (!await CommentRepository.CommentExists(tx, commentId, userId))
                 return NotFound("Either the comment doesn't exist or you don't have permission to delete it");
 
             await CommentRepository.DeleteCommentAsync(tx, commentId, userId);
