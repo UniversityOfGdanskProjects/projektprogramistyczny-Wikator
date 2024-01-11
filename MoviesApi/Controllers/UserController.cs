@@ -6,6 +6,7 @@ using Neo4j.Driver;
 
 namespace MoviesApi.Controllers;
 
+[Route("api/[controller]")]
 public class UserController(IDriver driver, IUserRepository userRepository) : BaseApiController(driver)
 {
     private IUserRepository UserRepository { get; } = userRepository;

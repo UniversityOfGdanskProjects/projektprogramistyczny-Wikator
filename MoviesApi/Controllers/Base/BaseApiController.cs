@@ -5,7 +5,6 @@ using Neo4j.Driver;
 namespace MoviesApi.Controllers.Base;
 
 [ApiController]
-[Route("api/[controller]")]
 [ServiceFilter(typeof(LogUserActivity))]
 public abstract class BaseApiController(IDriver driver) : ControllerBase
 {

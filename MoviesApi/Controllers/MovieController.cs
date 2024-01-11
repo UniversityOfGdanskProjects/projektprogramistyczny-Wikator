@@ -13,7 +13,8 @@ using Neo4j.Driver;
 namespace MoviesApi.Controllers;
 
 [Authorize(Policy = "RequireAdminRole")]
-public class MoviesController(IDriver driver, IMovieRepository movieRepository,
+[Route("api/[controller]")]
+public class MovieController(IDriver driver, IMovieRepository movieRepository,
 	IPhotoService photoService) : BaseApiController(driver)
 {
 	private IMovieRepository MovieRepository { get; } = movieRepository;

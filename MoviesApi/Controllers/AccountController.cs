@@ -8,6 +8,7 @@ using Neo4j.Driver;
 
 namespace MoviesApi.Controllers;
 
+[Route("api/[controller]")]
 public class AccountController(IDriver driver, ITokenService tokenService, IAccountRepository accountRepository)
 	: BaseApiController(driver)
 {

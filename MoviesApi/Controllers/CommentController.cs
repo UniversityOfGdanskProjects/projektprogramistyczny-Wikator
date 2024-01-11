@@ -9,6 +9,7 @@ using Neo4j.Driver;
 namespace MoviesApi.Controllers;
 
 [Authorize]
+[Route("api/[controller]")]
 public class CommentController(IDriver driver, IMovieRepository movieRepository, ICommentRepository commentRepository,
     IUserClaimsProvider userClaimsProvider) : BaseApiController(driver)
 {

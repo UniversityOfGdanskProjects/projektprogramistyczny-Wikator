@@ -8,7 +8,8 @@ using Neo4j.Driver;
 namespace MoviesApi.Controllers;
 
 [Authorize]
-public class IgnoresController(IDriver driver, IIgnoresRepository ignoresRepository,
+[Route("api/movie")]
+public class IgnoredController(IDriver driver, IIgnoresRepository ignoresRepository,
     IUserClaimsProvider userClaimsProvider, IMovieRepository movieRepository)
     : BaseApiController(driver)
 {
@@ -16,7 +17,8 @@ public class IgnoresController(IDriver driver, IIgnoresRepository ignoresReposit
     private IMovieRepository MovieRepository { get; } = movieRepository;
     private IUserClaimsProvider UserClaimsProvider { get; } = userClaimsProvider;
 
-    [HttpGet]
+    
+    [HttpGet("ignored")]
     public async Task<IActionResult> GetAllIgnoredMovies()
     {
         return await ExecuteReadAsync(async tx =>
@@ -26,7 +28,7 @@ public class IgnoresController(IDriver driver, IIgnoresRepository ignoresReposit
         });
     }
     
-    [HttpPost("{movieId:guid}")]
+    [HttpPost("{movieId:guid}/ignored")]
     public async Task<IActionResult> IgnoreMovie(Guid movieId)
     {
         return await ExecuteWriteAsync<IActionResult>(async tx =>
@@ -44,7 +46,7 @@ public class IgnoresController(IDriver driver, IIgnoresRepository ignoresReposit
         });
     }
     
-    [HttpDelete("{movieId:guid}")]
+    [HttpDelete("{movieId:guid}/ignored")]
     public async Task<IActionResult> RemoveMovieFromIgnored(Guid movieId)
     {
         return await ExecuteWriteAsync<IActionResult>(async tx =>

@@ -8,6 +8,7 @@ using Neo4j.Driver;
 namespace MoviesApi.Controllers;
 
 [Authorize]
+[Route("api/movie")]
 public class WatchlistController(IDriver driver, IWatchlistRepository watchlistRepository,
     IMovieRepository movieRepository, IUserClaimsProvider userClaimsProvider)
     : BaseApiController(driver)
@@ -17,7 +18,7 @@ public class WatchlistController(IDriver driver, IWatchlistRepository watchlistR
     private IUserClaimsProvider UserClaimsProvider { get; } = userClaimsProvider;
     
 
-    [HttpGet]
+    [HttpGet("watchlist")]
     public async Task<IActionResult> GetAllMoviesOnWatchlist()
     {
         return await ExecuteReadAsync(async tx =>
@@ -29,7 +30,7 @@ public class WatchlistController(IDriver driver, IWatchlistRepository watchlistR
         });
     }
     
-    [HttpPost("{movieId:guid}")]
+    [HttpPost("{movieId:guid}/watchlist")]
     public async Task<IActionResult> AddToWatchList(Guid movieId)
     {
         return await ExecuteWriteAsync<IActionResult>(async tx =>
@@ -47,7 +48,7 @@ public class WatchlistController(IDriver driver, IWatchlistRepository watchlistR
         });
     }
     
-    [HttpDelete("{movieId:guid}")]
+    [HttpDelete("{movieId:guid}/watchlist")]
     public async Task<IActionResult> RemoveFromWatchList(Guid movieId)
     {
         return await ExecuteWriteAsync<IActionResult>(async tx =>

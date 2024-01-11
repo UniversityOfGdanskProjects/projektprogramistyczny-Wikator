@@ -9,12 +9,14 @@ using Neo4j.Driver;
 namespace MoviesApi.Controllers;
 
 [Authorize]
-public class ReviewsController(IDriver driver, IMovieRepository movieRepository, IReviewRepository reviewRepository,
+[Route("api/[controller]")]
+public class ReviewController(IDriver driver, IMovieRepository movieRepository, IReviewRepository reviewRepository,
     IUserClaimsProvider claimsProvider) : BaseApiController(driver)
 {
     private IReviewRepository ReviewRepository { get; } = reviewRepository;
     private IMovieRepository MovieRepository { get; } = movieRepository;
     private IUserClaimsProvider UserClaimsProvider { get; } = claimsProvider;
+    
 
     [HttpPost]
     public async Task<IActionResult> CreateReview(AddReviewDto reviewDto)

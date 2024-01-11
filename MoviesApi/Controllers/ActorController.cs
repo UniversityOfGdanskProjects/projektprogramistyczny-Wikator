@@ -9,8 +9,9 @@ using Neo4j.Driver;
 
 namespace MoviesApi.Controllers;
 
+[Route("api/[controller]")]
 [Authorize(Policy = "RequireAdminRole")]
-public class ActorsController(IDriver driver, IPhotoService photoService, IActorRepository actorRepository)
+public class ActorController(IDriver driver, IPhotoService photoService, IActorRepository actorRepository)
     : BaseApiController(driver)
 {
     private IPhotoService PhotoService { get; } = photoService;
