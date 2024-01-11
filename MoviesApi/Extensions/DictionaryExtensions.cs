@@ -60,4 +60,12 @@ public static class DictionaryExtensions
             MovieId: Guid.Parse(reviewData["MovieId"].As<string>()),
             Score: reviewData["Score"].As<int>()
         );
+    
+    public static NotificationDto ConvertToNotificationDto(this IDictionary<string, object> notificationData) =>
+        new(
+            Id: Guid.Parse(notificationData["Id"].As<string>()),
+            IsRead: notificationData["IsRead"].As<bool>(),
+            CreatedAt: notificationData["CreatedAt"].As<DateTime>(),
+            Comment: notificationData["Comment"].As<IDictionary<string, object>>().ConvertToCommentDto()
+        );
 }

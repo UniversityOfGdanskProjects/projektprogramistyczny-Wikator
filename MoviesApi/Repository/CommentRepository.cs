@@ -46,12 +46,19 @@ public class CommentRepository : ICommentRepository
         // language=Cypher
         const string query = """
                              MATCH (m:Movie { Id: $movieId }), (u:User { Id: $userId })
-                                CREATE (u)-[r:COMMENTED {
-                                    Id: randomUUID(),
-                                    Text: $text,
-                                    CreatedAt: $dateTime,
-                                    IsEdited: false
-                                }]->(m)
+                             MATCH (m)<-[:FAVOURITE]-(u2:User)
+                             CREATE (u)-[r:COMMENTED {
+                               Id: randomUUID(),
+                               Text: $text,
+                               CreatedAt: $dateTime,
+                               IsEdited: false
+                             }]->(m)
+                             CREATE (u2)<-[:NOTIFICATION {
+                               Id: randomUUID(),
+                               RelatedEntityId: r.Id,
+                               CreatedAt: $dateTime,
+                               IsRead: false
+                             }]-(m)
                              RETURN {
                                  Id: r.Id,
                                  MovieId: m.Id,

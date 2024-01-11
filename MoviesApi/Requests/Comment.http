@@ -1,10 +1,10 @@
-﻿POST https://localhost:7102/api/Comment
-Authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJuYW1laWQiOiJlMzdlYjA2NC05OTdjLTQwNzEtOWNkOS1hNzRkOGZmNzM3MGUiLCJ1bmlxdWVfbmFtZSI6IlRlc3QzIiwicm9sZSI6IlVzZXIiLCJuYmYiOjE3MDQzMTQ1OTcsImV4cCI6MTcwNDkxOTM5NywiaWF0IjoxNzA0MzE0NTk3LCJpc3MiOiJsb2NhbGhvc3QifQ.fqTmxCt0T-WiCofRZARKaqmiMrbR7vRO5UqjDzKF7pD_2FPX35SZn8S1NBRc2TvESE36pdo2Kv044SQQWS5FPQ
+﻿GET https://localhost:7102/api/wishlist
+Authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJuYW1laWQiOiI5YWQ2NDQwNC0xYWJmLTQ3ZjEtODE4OC03YTcyM2E5MzM3NDUiLCJ1bmlxdWVfbmFtZSI6IlRlc3QzIiwicm9sZSI6IlVzZXIiLCJuYmYiOjE3MDQ5OTkxODUsImV4cCI6MTcwNTYwMzk4NSwiaWF0IjoxNzA0OTk5MTg1LCJpc3MiOiJodHRwczovL21vdmllc2FwaXdlYnRlc3QuYXp1cmV3ZWJzaXRlcy5uZXQifQ.8nA9xve0fS0bGD28N63Ldp1mRXoC9r_YBu-O4WQxKIorPCe6HSBWXjQ2rbCaD2OsDa6PoX7-n5FAU4apmTJpPw
 Content-Type: application/json
 
 {
   "text": "Pew-pew",
-  "movieId": "f70065b6-b425-4faa-8daa-e3977dcae01f"
+  "movieId": "6fd87021-ee33-4e3c-8626-220a7023b403"
 }
 
 ###

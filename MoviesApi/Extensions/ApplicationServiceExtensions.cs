@@ -27,6 +27,7 @@ public static class ApplicationServiceExtensions
 		services.AddScoped<IActorRepository, ActorRepository>();
 		services.AddScoped<IAccountRepository, AccountRepository>();
 		services.AddScoped<IUserRepository, UserRepository>();
+		services.AddScoped<INotificationRepository, NotificationRepository>();
 		services.AddScoped<IReviewRepository, ReviewRepository>();
 		services.AddScoped<IWatchlistRepository, WatchlistRepository>();
 		services.AddScoped<IFavouriteRepository, FavouriteRepository>();

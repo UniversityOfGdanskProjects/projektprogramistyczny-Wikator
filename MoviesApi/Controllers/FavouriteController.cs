@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using MoviesApi.Controllers.Base;
 using MoviesApi.Extensions;
 using MoviesApi.Repository.Contracts;
@@ -6,6 +7,7 @@ using Neo4j.Driver;
 
 namespace MoviesApi.Controllers;
 
+[Authorize]
 [Route("api/movie")]
 public class FavouriteController(IDriver driver, IFavouriteRepository favouriteRepository,
     IMovieRepository movieRepository) : BaseApiController(driver)
