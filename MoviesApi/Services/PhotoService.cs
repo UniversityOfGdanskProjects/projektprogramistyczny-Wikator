@@ -26,9 +26,10 @@ public class PhotoService(IOptions<CloudinarySettings> config) : IPhotoService
         {
             File = new FileDescription(file.FileName, stream),
             Transformation = new Transformation()
-                .Height(1000)
-                .Width(750)
+                .Height(1080)
+                .Width(720)
                 .Crop("fill")
+                .AspectRatio(1.33)
                 .Gravity(gravity),
             Folder = "p-bz-2"
         };
