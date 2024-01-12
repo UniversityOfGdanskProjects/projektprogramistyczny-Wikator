@@ -26,7 +26,7 @@ public class Setup(IDriver driver)
             const string createJobQuery = """
                                           CALL apoc.periodic.repeat(
                                               'decrease popularity',
-                                              'MATCH (m:Movie) SET m.popularity = m.popularity / 2',
+                                              'MATCH (m:Movie) SET m.Popularity = m.Popularity / 2',
                                               43200000
                                           )
                                           """;
