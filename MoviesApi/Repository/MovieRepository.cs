@@ -25,7 +25,7 @@ public class MovieRepository : IMovieRepository
 		                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(:User)
 		                     OPTIONAL MATCH (m)<-[w:WATCHLIST]-(:User { Id: $userId })
 		                     OPTIONAL MATCH (m)<-[f:FAVOURITE]-(:User { Id: $userId })
-		                     WITH m, COALESCE(AVG(r.Score), 0) AS AverageReviewScore, COUNT(w) > 0 AS OnWatchlist, COUNT(f) > 0 AS IsFavorite
+		                     WITH m, COALESCE(AVG(r.Score), 0) AS AverageReviewScore, COUNT(w) > 0 AS OnWatchlist, COUNT(f) > 0 AS IsFavourite
 		                     ORDER BY
 		                     CASE WHEN $SortOrder = "Ascending" THEN CASE WHEN $SortBy = "AverageReviewScore" THEN AverageReviewScore ELSE m[$SortBy] END ELSE null END ASC,
 		                     CASE WHEN $SortOrder = "Descending" THEN CASE WHEN $SortBy = "AverageReviewScore" THEN AverageReviewScore ELSE m[$SortBy] END ELSE null END DESC
@@ -35,7 +35,7 @@ public class MovieRepository : IMovieRepository
 		                       PictureAbsoluteUri: m.PictureAbsoluteUri,
 		                       MinimumAge: m.MinimumAge,
 		                       OnWatchlist: OnWatchlist,
-		                       IsFavorite: IsFavorite,
+		                       IsFavourite: IsFavourite,
 		                       AverageReviewScore: AverageReviewScore
 		                     } AS Movies
 		                     SKIP $Skip
@@ -117,7 +117,7 @@ public class MovieRepository : IMovieRepository
 			                                  ReleaseDate: m.ReleaseDate,
 			                                  MinimumAge: m.MinimumAge,
 			                                  OnWatchlist: false,
-			                                  IsFavorite: false,
+			                                  IsFavourite: false,
 			                                  Actors: [],
 			                                  Comments: [],
 			                                  AverageReviewScore: 0
@@ -177,7 +177,7 @@ public class MovieRepository : IMovieRepository
 		                             ReleaseDate: m.ReleaseDate,
 		                             MinimumAge: m.MinimumAge,
 		                             OnWatchlist: false,
-		                             IsFavorite: false,
+		                             IsFavourite: false,
 		                             Actors: Actors,
 		                             Comments: [],
 		                             AverageReviewScore: 0
@@ -261,7 +261,7 @@ public class MovieRepository : IMovieRepository
 			                           IsEdited: c.IsEdited
 			                         }
 			                       END
-			                     ) AS Comments, AVG(r.Score) AS AverageReviewScore, COUNT(w) > 0 AS OnWatchlist, COUNT(f) > 0 AS IsFavorite
+			                     ) AS Comments, AVG(r.Score) AS AverageReviewScore, COUNT(w) > 0 AS OnWatchlist, COUNT(f) > 0 AS IsFavourite
 			                     RETURN {
 			                       Id: m.Id,
 			                       Title: m.Title,
@@ -273,7 +273,7 @@ public class MovieRepository : IMovieRepository
 			                       MinimumAge: m.MinimumAge,
 			                       Actors: Actors,
 			                       OnWatchlist: OnWatchlist,
-			                       IsFavorite: IsFavorite,
+			                       IsFavourite: IsFavourite,
 			                       Comments: Comments,
 			                       AverageReviewScore: COALESCE(AverageReviewScore, 0)
 			                     } AS MovieWithActors
@@ -310,7 +310,7 @@ public class MovieRepository : IMovieRepository
 		                       PictureAbsoluteUri: m.PictureAbsoluteUri,
 		                       MinimumAge: m.MinimumAge,
 		                       OnWatchlist: false,
-		                       IsFavorite: false,
+		                       IsFavourite: false,
 		                       AverageReviewScore: AverageReviewScore
 		                     } AS Movies
 		                     SKIP $Skip

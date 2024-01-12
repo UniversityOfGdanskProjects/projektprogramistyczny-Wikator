@@ -7,53 +7,21 @@ namespace MoviesApi.Repository;
 
 public class WatchlistRepository : IWatchlistRepository
 {
-    public async Task<IEnumerable<MovieDetailsDto>> GetAllMoviesOnWatchlist(IAsyncQueryRunner tx, Guid userId)
+    public async Task<IEnumerable<MovieDto>> GetAllMoviesOnWatchlist(IAsyncQueryRunner tx, Guid userId)
     {
         // language=Cypher
         const string query = """
-                             MATCH (m:Movie)<-[:WATCHLIST]-(u:User {Id: $userId})
-                             OPTIONAL MATCH (m)<-[:PLAYED_IN]-(a:Actor)
-                             OPTIONAL MATCH (m)<-[r:REVIEWED]-(u:User)
-                             OPTIONAl MATCH (m)<-[c:COMMENTED]-(u2:User)
-                             WITH m, COLLECT(
-                               CASE
-                                 WHEN a IS NULL THEN null
-                                 ELSE {
-                                   Id: a.Id,
-                                   FirstName: a.FirstName,
-                                   LastName: a.LastName,
-                                   DateOfBirth: a.DateOfBirth,
-                                   Biography: a.Biography,
-                                   PictureAbsoluteUri: a.PictureAbsoluteUri
-                                 }
-                               END
-                             ) AS Actors,
-                             COLLECT(
-                               CASE
-                                 WHEN u2 is NULL OR c is NULL THEN null
-                                 ELSE {
-                                   Id: c.Id,
-                                   MovieId: m.Id,
-                                   UserId: u2.Id,
-                                   Username: u2.Name,
-                                   Text: c.Text,
-                                   CreatedAt: c.CreatedAt,
-                                   IsEdited: c.IsEdited
-                                 }
-                               END
-                             ) AS Comments, AVG(r.score) AS AverageReviewScore
+                             MATCH (m:Movie)<-[:WATCHLIST]-(u:User { Id: $userId })
+                             OPTIONAL MATCH (m)<-[r:REVIEWED]-(:User)
+                             OPTIONAL MATCH (m)<-[f:FAVOURITE]-(u)
+                             WITH m, AVG(r.Score) AS AverageReviewScore, f IS NOT NULL AS IsFavourite
                              RETURN {
                                Id: m.Id,
                                Title: m.Title,
-                               Description: m.Description,
-                               InTheaters: m.InTheaters,
-                               TrailerAbsoluteUri: m.TrailerAbsoluteUri,
                                PictureAbsoluteUri: m.PictureAbsoluteUri,
-                               ReleaseDate: m.ReleaseDate,
                                MinimumAge: m.MinimumAge,
-                               Actors: Actors,
                                OnWatchlist: true,
-                               Comments: Comments,
+                               IsFavourite: IsFavourite,
                                AverageReviewScore: COALESCE(AverageReviewScore, 0)
                              } AS MovieWithActors
                              """;
@@ -62,7 +30,7 @@ public class WatchlistRepository : IWatchlistRepository
         return await result.ToListAsync(record =>
         {
             var movieWithActorsDto = record["MovieWithActors"].As<IDictionary<string, object>>();
-            return movieWithActorsDto.ConvertToMovieDetailsDto();
+            return movieWithActorsDto.ConvertToMovieDto();
         });
     }
 

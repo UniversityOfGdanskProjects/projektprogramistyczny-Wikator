@@ -13,14 +13,16 @@ public class IgnoresRepository : IIgnoresRepository
         const string query = """
                              MATCH (m:Movie)<-[:IGNORES]-(u:User { Id: $userId })
                              OPTIONAL MATCH (m)<-[r:REVIEWED]-(:User)
-                             OPTIONAL MATCH (m)<-[w:WATCHLIST]-(:User { Id: $userId })
-                             WITH m, AVG(r.Score) AS AverageReviewScore, COUNT(w) > 0 AS OnWatchlist
+                             OPTIONAL MATCH (m)<-[w:WATCHLIST]-(u)
+                             OPTIONAL MATCH (m)<-[f:FAVOURITE]-(u)
+                             WITH m, AVG(r.Score) AS AverageReviewScore, w IS NOT NULL AS OnWatchlist, f IS NOT NULL AS IsFavourite
                              RETURN {
                                Id: m.Id,
                                Title: m.Title,
                                PictureAbsoluteUri: m.PictureAbsoluteUri,
                                MinimumAge: m.MinimumAge,
                                OnWatchlist: OnWatchlist,
+                               IsFavourite: IsFavourite,
                                AverageReviewScore: COALESCE(AverageReviewScore, 0)
                              } AS MovieWithActors
                              """;
