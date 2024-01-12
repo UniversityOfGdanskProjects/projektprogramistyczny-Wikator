@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using CloudinaryDotNet;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MoviesApi.Controllers.Base;
 using MoviesApi.DTOs.Requests;
@@ -62,7 +63,7 @@ public class ActorController(IDriver driver, IPhotoService photoService, IActorR
                     "file", actorDto.FileName ?? $"movie-{new Guid()}"
                     );
 
-                var uploadResult = await PhotoService.AddPhotoAsync(file);
+                var uploadResult = await PhotoService.AddPhotoAsync(file, Gravity.Face);
                 if (uploadResult.Error is not null)
                     throw new PhotoServiceException("Photo failed to save, please try again in few minutes");
 

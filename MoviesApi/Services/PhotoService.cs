@@ -14,7 +14,7 @@ public class PhotoService(IOptions<CloudinarySettings> config) : IPhotoService
         config.Value.ApiSecret
     ));
 
-    public async Task<ImageUploadResult> AddPhotoAsync(IFormFile file)
+    public async Task<ImageUploadResult> AddPhotoAsync(IFormFile file, string gravity = "auto")
     {
         var uploadResult = new ImageUploadResult();
 
@@ -26,16 +26,14 @@ public class PhotoService(IOptions<CloudinarySettings> config) : IPhotoService
         {
             File = new FileDescription(file.FileName, stream),
             Transformation = new Transformation()
-                .Height(500)
+                .Height(1000)
                 .Width(750)
                 .Crop("fill")
-                .Gravity(Gravity.Auto),
+                .Gravity(gravity),
             Folder = "p-bz-2"
         };
 
-        uploadResult = await Cloudinary.UploadAsync(uploadParams);
-
-        return uploadResult;
+        return await Cloudinary.UploadAsync(uploadParams);
     }
 
     public async Task<DeletionResult> DeleteAsync(string publicId)
