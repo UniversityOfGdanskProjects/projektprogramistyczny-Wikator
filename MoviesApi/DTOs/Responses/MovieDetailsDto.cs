@@ -11,6 +11,6 @@ public record MovieDetailsDto(
     int MinimumAge,
     string? PictureUri,
     bool OnWatchlist,
-    bool IsFavorite,
+    bool IsFavourite,
     IEnumerable<ActorDto> Actors,
     IEnumerable<CommentDto> Comments);
