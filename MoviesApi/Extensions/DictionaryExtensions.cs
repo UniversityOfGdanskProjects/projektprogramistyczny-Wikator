@@ -18,6 +18,8 @@ public static class DictionaryExtensions
             MinimumAge: movie["MinimumAge"].As<int>(),
             OnWatchlist: movie["OnWatchlist"].As<bool>(),
             IsFavourite: movie["IsFavourite"].As<bool>(),
+            UserReviewScore: movie["UserReviewScore"].As<int?>(),
+            ReviewsCount: movie["ReviewsCount"].As<int>(),
             Actors: movie["Actors"].As<List<IDictionary<string, object>>>().Select(ConvertToActorDto),
             Comments: movie["Comments"].As<List<IDictionary<string, object>>>().Select(ConvertToCommentDto)
         );
@@ -30,6 +32,8 @@ public static class DictionaryExtensions
             PictureUri: movie["PictureAbsoluteUri"].As<string?>(),
             OnWatchlist: movie["OnWatchlist"].As<bool>(),
             IsFavourite: movie["IsFavourite"].As<bool>(),
+            UserReviewScore: movie["UserReviewScore"].As<int?>(),
+            ReviewsCount: movie["ReviewsCount"].As<int>(),
             MinimumAge: movie["MinimumAge"].As<int>()
         );
 
@@ -68,6 +72,9 @@ public static class DictionaryExtensions
             Id: Guid.Parse(notificationData["Id"].As<string>()),
             IsRead: notificationData["IsRead"].As<bool>(),
             CreatedAt: notificationData["CreatedAt"].As<DateTime>(),
-            Comment: notificationData["Comment"].As<IDictionary<string, object>>().ConvertToCommentDto()
+            CommentUsername: notificationData["CommentUsername"].As<string>(),
+            CommentText: notificationData["CommentText"].As<string>(),
+            MovieId: Guid.Parse(notificationData["MovieId"].As<string>()),
+            MovieTitle: notificationData["MovieTitle"].As<string>()
         );
 }

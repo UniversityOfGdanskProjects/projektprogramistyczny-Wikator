@@ -12,22 +12,17 @@ public class NotificationRepository : INotificationRepository
     {
         // language=Cypher
         const string query = """
-                             MATCH (u:User { Id: $userId })<-[r:NOTIFICATION]-(m:Movie)
-                             MATCH (m)<-[c:COMMENTED { Id: r.RelatedEntityId }]-(u2:User)
+                             MATCH (:User { Id: $userId })<-[r:NOTIFICATION]-(m:Movie)
+                             MATCH (m)<-[c:COMMENTED { Id: r.RelatedEntityId }]-(u:User)
 
                              RETURN {
                                Id: r.Id,
                                IsRead: r.IsRead,
                                CreatedAt: r.CreatedAt,
-                               Comment: {
-                                 Id: c.Id,
-                                 MovieId: m.Id,
-                                 UserId: u2.Id,
-                                 Username: u2.Name,
-                                 Text: c.Text,
-                                 CreatedAt: c.CreatedAt,
-                                 IsEdited: c.IsEdited
-                               }
+                               CommentUsername: u.Username,
+                               CommentText: c.Text,
+                               MovieId: m.Id,
+                               MovieTitle: m.Title
                              } AS Notification
                              SKIP $Skip
                              LIMIT $Limit

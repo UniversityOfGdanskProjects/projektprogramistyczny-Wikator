@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using MoviesApi.Controllers.Base;
 using MoviesApi.Extensions;
 using MoviesApi.Helpers;
@@ -7,6 +8,7 @@ using Neo4j.Driver;
 
 namespace MoviesApi.Controllers;
 
+[Authorize]
 [Route("api/[controller]")]
 public class NotificationController(IDriver driver,
     INotificationRepository notificationRepository) : BaseApiController(driver)

@@ -14,7 +14,8 @@ public class WatchlistRepository : IWatchlistRepository
                              MATCH (m:Movie)<-[:WATCHLIST]-(u:User { Id: $userId })
                              OPTIONAL MATCH (m)<-[r:REVIEWED]-(:User)
                              OPTIONAL MATCH (m)<-[f:FAVOURITE]-(u)
-                             WITH m, AVG(r.Score) AS AverageReviewScore, f IS NOT NULL AS IsFavourite
+                             OPTIONAL MATCH (m)<-[ur:REVIEWED]-(u)
+                             WITH m, AVG(r.Score) AS AverageReviewScore, f IS NOT NULL AS IsFavourite, COUNT(r) AS ReviewsCount, ur.Score AS UserReviewScore
                              RETURN {
                                Id: m.Id,
                                Title: m.Title,
@@ -22,6 +23,8 @@ public class WatchlistRepository : IWatchlistRepository
                                MinimumAge: m.MinimumAge,
                                OnWatchlist: true,
                                IsFavourite: IsFavourite,
+                               UserReviewScore: UserReviewScore,
+                               ReviewsCount: ReviewsCount,
                                AverageReviewScore: COALESCE(AverageReviewScore, 0)
                              } AS MovieWithActors
                              """;
