@@ -27,7 +27,7 @@ public class Setup(IDriver driver)
                                           CALL apoc.periodic.repeat(
                                               'decrease popularity',
                                               'MATCH (m:Movie) SET m.Popularity = m.Popularity / 2',
-                                              43200000
+                                              60 * 60 * 12
                                           )
                                           """;
             await session.ExecuteWriteAsync(async tx => await tx.RunAsync(createJobQuery));
