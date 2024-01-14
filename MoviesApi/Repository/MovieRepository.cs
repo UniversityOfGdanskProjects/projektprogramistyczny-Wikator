@@ -21,7 +21,8 @@ public class MovieRepository : IMovieRepository
 		                       AND ($Actor IS NULL OR $Actor = "" OR EXISTS {
 		                       MATCH (m)<-[:PLAYED_IN]-(a:Actor)
 		                       WHERE a.Id = $Actor
-		                      })
+		                       })
+		                       AND ($InTheaters IS NULL OR m.InTheaters = $InTheaters)
 		                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(:User)
 		                     OPTIONAL MATCH (m)<-[w:WATCHLIST]-(:User { Id: $userId })
 		                     OPTIONAL MATCH (m)<-[f:FAVOURITE]-(:User { Id: $userId })
@@ -49,8 +50,9 @@ public class MovieRepository : IMovieRepository
 			new
 			{
 				userId = userId.ToString(), queryParams.Title, Actor = queryParams.Actor.ToString(),
-				SortBy = queryParams.SortBy.ToString(), SortOrder = queryParams.SortOrder.ToString(),
-				Skip = (queryParams.PageNumber - 1) * queryParams.PageSize, Limit = queryParams.PageSize
+				queryParams.InTheaters, SortBy = queryParams.SortBy.ToString(),
+				SortOrder = queryParams.SortOrder.ToString(), Skip = (queryParams.PageNumber - 1) * queryParams.PageSize,
+				Limit = queryParams.PageSize
 			});
 		
 		var items = await cursor.ToListAsync(record =>
@@ -309,6 +311,7 @@ public class MovieRepository : IMovieRepository
 		                       AND ($Actor IS NULL OR $Actor = "" OR EXISTS {
 		                         MATCH (m)<-[:PLAYED_IN]-(a:Actor { Id: $Actor })
 		                       })
+		                       AND ($InTheaters IS NULL OR m.InTheaters = $InTheaters)
 		                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(:User)
 		                     WITH m, COALESCE(AVG(r.Score), 0) AS AverageReviewScore, COUNT(r) AS ReviewsCount
 		                     ORDER BY
@@ -331,7 +334,7 @@ public class MovieRepository : IMovieRepository
 		
 		var cursor = await tx.RunAsync(query, new
 		{
-			queryParams.Title, Actor = queryParams.Actor.ToString(),
+			queryParams.Title, Actor = queryParams.Actor.ToString(), queryParams.InTheaters,
 			SortBy = queryParams.SortBy.ToString(), SortOrder = queryParams.SortOrder.ToString(),
 			Skip = (queryParams.PageNumber - 1) * queryParams.PageSize,
 			Limit = queryParams.PageSize
