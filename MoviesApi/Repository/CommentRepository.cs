@@ -41,18 +41,20 @@ public class CommentRepository : ICommentRepository
         // language=Cypher
         const string query = """
                              MATCH (m:Movie { id: $movieId }), (u:User { id: $userId })
-                             MATCH (m)<-[:FAVOURITE]-(u2:User)
+                             OPTIONAL MATCH (m)<-[:FAVOURITE]-(u2:User) WHERE u2.id <> $userId
                              CREATE (u)-[r:COMMENTED {
                                id: apoc.create.uuid(),
                                text: $text,
                                createdAt: $dateTime,
                                isEdited: false
                              }]->(m)
-                             CREATE (u2)<-[:NOTIFICATION {
-                               id: apoc.create.uuid(),
-                               relatedEntityId: r.id,
-                               isRead: false
-                             }]-(m)
+                             FOREACH(ignoreMe IN CASE WHEN u2 IS NOT NULL THEN [1] ELSE [] END |
+                               CREATE (u2)<-[:NOTIFICATION {
+                                 id: apoc.create.uuid(),
+                                 relatedEntityId: r.id,
+                                 isRead: false
+                               }]-(m)
+                             )
                              RETURN
                                r.id AS id,
                                m.id AS movieId,
