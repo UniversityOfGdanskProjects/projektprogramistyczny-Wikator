@@ -21,7 +21,8 @@ public class MovieRepository : IMovieRepository
 		                       AND ($actor IS NULL OR $actor = "" OR EXISTS {
 		                       MATCH (m)<-[:PLAYED_IN]-(a:Actor)
 		                       WHERE a.id = $actor
-		                      })
+		                       })
+		                       AND ($inTheaters IS NULL OR m.inTheaters = $inTheaters)
 		                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(:User)
 		                     OPTIONAL MATCH (m)<-[w:WATCHLIST]-(:User { id: $userId })
 		                     OPTIONAL MATCH (m)<-[f:FAVOURITE]-(:User { id: $userId })
@@ -49,6 +50,7 @@ public class MovieRepository : IMovieRepository
 			userId = userId.ToString(),
 			title = queryParams.Title,
 			actor = queryParams.Actor.ToString(),
+			inTheaters = queryParams.InTheaters,
 			sortBy = queryParams.SortBy.ToCamelCaseString(),
 			sortOrder = queryParams.SortOrder.ToCamelCaseString(),
 			skip = (queryParams.PageNumber - 1) * queryParams.PageSize,
@@ -316,6 +318,7 @@ public class MovieRepository : IMovieRepository
 		                       AND ($actor IS NULL OR $actor = "" OR EXISTS {
 		                         MATCH (m)<-[:PLAYED_IN]-(a:Actor { id: $actor })
 		                       })
+		                       AND ($inTheaters IS NULL OR m.inTheaters = $inTheaters)
 		                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(:User)
 		                     WITH m, COALESCE(AVG(r.score), 0) AS averageReviewScore, COUNT(r) AS reviewsCount
 		                     ORDER BY
@@ -339,6 +342,7 @@ public class MovieRepository : IMovieRepository
 		{
 			title = queryParams.Title,
 			actor = queryParams.Actor.ToString(),
+			inTheaters = queryParams.InTheaters,
 			sortBy = queryParams.SortBy.ToCamelCaseString(),
 			sortOrder = queryParams.SortOrder.ToCamelCaseString(),
 			skip = (queryParams.PageNumber - 1) * queryParams.PageSize,

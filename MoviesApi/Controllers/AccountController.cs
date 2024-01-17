@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using MoviesApi.Controllers.Base;
 using MoviesApi.DTOs.Requests;
 using MoviesApi.DTOs.Responses;
+using MoviesApi.Extensions;
 using MoviesApi.Repository.Contracts;
 using MoviesApi.Services.Contracts;
 using Neo4j.Driver;
@@ -46,6 +48,18 @@ public class AccountController(IDriver driver, ITokenService tokenService, IAcco
 				null => BadRequest("There was an error when creating new user"),
 				_ => Ok(new UserDto(user.Id, user.Name, user.Role, TokenService.CreateToken(user)))
 			};
+		});
+	}
+	
+	[Authorize]
+	[HttpDelete]
+	public async Task<IActionResult> DeleteAccount()
+	{
+		return await ExecuteWriteAsync<IActionResult>(async tx =>
+		{
+			var userId = User.GetUserId();
+			await AccountRepository.DeleteUserAsync(tx, userId);
+			return NoContent();
 		});
 	}
 }

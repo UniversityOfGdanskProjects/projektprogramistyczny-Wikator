@@ -83,6 +83,17 @@ public class AccountRepository : IAccountRepository
         }
     }
 
+    public async Task DeleteUserAsync(IAsyncQueryRunner tx, Guid userId)
+    {
+        // language=Cypher
+        const string query = """
+                             MATCH (u:User { id: $Id })
+                             DETACH DELETE u
+                             """;
+        
+        await tx.RunAsync(query, new { Id = userId.ToString() });
+    }
+
     public async Task<bool> EmailExistsAsync(IAsyncQueryRunner tx, string email)
     {
         // language=Cypher
