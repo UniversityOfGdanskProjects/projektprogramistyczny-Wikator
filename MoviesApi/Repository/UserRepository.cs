@@ -29,4 +29,16 @@ public class UserRepository : IUserRepository
             );
         });
     }
+
+    public async Task<bool> UserExistsAsync(IAsyncQueryRunner tx, Guid userId)
+    {
+        // language=Cypher
+        const string query = """
+                             MATCH (u:User { id: $userId })
+                             RETURN COUNT(u) > 0 AS userExists
+                             """;
+
+        var cursor = await tx.RunAsync(query, new { userId = userId.ToString() });
+        return await cursor.SingleAsync(record => record["userExists"].As<bool>());
+    }
 }
