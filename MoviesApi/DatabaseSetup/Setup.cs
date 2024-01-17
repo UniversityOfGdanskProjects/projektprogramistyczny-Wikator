@@ -26,7 +26,7 @@ public class Setup(IDriver driver)
             const string createJobQuery = """
                                           CALL apoc.periodic.repeat(
                                               'decrease popularity',
-                                              'MATCH (m:Movie) SET m.Popularity = m.Popularity / 2',
+                                              'MATCH (m:Movie) SET m.popularity = m.popularity / 2',
                                               60 * 60 * 12
                                           )
                                           """;
@@ -38,7 +38,7 @@ public class Setup(IDriver driver)
     {
         await using var sessions = Driver.AsyncSession();
         // language=Cypher
-        const string adminExistQuery = "Match (u:User { Role : 'Admin' }) WITH COUNT(u) > 0 AS adminExists Return adminExists";
+        const string adminExistQuery = "Match (u:User { role : 'Admin' }) RETURN COUNT(u) > 0 AS adminExists";
         
         var result = await sessions.ExecuteReadAsync(async tx =>
         {
@@ -56,25 +56,28 @@ public class Setup(IDriver driver)
             // language=Cypher
             const string query = """
                                  CREATE (a:User {
-                                   Id: randomUUID(),
-                                   Name: $Name,
-                                   Email: $Email,
-                                   PasswordHash: $PasswordHash,
-                                   PasswordSalt: $PasswordSalt,
-                                   Role: "Admin",
-                                   LastActive: datetime()
+                                   id: apoc.create.uuid(),
+                                   name: $name,
+                                   email: $email,
+                                   passwordHash: $passwordHash,
+                                   passwordSalt: $passwordSalt,
+                                   role: "Admin",
+                                   lastActive: datetime()
                                  })
-                                 RETURN a.Name as name, a.Email as email, a.Role as role, a.Id as id
+                                 RETURN a.name as name, a.email as email, a.role as role, a.id as id
                                  """;
+
+            var parameters = new
+            {
+                name = "Admin",
+                email = "wiktor@szymulewicz.com",
+                passwordHash = Convert.ToBase64String(passwordHash),
+                passwordSalt = Convert.ToBase64String(passwordSalt)
+            };
 
             await sessions.ExecuteWriteAsync(async tx =>
             {
-                await tx.RunAsync(query, new
-                {
-                    Name = "Admin", Email = "wiktor@szymulewicz.com",
-                    PasswordHash = Convert.ToBase64String(passwordHash),
-                    PasswordSalt = Convert.ToBase64String(passwordSalt)
-                });
+                await tx.RunAsync(query, parameters);
             });
         }
     }

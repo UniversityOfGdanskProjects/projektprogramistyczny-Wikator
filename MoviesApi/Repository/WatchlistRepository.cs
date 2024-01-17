@@ -11,37 +11,32 @@ public class WatchlistRepository : IWatchlistRepository
     {
         // language=Cypher
         const string query = """
-                             MATCH (m:Movie)<-[:WATCHLIST]-(u:User { Id: $userId })
+                             MATCH (m:Movie)<-[:WATCHLIST]-(u:User { id: $userId })
                              OPTIONAL MATCH (m)<-[r:REVIEWED]-(:User)
                              OPTIONAL MATCH (m)<-[f:FAVOURITE]-(u)
                              OPTIONAL MATCH (m)<-[ur:REVIEWED]-(u)
-                             WITH m, AVG(r.Score) AS AverageReviewScore, f IS NOT NULL AS IsFavourite, COUNT(r) AS ReviewsCount, ur.Score AS UserReviewScore
-                             RETURN {
-                               Id: m.Id,
-                               Title: m.Title,
-                               PictureAbsoluteUri: m.PictureAbsoluteUri,
-                               MinimumAge: m.MinimumAge,
-                               OnWatchlist: true,
-                               IsFavourite: IsFavourite,
-                               UserReviewScore: UserReviewScore,
-                               ReviewsCount: ReviewsCount,
-                               AverageReviewScore: COALESCE(AverageReviewScore, 0)
-                             } AS MovieWithActors
+                             WITH m, AVG(r.score) AS averageReviewScore, f IS NOT NULL AS isFavourite, COUNT(r) AS reviewsCount, ur.score AS userReviewScore
+                             RETURN
+                               m.id AS id,
+                               m.title AS title,
+                               m.pictureAbsoluteUri AS pictureAbsoluteUri,
+                               m.minimumAge AS minimumAge,
+                               true AS onWatchlist,
+                               isFavourite,
+                               userReviewScore,
+                               reviewsCount,
+                               averageReviewScore
                              """;
 
         var result = await tx.RunAsync(query, new { userId = userId.ToString() });
-        return await result.ToListAsync(record =>
-        {
-            var movieWithActorsDto = record["MovieWithActors"].As<IDictionary<string, object>>();
-            return movieWithActorsDto.ConvertToMovieDto();
-        });
+        return await result.ToListAsync(record => record.ConvertToMovieDto());
     }
 
     public async Task AddToWatchList(IAsyncQueryRunner tx, Guid userId, Guid movieId)
     {
         // language=Cypher
         const string query = """
-                             MATCH (u:User { Id: $userId }), (m:Movie { Id: $movieId })
+                             MATCH (u:User { id: $userId }), (m:Movie { id: $movieId })
                              CREATE (u)-[r:WATCHLIST]->(m)
                              """;
         
@@ -52,25 +47,28 @@ public class WatchlistRepository : IWatchlistRepository
     {
         // language=Cypher
         const string query = """
-                             MATCH (:User { Id: $userId })-[r:WATCHLIST]->(:Movie { Id: $movieId })
+                             MATCH (:User { id: $userId })-[r:WATCHLIST]->(:Movie { id: $movieId })
                              DELETE r
                              """;
 
-        await tx.RunAsync(query,
-            new { userId = userId.ToString(), movieId = movieId.ToString() });
+        await tx.RunAsync(query, new { userId = userId.ToString(), movieId = movieId.ToString() });
     }
     
     public async Task<bool> WatchlistExists(IAsyncQueryRunner tx, Guid movieId, Guid userId)
     {
         // language=Cypher
-        const string checkIfWatchlistExistsQuery = """
-                                                   MATCH (:User { Id: $userId })-[r:WATCHLIST]->(:Movie { Id: $movieId })
-                                                   WITH COUNT(r) > 0 AS watchlistExists
-                                                   RETURN watchlistExists
-                                                   """;
+        const string query = """
+                             MATCH (:User { id: $userId })-[r:WATCHLIST]->(:Movie { id: $movieId })
+                             RETURN COUNT(r) > 0 AS watchlistExists
+                             """;
         
-        var watchlistExistsCursor = await tx.RunAsync(checkIfWatchlistExistsQuery,
-            new { userId = userId.ToString(), movieId = movieId.ToString() });
+        var parameters = new
+        {
+            userId = userId.ToString(),
+            movieId = movieId.ToString()
+        };
+        
+        var watchlistExistsCursor = await tx.RunAsync(query, parameters);
         return await watchlistExistsCursor.SingleAsync(record => record["watchlistExists"].As<bool>());
     }
 }

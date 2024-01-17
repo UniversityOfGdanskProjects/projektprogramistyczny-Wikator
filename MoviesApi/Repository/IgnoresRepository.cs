@@ -11,68 +11,59 @@ public class IgnoresRepository : IIgnoresRepository
     {
         // language=Cypher
         const string query = """
-                             MATCH (m:Movie)<-[:IGNORES]-(u:User { Id: $userId })
+                             MATCH (m:Movie)<-[:IGNORES]-(u:User { id: $userId })
                              OPTIONAL MATCH (m)<-[r:REVIEWED]-(:User)
                              OPTIONAL MATCH (m)<-[w:WATCHLIST]-(u)
                              OPTIONAL MATCH (m)<-[f:FAVOURITE]-(u)
                              OPTIONAL MATCH (m)<-[ur:REVIEWED]-(u)
-                             WITH m, AVG(r.Score) AS AverageReviewScore, w IS NOT NULL AS OnWatchlist, f IS NOT NULL AS IsFavourite, COUNT(r) AS ReviewsCount, ur.Score AS UserReviewScore
-                             RETURN {
-                               Id: m.Id,
-                               Title: m.Title,
-                               PictureAbsoluteUri: m.PictureAbsoluteUri,
-                               MinimumAge: m.MinimumAge,
-                               OnWatchlist: OnWatchlist,
-                               IsFavourite: IsFavourite,
-                               UserReviewScore: UserReviewScore,
-                               ReviewsCount: ReviewsCount,
-                               AverageReviewScore: COALESCE(AverageReviewScore, 0)
-                             } AS MovieWithActors
+                             WITH m, COALESCE(AVG(r.score), 0) AS averageReviewScore, w IS NOT NULL AS onWatchlist, f IS NOT NULL AS isFavourite, COUNT(r) AS reviewsCount, ur.score AS userReviewScore
+                             RETURN
+                               m.id AS id,
+                               m.title AS title,
+                               m.pictureAbsoluteUri AS pictureAbsoluteUri,
+                               m.minimumAge AS minimumAge,
+                               onWatchlist,
+                               isFavourite,
+                               userReviewScore,
+                               reviewsCount,
+                               averageReviewScore
                              """;
 
         var result = await tx.RunAsync(query, new { userId = userId.ToString() });
-        return await result.ToListAsync(record =>
-        {
-            var movieWithActorsDto = record["MovieWithActors"].As<IDictionary<string, object>>();
-            return movieWithActorsDto.ConvertToMovieDto();
-        });
+        return await result.ToListAsync(record => record.ConvertToMovieDto());
     }
 
     public async Task IgnoreMovie(IAsyncQueryRunner tx, Guid userId, Guid movieId)
     {
         // language=Cypher
         const string query = """
-                             MATCH (u:User { Id: $userId }), (m:Movie { Id: $movieId })
+                             MATCH (u:User { id: $userId }), (m:Movie { id: $movieId })
                              CREATE (u)-[r:IGNORES]->(m)
                              """;
         
-        await tx.RunAsync(query,
-            new { userId = userId.ToString(), movieId = movieId.ToString() });
+        await tx.RunAsync(query, new { userId = userId.ToString(), movieId = movieId.ToString() });
     }
 
     public async Task RemoveIgnoreMovie(IAsyncQueryRunner tx, Guid userId, Guid movieId)
     {
         // language=Cypher
-        const string removeMovieFromIgnoredQuery = """
-                                                   MATCH (:User { Id: $userId })-[r:IGNORES]->(:Movie { Id: $movieId })
-                                                   DELETE r
-                                                   """;
+        const string query = """
+                             MATCH (:User { id: $userId })-[r:IGNORES]->(:Movie { id: $movieId })
+                             DELETE r
+                             """;
 
-        await tx.RunAsync(removeMovieFromIgnoredQuery,
-            new { userId = userId.ToString(), movieId = movieId.ToString() });
+        await tx.RunAsync(query, new { userId = userId.ToString(), movieId = movieId.ToString() });
     }
 
     public async Task<bool> IgnoresExists(IAsyncQueryRunner tx, Guid movieId, Guid userId)
     {
         // language=Cypher
         const string query = """
-                             MATCH (:User { Id: $userId })-[r:IGNORES]->(:Movie { Id: $movieId })
-                             WITH COUNT(r) > 0 AS IsIgnored
-                             RETURN IsIgnored
+                             MATCH (:User { id: $userId })-[r:IGNORES]->(:Movie { id: $movieId })
+                             RETURN COUNT(r) > 0 AS isIgnored
                              """;
 
-        var cursor = await tx.RunAsync(query,
-            new { userId = userId.ToString(), movieId = movieId.ToString() });
-        return await cursor.SingleAsync(record => record["IsIgnored"].As<bool>());
+        var cursor = await tx.RunAsync(query, new { userId = userId.ToString(), movieId = movieId.ToString() });
+        return await cursor.SingleAsync(record => record["isIgnored"].As<bool>());
     }
 }

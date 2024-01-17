@@ -13,46 +13,38 @@ public class ActorRepository : IActorRepository
         // language=Cypher
         const string query = """
                              MATCH (a:Actor)
-                             RETURN {
-                                 Id: a.Id,
-                                 FirstName: a.FirstName,
-                                 LastName: a.LastName,
-                                 DateOfBirth: a.DateOfBirth,
-                                 Biography: a.Biography,
-                                 PictureAbsoluteUri: a.PictureAbsoluteUri
-                             } AS Actors
+                             RETURN 
+                                 a.id AS id,
+                                 a.firstName AS firstName,
+                                 a.lastName AS lastName,
+                                 a.dateOfBirth AS dateOfBirth,
+                                 a.biography AS biography,
+                                 a.pictureAbsoluteUri AS pictureAbsoluteUri
                              """;
 
         var cursor = await tx.RunAsync(query);
-        return await cursor.ToListAsync(record =>
-        {
-            var actor = record["Actors"].As<IDictionary<string, object>>();
-
-            return actor.ConvertToActorDto();
-        });
+        return await cursor.ToListAsync(record => record.ConvertToActorDto());
     }
 
     public async Task<ActorDto?> GetActor(IAsyncQueryRunner tx, Guid id)
     {
         // language=Cypher
         const string query = """
-                             MATCH (a:Actor { Id: $id })
-                             RETURN {
-                                 Id: a.Id,
-                                 FirstName: a.FirstName,
-                                 LastName: a.LastName,
-                                 DateOfBirth: a.DateOfBirth,
-                                 Biography: a.Biography,
-                                 PictureAbsoluteUri: a.PictureAbsoluteUri
-                             } AS Actor
+                             MATCH (a:Actor { id: $id })
+                             RETURN
+                                 a.id AS id,
+                                 a.firstName AS firstName,
+                                 a.lastName AS lastName,
+                                 a.dateOfBirth AS dateOfBirth,
+                                 a.biography AS biography,
+                                 a.pictureAbsoluteUri AS pictureAbsoluteUri
                              """;
     
         var cursor = await tx.RunAsync(query, new { id = id.ToString() });
         
         try
         {
-            return await cursor.SingleAsync(record =>
-                record["Actor"].As<Dictionary<string, object>>().ConvertToActorDto());
+            return await cursor.SingleAsync(record => record.ConvertToActorDto());
         }
         catch (InvalidOperationException)
         {
@@ -60,76 +52,82 @@ public class ActorRepository : IActorRepository
         }
     }
 
-    public async Task<ActorDto> CreateActor(IAsyncQueryRunner tx, AddActorDto actorDto, string? pictureAbsoluteUri, string? picturePublicId)
+    public async Task<ActorDto> CreateActor(IAsyncQueryRunner tx, AddActorDto actorDto,
+        string? pictureAbsoluteUri, string? picturePublicId)
     {
         // language=Cypher
         const string query = """
                              CREATE (a:Actor { 
-                               Id: randomUUID(),
-                               FirstName: $FirstName,
-                               LastName: $LastName,
-                               DateOfBirth: $DateOfBirth,
-                               Biography: $Biography,
-                               PictureAbsoluteUri: $PictureAbsoluteUri,
-                               PicturePublicId: $PicturePublicId
+                               id: apoc.create.uuid(),
+                               firstName: $firstName,
+                               lastName: $lastName,
+                               dateOfBirth: $dateOfBirth,
+                               biography: $biography,
+                               pictureAbsoluteUri: $pictureAbsoluteUri,
+                               picturePublicId: $picturePublicId
                              })
-                             RETURN {
-                               Id: a.Id,
-                               FirstName: a.FirstName,
-                               LastName: a.LastName,
-                               DateOfBirth: a.DateOfBirth,
-                               Biography: a.Biography,
-                               PictureAbsoluteUri: a.PictureAbsoluteUri
-                             } As Actor
+                             RETURN
+                               a.id AS id,
+                               a.firstName AS firstName,
+                               a.lastName AS lastName,
+                               a.dateOfBirth AS dateOfBirth,
+                               a.biography AS biography,
+                               a.pictureAbsoluteUri AS pictureAbsoluteUri
                              """;
 
         var cursor = await tx.RunAsync(query, new
         {
-            actorDto.FirstName, actorDto.LastName, actorDto.DateOfBirth, actorDto.Biography,
-            PictureAbsoluteUri = pictureAbsoluteUri, PicturePublicId = picturePublicId
+            firstName = actorDto.FirstName,
+            lastName = actorDto.LastName,
+            dateOfBirth = actorDto.DateOfBirth,
+            biography = actorDto.Biography,
+            pictureAbsoluteUri,
+            picturePublicId
         });
 
-        return await cursor.SingleAsync(record =>
-            record["Actor"].As<Dictionary<string, object>>().ConvertToActorDto());
+        return await cursor.SingleAsync(record => record.ConvertToActorDto());
     }
 
-    public async Task<ActorDto> UpdateActor(IAsyncQueryRunner tx, Guid id, UpdateActorDto actorDto, string? pictureAbsoluteUri, string? picturePublicId)
+    public async Task<ActorDto> UpdateActor(IAsyncQueryRunner tx, Guid id,
+        UpdateActorDto actorDto, string? pictureAbsoluteUri, string? picturePublicId)
     {
         // language=Cypher
         const string query = """
-                                  MATCH (a:Actor {Id: $id})
+                                  MATCH (a:Actor {id: $id})
                                   SET
-                                    a.FirstName = coalesce($FirstName, a.FirstName),
-                                    a.LastName = coalesce($LastName, a.LastName),
-                                    a.DateOfBirth = coalesce($DateOfBirth, a.DateOfBirth),
-                                    a.Biography = $Biography,
-                                    a.PictureAbsoluteUri = $PictureAbsoluteUri,
-                                    a.PicturePublicId = $PicturePublicId
-                                  RETURN {
-                                    Id: a.Id,
-                                    FirstName: a.FirstName,
-                                    LastName: a.LastName,
-                                    DateOfBirth: a.DateOfBirth,
-                                    Biography: a.Biography,
-                                    PictureAbsoluteUri: a.PictureAbsoluteUri
-                                  } As Actor
+                                    a.firstName = coalesce($firstName, a.firstName),
+                                    a.lastName = coalesce($lastName, a.lastName),
+                                    a.dateOfBirth = coalesce($dateOfBirth, a.dateOfBirth),
+                                    a.biography = $biography,
+                                    a.pictureAbsoluteUri = $pictureAbsoluteUri,
+                                    a.picturePublicId = $picturePublicId
+                                  RETURN
+                                    a.id AS id,
+                                    a.firstName AS firstName,
+                                    a.lastName AS lastName,
+                                    a.dateOfBirth as dateOfBirth,
+                                    a.biography AS biography,
+                                    a.pictureAbsoluteUri AS pictureAbsoluteUri
                                   """;
         
         var cursor = await tx.RunAsync(query, new
         {
-            id = id.ToString(), actorDto.FirstName, actorDto.LastName,
-            actorDto.DateOfBirth, actorDto.Biography, PictureAbsoluteUri = pictureAbsoluteUri,
-            PicturePublicId = picturePublicId
+            id = id.ToString(),
+            firstName = actorDto.FirstName, 
+            lastName = actorDto.LastName,
+            dateOfBirth = actorDto.DateOfBirth,
+            biography = actorDto.Biography,
+            pictureAbsoluteUri,
+            picturePublicId
         });
 
-        return await cursor.SingleAsync(record =>
-            record["Actor"].As<IDictionary<string, object>>().ConvertToActorDto());
+        return await cursor.SingleAsync(record => record.ConvertToActorDto());
     }
 
     public async Task DeleteActor(IAsyncQueryRunner tx, Guid id)
     {
         // language=Cypher
-        const string deleteQuery = "MATCH (a:Actor) WHERE Id(a) = $id DETACH DELETE a";
+        const string deleteQuery = "MATCH (a:Actor) WHERE a.id = $id DETACH DELETE a";
         await tx.RunAsync(deleteQuery, new { id = id.ToString() });
     }
 
@@ -137,21 +135,19 @@ public class ActorRepository : IActorRepository
     {
         // language=Cypher
         const string query = """
-                             MATCH (a:Actor {Id: $id})
-                             WITH COUNT(a) > 0 AS actorExists
-                             RETURN actorExists
+                             MATCH (a:Actor {id: $id})
+                             RETURN COUNT(a) > 0 AS actorExists
                              """;
 
         var actorExistsCursor = await tx.RunAsync(query, new { id = id.ToString() });
-
         return await actorExistsCursor.SingleAsync(record => record["actorExists"].As<bool>());
     }
 
     public async Task<string?> GetPublicId(IAsyncQueryRunner tx, Guid actorId)
     {
         // language=Cypher
-        const string matchQuery = "MATCH (a:Actor) WHERE a.Id = $id RETURN a.PicturePublicId AS PicturePublicId";
+        const string matchQuery = "MATCH (a:Actor) WHERE a.id = $id RETURN a.picturePublicId AS picturePublicId";
         var cursor = await tx.RunAsync(matchQuery, new { id = actorId.ToString() });
-        return await cursor.SingleAsync(record => record["PicturePublicId"].As<string?>());
+        return await cursor.SingleAsync(record => record["picturePublicId"].As<string?>());
     }
 }

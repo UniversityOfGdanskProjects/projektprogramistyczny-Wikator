@@ -20,7 +20,7 @@ public class UserExistsInDatabaseMiddleware(RequestDelegate next)
             {
                 // language=Cypher
                 var cursor = await transaction.RunAsync(
-                    "MATCH (u:User {Id: $userId}) WITH COUNT(u) > 0 AS userExists RETURN userExists",
+                    "MATCH (u:User { id: $userId }) RETURN COUNT(u) > 0 AS userExists",
                     new { userId });
 
                 return await cursor.SingleAsync(record => record["userExists"].As<bool>());

@@ -8,49 +8,44 @@ namespace MoviesApi.Repository;
 
 public class NotificationRepository : INotificationRepository
 {
-    public async Task<PagedList<NotificationDto>> GetAllNotificationsAsync(IAsyncQueryRunner tx, NotificationQueryParams queryParams, Guid userId)
+    public async Task<PagedList<NotificationDto>> GetAllNotificationsAsync(IAsyncQueryRunner tx,
+        NotificationQueryParams queryParams, Guid userId)
     {
         // language=Cypher
         const string query = """
-                             MATCH (:User { Id: $userId })<-[r:NOTIFICATION]-(m:Movie)
-                             MATCH (m)<-[c:COMMENTED { Id: r.RelatedEntityId }]-(u:User)
+                             MATCH (:User { id: $userId })<-[r:NOTIFICATION]-(m:Movie)
+                             MATCH (m)<-[c:COMMENTED { id: r.relatedEntityId }]-(u:User)
 
-                             RETURN {
-                               Id: r.Id,
-                               IsRead: r.IsRead,
-                               CreatedAt: r.CreatedAt,
-                               CommentUsername: u.Username,
-                               CommentText: c.Text,
-                               MovieId: m.Id,
-                               MovieTitle: m.Title
-                             } AS Notification
-                             SKIP $Skip
-                             LIMIT $Limit
+                             RETURN
+                               r.id AS id,
+                               r.isRead AS isRead,
+                               c.createdAt AS createdAt,
+                               u.name AS commentUsername,
+                               c.text AS commentText,
+                               m.id AS movieId,
+                               m.title AS movieTitle
+                             SKIP $skip
+                             LIMIT $limit
                              """;
         
-        var cursor = await tx.RunAsync(query,
-            new
-            {
-                userId = userId.ToString(), Skip = (queryParams.PageNumber - 1) * queryParams.PageSize,
-                Limit = queryParams.PageSize
-            });
-        
-        var items = await cursor.ToListAsync(record =>
+        var parameters = new
         {
-            var notification = record["Notification"].As<IDictionary<string, object>>();
-            return notification.ConvertToNotificationDto();
-        });
+            userId = userId.ToString(),
+            skip = (queryParams.PageNumber - 1) * queryParams.PageSize,
+            limit = queryParams.PageSize
+        };
+        
+        var cursor = await tx.RunAsync(query, parameters);
+        var items = await cursor.ToListAsync(record => record.ConvertToNotificationDto());
         
         // language=Cypher
         const string totalCountQuery = """
-                                       MATCH (:User { Id: $userId })<-[r:NOTIFICATION]-(:Movie)
-                                       RETURN COUNT(r) AS TotalCount
+                                       MATCH (:User { id: $userId })<-[r:NOTIFICATION]-(:Movie)
+                                       RETURN COUNT(r) AS totalCount
                                        """;
         
-        var totalCountCursor = await tx.RunAsync(totalCountQuery,
-            new { userId = userId.ToString() });
-        var totalCount = await totalCountCursor.SingleAsync(record => record["TotalCount"].As<int>());
-        
+        var totalCountCursor = await tx.RunAsync(totalCountQuery, new { userId = userId.ToString() });
+        var totalCount = await totalCountCursor.SingleAsync(record => record["totalCount"].As<int>());
         return new PagedList<NotificationDto>(items, queryParams.PageNumber, queryParams.PageSize, totalCount);
     }
 
@@ -58,72 +53,61 @@ public class NotificationRepository : INotificationRepository
     {
         // language=Cypher
         const string query = """
-                             MATCH (:User { Id: $userId })<-[r:NOTIFICATION { Id: $notificationId }]-(:Movie)
-                             SET r.IsRead = true
+                             MATCH (:User { id: $userId })<-[r:NOTIFICATION { id: $notificationId }]-(:Movie)
+                             SET r.isRead = true
                              """;
 
-        await tx.RunAsync(query,
-            new
-            {
-                userId = userId.ToString(),
-                notificationId = notificationId.ToString()
-            });
+        await tx.RunAsync(query, new { userId = userId.ToString(), notificationId = notificationId.ToString()});
     }
 
     public Task MarkAllNotificationsAsReadAsync(IAsyncQueryRunner tx, Guid userId)
     {
         // language=Cypher
         const string query = """
-                             MATCH (:User { Id: $userId })<-[r:NOTIFICATION]-(:Movie)
-                             SET r.IsRead = true
+                             MATCH (:User { id: $userId })<-[r:NOTIFICATION]-(:Movie)
+                             SET r.isRead = true
                              """;
         
-        return tx.RunAsync(query,
-            new { userId = userId.ToString() });
+        return tx.RunAsync(query, new { userId = userId.ToString() });
     }
 
-    public Task DeleteNotificationAsync(IAsyncQueryRunner tx, Guid notificationId, Guid userId)
+    public async Task DeleteNotificationAsync(IAsyncQueryRunner tx, Guid notificationId, Guid userId)
     {
         // language=Cypher
         const string query = """
-                             MATCH (:User { Id: $userId })<-[r:NOTIFICATION { Id: $notificationId }]-(:Movie)
+                             MATCH (:User { id: $userId })<-[r:NOTIFICATION { id: $notificationId }]-(:Movie)
                              DELETE r
                              """;
         
-        return tx.RunAsync(query,
-            new
-            {
-                userId = userId.ToString(),
-                notificationId = notificationId.ToString()
-            });
+        await tx.RunAsync(query, new { userId = userId.ToString(), notificationId = notificationId.ToString()});
     }
 
-    public Task DeleteAllNotificationsAsync(IAsyncQueryRunner tx, Guid userId)
+    public async Task DeleteAllNotificationsAsync(IAsyncQueryRunner tx, Guid userId)
     {
         // language=Cypher
         const string query = """
-                             MATCH (:User { Id: $userId })<-[r:NOTIFICATION]-(:Movie)
+                             MATCH (:User { id: $userId })<-[r:NOTIFICATION]-(:Movie)
                              DELETE r
                              """;
         
-        return tx.RunAsync(query,
-            new { userId = userId.ToString() });
+        await tx.RunAsync(query, new { userId = userId.ToString() });
     }
 
     public async Task<bool> NotificationExistsAsync(IAsyncQueryRunner tx, Guid notificationId, Guid userId)
     {
         // language=Cypher
         const string query = """
-                             MATCH (:User { Id: $userId })<-[r:NOTIFICATION { Id: $notificationId }]-(:Movie)
-                             RETURN COUNT(r) > 0 AS Exists
+                             MATCH (:User { id: $userId })<-[r:NOTIFICATION { id: $notificationId }]-(:Movie)
+                             RETURN COUNT(r) > 0 AS exists
                              """;
         
-        var cursor = await tx.RunAsync(query,
-            new
-            {
-                userId = userId.ToString(),
-                notificationId = notificationId.ToString()
-            });
-        return await cursor.SingleAsync(record => record["Exists"].As<bool>());
+        var parameters = new
+        {
+            userId = userId.ToString(),
+            notificationId = notificationId.ToString()
+        };
+        
+        var cursor = await tx.RunAsync(query, parameters);
+        return await cursor.SingleAsync(record => record["exists"].As<bool>());
     }
 }

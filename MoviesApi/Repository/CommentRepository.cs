@@ -8,32 +8,27 @@ namespace MoviesApi.Repository;
 
 public class CommentRepository : ICommentRepository
 {
-    public async Task<CommentDto?> GetCommentAsync(IAsyncQueryRunner tx,Guid commentId)
+    public async Task<CommentDto?> GetCommentAsync(IAsyncQueryRunner tx, Guid commentId)
     {
         // language=Cypher
         const string query = """
-                                MATCH (m:Movie)<-[r:COMMENTED]-(u:User)
-                                WHERE r.Id = $commentId
-                                RETURN {
-                                    Id: r.Id,
-                                    MovieId: m.Id,
-                                    UserId: u.Id,
-                                    Username: u.Name,
-                                    Text: r.Text,
-                                    CreatedAt: r.CreatedAt,
-                                    IsEdited: r.IsEdited
-                                } AS Comment
+                             MATCH (m:Movie)<-[r:COMMENTED]-(u:User)
+                             WHERE r.id = $commentId
+                             RETURN
+                               r.id AS id,
+                               m.id AS movieId,
+                               u.id AS userId,
+                               u.name AS username,
+                               r.text AS text,
+                               r.createdAt AS createdAt,
+                               r.isEdited AS isEdited
                              """;
         
         var result = await tx.RunAsync(query, new { commentId = commentId.ToString() });
 
         try
         {
-            return await result.SingleAsync(record =>
-            {
-                var comment = record["Comment"].As<IDictionary<string, object>>();
-                return comment.ConvertToCommentDto();
-            });
+            return await result.SingleAsync(record => record.ConvertToCommentDto());
         }
         catch (InvalidOperationException)
         {
@@ -41,81 +36,78 @@ public class CommentRepository : ICommentRepository
         }
     }
 
-    public async Task<CommentDto> AddCommentAsync(IAsyncQueryRunner tx,Guid userId, AddCommentDto addCommentDto)
+    public async Task<CommentDto> AddCommentAsync(IAsyncQueryRunner tx, Guid userId, AddCommentDto addCommentDto)
     {
         // language=Cypher
         const string query = """
-                             MATCH (m:Movie { Id: $movieId }), (u:User { Id: $userId })
+                             MATCH (m:Movie { id: $movieId }), (u:User { id: $userId })
                              MATCH (m)<-[:FAVOURITE]-(u2:User)
                              CREATE (u)-[r:COMMENTED {
-                               Id: randomUUID(),
-                               Text: $text,
-                               CreatedAt: $dateTime,
-                               IsEdited: false
+                               id: apoc.create.uuid(),
+                               text: $text,
+                               createdAt: $dateTime,
+                               isEdited: false
                              }]->(m)
                              CREATE (u2)<-[:NOTIFICATION {
-                               Id: randomUUID(),
-                               RelatedEntityId: r.Id,
-                               CreatedAt: $dateTime,
-                               IsRead: false
+                               id: apoc.create.uuid(),
+                               relatedEntityId: r.id,
+                               isRead: false
                              }]-(m)
-                             RETURN {
-                                 Id: r.Id,
-                                 MovieId: m.Id,
-                                 UserId: u.Id,
-                                 Username: u.Name,
-                                 Text: r.Text,
-                                 CreatedAt: r.CreatedAt,
-                                 IsEdited: r.IsEdited
-                             } AS Comment
+                             RETURN
+                               r.id AS id,
+                               m.id AS movieId,
+                               u.id AS userId,
+                               u.name AS username,
+                               r.text AS text,
+                               r.createdAt AS createdAt,
+                               r.isEdited AS isEdited
                              """;
-        var cursor = await tx.RunAsync(query, new
+        
+        var parameters = new
         {
             movieId = addCommentDto.MovieId.ToString(),
             userId = userId.ToString(),
             text = addCommentDto.Text,
             dateTime = DateTime.Now
-        });
+        };
         
-        return await cursor.SingleAsync(record =>
-        {
-            var comment = record["Comment"].As<IDictionary<string, object>>();
-            return comment.ConvertToCommentDto();
-        });
+        var cursor = await tx.RunAsync(query, parameters);
+        return await cursor.SingleAsync(record => record.ConvertToCommentDto());
     }
 
-    public async Task<CommentDto> EditCommentAsync(IAsyncQueryRunner tx,Guid commentId, Guid userId, EditCommentDto addCommentDto)
+    public async Task<CommentDto> EditCommentAsync(IAsyncQueryRunner tx, Guid commentId, Guid userId,
+        EditCommentDto addCommentDto)
     {
         // language=Cypher
         const string query = """
-                             MATCH (u:User { Id: $userId })-[r:COMMENTED { Id: $commentId }]->(m:Movie)
-                             SET r.Text = $text, r.IsEdited = true
-                             RETURN {
-                                 Id: r.Id,
-                                 MovieId: m.Id,
-                                 UserId: u.Id,
-                                 Username: u.Name,
-                                 Text: r.Text,
-                                 CreatedAt: r.CreatedAt,
-                                 IsEdited: r.IsEdited
-                             } AS Comment
+                             MATCH (u:User { id: $userId })-[r:COMMENTED { id: $commentId }]->(m:Movie)
+                             SET r.text = $text, r.isEdited = true
+                             RETURN
+                               r.id AS id,
+                               m.id AS movieId,
+                               u.id AS userId,
+                               u.name AS username,
+                               r.text AS text,
+                               r.createdAt AS createdAt,
+                               r.isEdited AS isEdited
                              """;
-
-        var cursor = await tx.RunAsync(query, new
-            { userId = userId.ToString(), commentId = commentId.ToString(), text = addCommentDto.Text });
-
-        return await cursor.SingleAsync(record =>
+        
+        var parameters = new
         {
-            var comment = record["Comment"].As<IDictionary<string, object>>();
-            return comment.ConvertToCommentDto();
-        });
+            userId = userId.ToString(),
+            commentId = commentId.ToString(),
+            text = addCommentDto.Text
+        };
+
+        var cursor = await tx.RunAsync(query, parameters);
+        return await cursor.SingleAsync(record => record.ConvertToCommentDto());
     }
 
     public async Task DeleteCommentAsync(IAsyncQueryRunner tx,Guid commentId, Guid userId)
     {
         // language=Cypher
         const string query = """
-                             MATCH (:User { Id: $userId })-[r:COMMENTED { Id: $commentId }]->(:Movie)
+                             MATCH (:User { id: $userId })-[r:COMMENTED { id: $commentId }]->(:Movie)
                              DELETE r
                              """;
 
@@ -126,13 +118,11 @@ public class CommentRepository : ICommentRepository
     {
         // language=Cypher
         const string query = """
-                             MATCH (:User { Id: $userId })-[r:COMMENTED { Id: $commentId }]->(:Movie)
-                             WITH COUNT(r) > 0 AS commentsExists
-                             RETURN commentsExists
+                             MATCH (:User { id: $userId })-[r:COMMENTED { id: $commentId }]->(:Movie)
+                             RETURN COUNT(r) > 0 AS commentsExists
                              """;
 
-        var cursor = await tx.RunAsync(query,
-            new { commentId = commentId.ToString(), userId = userId.ToString() });
+        var cursor = await tx.RunAsync(query, new { commentId = commentId.ToString(), userId = userId.ToString() });
         return await cursor.SingleAsync(record => record["commentsExists"].As<bool>());
     }
 }

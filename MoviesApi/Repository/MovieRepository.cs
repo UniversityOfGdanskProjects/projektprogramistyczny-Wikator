@@ -13,70 +13,74 @@ public class MovieRepository : IMovieRepository
 	{
 		// language=Cypher
 		const string query = """
-		                     MATCH (ignoredMovie:Movie)<-[:IGNORES]-(u:User { Id: $userId })
-		                     WITH COLLECT(ignoredMovie.Id) AS ignoredMovieIds
+		                     MATCH (ignoredMovie:Movie)<-[:IGNORES]-(u:User { id: $userId })
+		                     WITH COLLECT(ignoredMovie.id) AS ignoredMovieIds
 
 		                     MATCH (m:Movie)
-		                     WHERE NOT m.Id IN ignoredMovieIds AND toLower(m.Title) CONTAINS toLower($Title)
-		                       AND ($Actor IS NULL OR $Actor = "" OR EXISTS {
+		                     WHERE NOT m.id IN ignoredMovieIds AND toLower(m.title) CONTAINS toLower($title)
+		                       AND ($actor IS NULL OR $actor = "" OR EXISTS {
 		                       MATCH (m)<-[:PLAYED_IN]-(a:Actor)
-		                       WHERE a.Id = $Actor
+		                       WHERE a.id = $actor
 		                      })
 		                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(:User)
-		                     OPTIONAL MATCH (m)<-[w:WATCHLIST]-(:User { Id: $userId })
-		                     OPTIONAL MATCH (m)<-[f:FAVOURITE]-(:User { Id: $userId })
-		                     OPTIONAL MATCH (m)<-[ur:REVIEWED]-(:User { Id: $userId })
-		                     WITH m, COALESCE(AVG(r.Score), 0) AS AverageReviewScore, COUNT(w) > 0 AS OnWatchlist, COUNT(f) > 0 AS IsFavourite, COUNT(r) AS ReviewsCount, ur.Score AS UserReviewScore
+		                     OPTIONAL MATCH (m)<-[w:WATCHLIST]-(:User { id: $userId })
+		                     OPTIONAL MATCH (m)<-[f:FAVOURITE]-(:User { id: $userId })
+		                     OPTIONAL MATCH (m)<-[ur:REVIEWED]-(:User { id: $userId })
+		                     WITH m, COALESCE(AVG(r.score), 0) AS averageReviewScore, COUNT(w) > 0 AS onWatchlist, COUNT(f) > 0 AS isFavourite, COUNT(r) AS reviewsCount, ur.score AS userReviewScore
 		                     ORDER BY
-		                     CASE WHEN $SortOrder = "Ascending" THEN CASE WHEN $SortBy = "AverageReviewScore" THEN AverageReviewScore ELSE m[$SortBy] END ELSE null END ASC,
-		                     CASE WHEN $SortOrder = "Descending" THEN CASE WHEN $SortBy = "AverageReviewScore" THEN AverageReviewScore ELSE m[$SortBy] END ELSE null END DESC
-		                     RETURN {
-		                       Id: m.Id,
-		                       Title: m.Title,
-		                       PictureAbsoluteUri: m.PictureAbsoluteUri,
-		                       MinimumAge: m.MinimumAge,
-		                       OnWatchlist: OnWatchlist,
-		                       IsFavourite: IsFavourite,
-		                       UserReviewScore: UserReviewScore,
-		                       ReviewsCount: ReviewsCount,
-		                       AverageReviewScore: AverageReviewScore
-		                     } AS Movies
-		                     SKIP $Skip
-		                     LIMIT $Limit
+		                     CASE WHEN $sortOrder = "ascending" THEN CASE WHEN $sortBy = "averageReviewScore" THEN averageReviewScore ELSE m[$sortBy] END ELSE null END ASC,
+		                     CASE WHEN $sortOrder = "descending" THEN CASE WHEN $sortBy = "averageReviewScore" THEN averageReviewScore ELSE m[$sortBy] END ELSE null END DESC
+		                     RETURN
+		                       m.id AS id,
+		                       m.title AS title,
+		                       m.pictureAbsoluteUri AS pictureAbsoluteUri,
+		                       m.minimumAge AS minimumAge,
+		                       onWatchlist,
+		                       isFavourite,
+		                       userReviewScore,
+		                       reviewsCount,
+		                       averageReviewScore
+		                     SKIP $skip
+		                     LIMIT $limit
 		                     """;
-		
-		var cursor = await tx.RunAsync(query,
-			new
-			{
-				userId = userId.ToString(), queryParams.Title, Actor = queryParams.Actor.ToString(),
-				SortBy = queryParams.SortBy.ToString(), SortOrder = queryParams.SortOrder.ToString(),
-				Skip = (queryParams.PageNumber - 1) * queryParams.PageSize, Limit = queryParams.PageSize
-			});
-		
-		var items = await cursor.ToListAsync(record =>
+
+		var parameters = new
 		{
-			var movieWithActorsDto = record["Movies"].As<IDictionary<string, object>>();
-			return movieWithActorsDto.ConvertToMovieDto();
-		});
+			userId = userId.ToString(),
+			title = queryParams.Title,
+			actor = queryParams.Actor.ToString(),
+			sortBy = queryParams.SortBy.ToCamelCaseString(),
+			sortOrder = queryParams.SortOrder.ToCamelCaseString(),
+			skip = (queryParams.PageNumber - 1) * queryParams.PageSize,
+			limit = queryParams.PageSize
+		};
+		
+		var cursor = await tx.RunAsync(query, parameters);
+		var items = await cursor.ToListAsync(record => record.ConvertToMovieDto());
 		
 		// language=Cypher
 		const string totalCountQuery = """
-		                               MATCH (ignoredMovie:Movie)<-[:IGNORES]-(u:User { Id: $userId })
-		                               WITH COLLECT(ignoredMovie.Id) AS ignoredMovieIds
+		                               MATCH (ignoredMovie:Movie)<-[:IGNORES]-(u:User { id: $userId })
+		                               WITH COLLECT(ignoredMovie.id) AS ignoredMovieIds
 		                               
 		                               MATCH (m:Movie)
-		                               WHERE NOT m.Id IN ignoredMovieIds AND toLower(m.Title) CONTAINS toLower($Title)
-		                                 AND ($Actor IS NULL OR $Actor = "" OR EXISTS {
+		                               WHERE NOT m.id IN ignoredMovieIds AND toLower(m.title) CONTAINS toLower($title)
+		                                 AND ($actor IS NULL OR $actor = "" OR EXISTS {
 		                                 MATCH (m)<-[:PLAYED_IN]-(a:Actor)
-		                                 WHERE a.Id = $Actor
+		                                 WHERE a.id = $actor
 		                               })
-		                               WITH COUNT(m) as TotalCount
-		                               RETURN TotalCount
+		                               RETURN COUNT(m) AS totalCount
 		                               """;
 
-		var totalCountCursor = await tx.RunAsync(totalCountQuery,
-			new { userId = userId.ToString(), queryParams.Title, Actor = queryParams.Actor.ToString()});
-		var totalCount = await totalCountCursor.SingleAsync(record => record["TotalCount"].As<int>());
+		var totalCountParameters = new
+		{
+			userId = userId.ToString(),
+			title = queryParams.Title,
+			actor = queryParams.Actor.ToString()
+		};
+
+		var totalCountCursor = await tx.RunAsync(totalCountQuery, totalCountParameters);
+		var totalCount = await totalCountCursor.SingleAsync(record => record["totalCount"].As<int>());
 		return new PagedList<MovieDto>(items, queryParams.PageNumber, queryParams.PageSize, totalCount);
 	}
 
@@ -84,145 +88,151 @@ public class MovieRepository : IMovieRepository
 	{
 		// language=Cypher
 		const string query = """
-		                     MATCH (m:Movie { Id: $movieId })
-		                     RETURN m.PicturePublicId AS PicturePublicId
+		                     MATCH (m:Movie { id: $movieId })
+		                     RETURN m.picturePublicId AS picturePublicId
 		                     """;
 
 		var cursor = await tx.RunAsync(query, new { movieId = movieId.ToString() });
-		return await cursor.SingleAsync(record => record["PicturePublicId"].As<string?>());
+		return await cursor.SingleAsync(record => record["picturePublicId"].As<string?>());
 	}
 
-	public async Task<MovieDetailsDto> AddMovie(IAsyncQueryRunner tx, AddMovieDto movieDto, string? pictureAbsoluteUri, string? picturePublicId)
+	public async Task<MovieDetailsDto> AddMovie(IAsyncQueryRunner tx,
+		AddMovieDto movieDto, string? pictureAbsoluteUri, string? picturePublicId)
 	{
 		if (!movieDto.ActorIds.Any())
 		{
 			// language=Cypher
 			const string createMovieQuery = """
 			                                CREATE (m:Movie {
-			                                  Id: randomUUID(),
-			                                  Title: $Title,
-			                                  Description: $Description,
-			                                  PictureAbsoluteUri: $PictureAbsoluteUri,
-			                                  PicturePublicId: $PicturePublicId,
-			                                  InTheaters: $InTheaters,
-			                                  ReleaseDate: $ReleaseDate,
-			                                  MinimumAge: $MinimumAge,
-			                                  TrailerAbsoluteUri: $TrailerAbsoluteUri,
-			                                  Popularity: 0
+			                                  id: apoc.create.uuid(),
+			                                  title: $title,
+			                                  description: $description,
+			                                  pictureAbsoluteUri: $pictureAbsoluteUri,
+			                                  picturePublicId: $picturePublicId,
+			                                  inTheaters: $inTheaters,
+			                                  releaseDate: $releaseDate,
+			                                  minimumAge: $minimumAge,
+			                                  trailerAbsoluteUri: $trailerAbsoluteUri,
+			                                  popularity: 0
 			                                })
-			                                RETURN {
-			                                  Id: m.Id,
-			                                  Title: m.Title,
-			                                  Description: m.Description,
-			                                  InTheaters: m.InTheaters,
-			                                  TrailerAbsoluteUri: m.TrailerAbsoluteUri,
-			                                  PictureAbsoluteUri: m.PictureAbsoluteUri,
-			                                  ReleaseDate: m.ReleaseDate,
-			                                  MinimumAge: m.MinimumAge,
-			                                  OnWatchlist: false,
-			                                  IsFavourite: false,
-			                                  UserReviewScore: null,
-			                                  ReviewsCount: 0,
-			                                  Actors: [],
-			                                  Comments: [],
-			                                  AverageReviewScore: 0
-			                                } AS MovieWithActors
+			                                RETURN
+			                                  m.id AS id,
+			                                  m.title AS title,
+			                                  m.description AS description,
+			                                  m.inTheaters AS inTheaters,
+			                                  m.trailerAbsoluteUri AS trailerAbsoluteUri,
+			                                  m.pictureAbsoluteUri AS pictureAbsoluteUri,
+			                                  m.releaseDate AS releaseDate,
+			                                  m.minimumAge AS minimumAge,
+			                                  false AS onWatchlist,
+			                                  false AS isFavourite,
+			                                  null AS userReviewScore,
+			                                  0 AS reviewsCount,
+			                                  [] AS actors,
+			                                  [] AS comments,
+			                                  0 AS averageReviewScore
 			                                """;
 
-			var movieCursorWithoutActors =
-				await tx.RunAsync(createMovieQuery, 
-					new { movieDto.Title, movieDto.Description, movieDto.ActorIds, PictureAbsoluteUri = pictureAbsoluteUri,
-						PicturePublicId = picturePublicId, movieDto.InTheaters, movieDto.ReleaseDate, movieDto.MinimumAge,
-						TrailerAbsoluteUri = movieDto.TrailerUrl });
-			
-			var movieRecordWithoutActors = await movieCursorWithoutActors.SingleAsync();
-			var movieNodeWithoutActors = movieRecordWithoutActors["MovieWithActors"].As<IDictionary<string, object>>();
+			var movieWithoutActorsParameters = new
+			{
+				title = movieDto.Title,
+				description = movieDto.Description,
+				inTheaters = movieDto.InTheaters,
+				releaseDate = movieDto.ReleaseDate,
+				minimumAge = movieDto.MinimumAge,
+				trailerAbsoluteUri = movieDto.TrailerUrl,
+				pictureAbsoluteUri,
+				picturePublicId
+			};
 
-			return  movieNodeWithoutActors.ConvertToMovieDetailsDto();
+			var movieCursorWithoutActors = await tx.RunAsync(createMovieQuery, movieWithoutActorsParameters);
+			return await movieCursorWithoutActors.SingleAsync(record => record.ConvertToMovieDetailsDto());
 		}
 		
 		// language=Cypher
 		const string createQuery = """
 		                           CREATE (m:Movie {
-		                             Id: randomUUID(),
-		                             Title: $Title,
-		                             Description: $Description,
-		                             PictureAbsoluteUri: $PictureAbsoluteUri,
-		                             PicturePublicId: $PicturePublicId,
-		                             InTheaters: $InTheaters,
-		                             ReleaseDate: $ReleaseDate,
-		                             MinimumAge: $MinimumAge,
-		                             Popularity: 0,
-		                             TrailerAbsoluteUri: $TrailerAbsoluteUri
+		                             id: apoc.create.uuid(),
+		                             title: $title,
+		                             description: $description,
+		                             pictureAbsoluteUri: $pictureAbsoluteUri,
+		                             picturePublicId: $picturePublicId,
+		                             inTheaters: $inTheaters,
+		                             releaseDate: $releaseDate,
+		                             minimumAge: $minimumAge,
+		                             popularity: 0,
+		                             trailerAbsoluteUri: $trailerAbsoluteUri
 		                           })
 		                           WITH m
-		                           UNWIND $ActorIds AS actorId
-		                           MATCH (a:Actor { Id: actorId })
+		                           UNWIND $actorIds AS actorId
+		                           MATCH (a:Actor { id: actorId })
 		                           CREATE (a)-[:PLAYED_IN]->(m)
 		                           WITH m, COLLECT(
 		                             CASE
 		                               WHEN a IS NULL THEN null
 		                               ELSE {
-		                                 Id: a.Id,
-		                                 FirstName: a.FirstName,
-		                                 LastName: a.LastName,
-		                                 DateOfBirth: a.DateOfBirth,
-		                                 Biography: a.Biography,
-		                                 PictureAbsoluteUri: a.PictureAbsoluteUri
+		                                 id: a.id,
+		                                 firstName: a.firstName,
+		                                 lastName: a.lastName,
+		                                 dateOfBirth: a.dateOfBirth,
+		                                 biography: a.biography,
+		                                 pictureAbsoluteUri: a.pictureAbsoluteUri
 		                               }
 		                             END
-		                           ) AS Actors
-		                           RETURN {
-		                             Id: m.Id,
-		                             Title: m.Title,
-		                             Description: m.Description,
-		                             InTheaters: m.InTheaters,
-		                             TrailerAbsoluteUri: m.TrailerAbsoluteUri,
-		                             PictureAbsoluteUri: m.PictureAbsoluteUri,
-		                             ReleaseDate: m.ReleaseDate,
-		                             MinimumAge: m.MinimumAge,
-		                             OnWatchlist: false,
-		                             IsFavourite: false,
-		                             UserReviewScore: null,
-		                             ReviewsCount: 0,
-		                             Actors: Actors,
-		                             Comments: [],
-		                             AverageReviewScore: 0
-		                           } AS MovieWithActors
+		                           ) AS actors
+		                           RETURN
+		                             m.id AS id,
+		                             m.title AS title,
+		                             m.description AS description,
+		                             m.inTheaters AS inTheaters,
+		                             m.trailerAbsoluteUri AS trailerAbsoluteUri,
+		                             m.pictureAbsoluteUri AS pictureAbsoluteUri,
+		                             m.releaseDate AS releaseDate,
+		                             m.minimumAge AS minimumAge,
+		                             false AS onWatchlist,
+		                             false AS isFavourite,
+		                             null AS userReviewScore,
+		                             0 AS reviewsCount,
+		                             actors,
+		                             [] AS comments,
+		                             0 AS averageReviewScore
 		                           """;
+		
+		var movieWithActorsParameters = new
+		{
+			title = movieDto.Title,
+			actorIds = movieDto.ActorIds.Select(a => a.ToString()),
+			description = movieDto.Description,
+			inTheaters = movieDto.InTheaters,
+			releaseDate = movieDto.ReleaseDate,
+			minimumAge = movieDto.MinimumAge,
+			trailerAbsoluteUri = movieDto.TrailerUrl,
+			pictureAbsoluteUri,
+			picturePublicId
+		};
 
-		var movieCursor = await tx.RunAsync(
-			createQuery,
-			new { movieDto.Title, movieDto.Description, ActorIds = movieDto.ActorIds.Select(a => a.ToString()), PictureAbsoluteUri = pictureAbsoluteUri,
-				PicturePublicId = picturePublicId, movieDto.InTheaters, movieDto.ReleaseDate, movieDto.MinimumAge,
-				TrailerAbsoluteUri = movieDto.TrailerUrl }
-		);
-
-		var record = await movieCursor.SingleAsync();
-
-		var movieNode = record["MovieWithActors"].As<IDictionary<string, object>>();
-		return movieNode.ConvertToMovieDetailsDto();
+		var movieCursor = await tx.RunAsync(createQuery, movieWithActorsParameters);
+		return await movieCursor.SingleAsync(record => record.ConvertToMovieDetailsDto());
 	}
 
 	public async Task DeleteMovie(IAsyncQueryRunner tx, Guid movieId)
 	{
 		// language=cypher
-		const string movieExistsAsync = """
-		                                  MATCH (m:Movie { Id: $movieId })
-		                                  DETACH DELETE m
-		                                """;
+		const string query = """
+                             MATCH (m:Movie { id: $movieId })
+                             DETACH DELETE m
+                             """;
 
-		await tx.RunAsync(movieExistsAsync, new { movieId = movieId.ToString() });
+		await tx.RunAsync(query, new { movieId = movieId.ToString() });
 	}
 
 	public async Task<bool> MovieExists(IAsyncQueryRunner tx, Guid movieId)
 	{
 		// language=Cypher
 		const string query = """
-		                                     MATCH (m:Movie {Id: $movieId})
-		                                     WITH COUNT(m) > 0 as movieExists
-		                                     RETURN movieExists
-		                                     """;
+                             MATCH (m:Movie { id: $movieId })
+                             RETURN COUNT(m) > 0 AS movieExists
+                             """;
 
 		var cursor = await tx.RunAsync(query, new { movieId = movieId.ToString() });
 		return await cursor.SingleAsync(record => record["movieExists"].As<bool>());
@@ -234,65 +244,62 @@ public class MovieRepository : IMovieRepository
 		{
 			// language=Cypher
 			const string query = """
-			                     MATCH (m:Movie { Id: $movieId })
-			                     SET m.Popularity = m.Popularity + 1
+			                     MATCH (m:Movie { id: $movieId })
+			                     SET m.popularity = m.popularity + 1
 			                     WITH m
 			                     OPTIONAL MATCH (m)<-[:PLAYED_IN]-(a:Actor)
 			                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(:User)
 			                     OPTIONAL MATCH (m)<-[c:COMMENTED]-(u:User)
-			                     OPTIONAL MATCH (m)<-[w:WATCHLIST]-(:User { Id: $userId })
-			                     OPTIONAL MATCH (m)<-[f:FAVOURITE]-(:User { Id: $userId })
-			                     OPTIONAL MATCH (m)<-[ur:REVIEWED]-(:User { Id: $userId })
+			                     OPTIONAL MATCH (m)<-[w:WATCHLIST]-(:User { id: $userId })
+			                     OPTIONAL MATCH (m)<-[f:FAVOURITE]-(:User { id: $userId })
+			                     OPTIONAL MATCH (m)<-[ur:REVIEWED]-(:User { id: $userId })
 			                     WITH m, COLLECT(
 			                       CASE
 			                         WHEN a IS NULL THEN null
 			                         ELSE {
-			                           Id: a.Id,
-			                           FirstName: a.FirstName,
-			                           LastName: a.LastName,
-			                           DateOfBirth: a.DateOfBirth,
-			                           Biography: a.Biography,
-			                           PictureAbsoluteUri: a.PictureAbsoluteUri
+			                           id: a.id,
+			                           firstName: a.firstName,
+			                           lastName: a.lastName,
+			                           dateOfBirth: a.dateOfBirth,
+			                           biography: a.biography,
+			                           pictureAbsoluteUri: a.pictureAbsoluteUri
 			                         }
 			                       END
-			                     ) AS Actors, 
+			                     ) AS actors, 
 			                     COLLECT(
 			                       CASE
 			                         WHEN u is NULL OR c is NULL THEN null
 			                         ELSE {
-			                           Id: c.Id,
-			                           MovieId: m.Id,
-			                           UserId: u.Id,
-			                           Username: u.Name,
-			                           Text: c.Text,
-			                           CreatedAt: c.CreatedAt,
-			                           IsEdited: c.IsEdited
+			                           id: c.id,
+			                           movieId: m.id,
+			                           userId: u.id,
+			                           username: u.name,
+			                           text: c.text,
+			                           createdAt: c.createdAt,
+			                           isEdited: c.isEdited
 			                         }
 			                       END
-			                     ) AS Comments, AVG(r.Score) AS AverageReviewScore, COUNT(w) > 0 AS OnWatchlist, COUNT(f) > 0 AS IsFavourite, COUNT(r) AS ReviewsCount, ur.Score AS UserReviewScore 
-			                     RETURN {
-			                       Id: m.Id,
-			                       Title: m.Title,
-			                       Description: m.Description,
-			                       InTheaters: m.InTheaters,
-			                       TrailerAbsoluteUri: m.TrailerAbsoluteUri,
-			                       PictureAbsoluteUri: m.PictureAbsoluteUri,
-			                       ReleaseDate: m.ReleaseDate,
-			                       MinimumAge: m.MinimumAge,
-			                       Actors: Actors,
-			                       OnWatchlist: OnWatchlist,
-			                       IsFavourite: IsFavourite,
-			                       UserReviewScore: UserReviewScore,
-			                       ReviewsCount: ReviewsCount,
-			                       Comments: Comments,
-			                       AverageReviewScore: COALESCE(AverageReviewScore, 0)
-			                     } AS MovieWithActors
+			                     ) AS comments, AVG(r.score) AS averageReviewScore, COUNT(w) > 0 AS onWatchlist, COUNT(f) > 0 AS isFavourite, COUNT(r) AS reviewsCount, ur.score AS userReviewScore 
+			                     RETURN
+			                       m.id AS id,
+			                       m.title AS title,
+			                       m.description AS description,
+			                       m.inTheaters AS inTheaters,
+			                       m.trailerAbsoluteUri AS trailerAbsoluteUri,
+			                       m.pictureAbsoluteUri AS pictureAbsoluteUri,
+			                       m.releaseDate AS releaseDate,
+			                       m.minimumAge AS minimumAge,
+			                       false AS onWatchlist,
+			                       false AS isFavourite,
+			                       null AS userReviewScore,
+			                       0 AS reviewsCount,
+			                       actors,
+			                       comments,
+			                       0 AS averageReviewScore
 			                     """;
 			
-			var cursor = await tx.RunAsync(query,
-				new {  movieId = movieId.ToString(), userId = userId?.ToString() });
-			return await cursor.SingleAsync(record =>
-				record["MovieWithActors"].As<IDictionary<string, object>>().ConvertToMovieDetailsDto());
+			var cursor = await tx.RunAsync(query, new {  movieId = movieId.ToString(), userId = userId?.ToString() });
+			return await cursor.SingleAsync(record => record.ConvertToMovieDetailsDto());
 		}
 		catch (InvalidOperationException)
 		{
@@ -305,58 +312,61 @@ public class MovieRepository : IMovieRepository
 		// language=Cypher
 		const string query = """
 		                     MATCH (m:Movie)
-		                     WHERE toLower(m.Title) CONTAINS toLower($Title)
-		                       AND ($Actor IS NULL OR $Actor = "" OR EXISTS {
-		                         MATCH (m)<-[:PLAYED_IN]-(a:Actor { Id: $Actor })
+		                     WHERE toLower(m.title) CONTAINS toLower($title)
+		                       AND ($actor IS NULL OR $actor = "" OR EXISTS {
+		                         MATCH (m)<-[:PLAYED_IN]-(a:Actor { id: $actor })
 		                       })
 		                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(:User)
-		                     WITH m, COALESCE(AVG(r.Score), 0) AS AverageReviewScore, COUNT(r) AS ReviewsCount
+		                     WITH m, COALESCE(AVG(r.score), 0) AS averageReviewScore, COUNT(r) AS reviewsCount
 		                     ORDER BY
-		                     CASE WHEN $SortOrder = "Ascending" THEN CASE WHEN $SortBy = "AverageReviewScore" THEN AverageReviewScore ELSE m[$SortBy] END ELSE null END ASC,
-		                     CASE WHEN $SortOrder = "Descending" THEN CASE WHEN $SortBy = "AverageReviewScore" THEN AverageReviewScore ELSE m[$SortBy] END ELSE null END DESC
-		                     RETURN {
-		                       Id: m.Id,
-		                       Title: m.Title,
-		                       PictureAbsoluteUri: m.PictureAbsoluteUri,
-		                       MinimumAge: m.MinimumAge,
-		                       OnWatchlist: false,
-		                       IsFavourite: false,
-		                       UserReviewScore: null,
-		                       ReviewsCount: ReviewsCount,
-		                       AverageReviewScore: AverageReviewScore
-		                     } AS Movies
-		                     SKIP $Skip
-		                     LIMIT $Limit
+		                     CASE WHEN $sortOrder = "ascending" THEN CASE WHEN $sortBy = "averageReviewScore" THEN averageReviewScore ELSE m[$sortBy] END ELSE null END ASC,
+		                     CASE WHEN $sortOrder = "descending" THEN CASE WHEN $sortBy = "averageReviewScore" THEN averageReviewScore ELSE m[$sortBy] END ELSE null END DESC
+		                     RETURN
+		                       m.id AS id,
+		                       m.title AS title,
+		                       m.pictureAbsoluteUri AS pictureAbsoluteUri,
+		                       m.minimumAge AS minimumAge,
+		                       false AS onWatchlist,
+		                       false AS isFavourite,
+		                       null AS userReviewScore,
+		                       reviewsCount,
+		                       averageReviewScore
+		                     SKIP $skip
+		                     LIMIT $limit
 		                     """;
 		
-		var cursor = await tx.RunAsync(query, new
+		var parameters = new
 		{
-			queryParams.Title, Actor = queryParams.Actor.ToString(),
-			SortBy = queryParams.SortBy.ToString(), SortOrder = queryParams.SortOrder.ToString(),
-			Skip = (queryParams.PageNumber - 1) * queryParams.PageSize,
-			Limit = queryParams.PageSize
-		});
+			title = queryParams.Title,
+			actor = queryParams.Actor.ToString(),
+			sortBy = queryParams.SortBy.ToCamelCaseString(),
+			sortOrder = queryParams.SortOrder.ToCamelCaseString(),
+			skip = (queryParams.PageNumber - 1) * queryParams.PageSize,
+			limit = queryParams.PageSize
+		};
 		
-		var items = await cursor.ToListAsync(record =>
-		{
-			var movieWithActorsDto = record["Movies"].As<IDictionary<string, object>>();
-			return movieWithActorsDto.ConvertToMovieDto();
-		});
+		var cursor = await tx.RunAsync(query, parameters);
+		
+		var items = await cursor.ToListAsync(record => record.ConvertToMovieDto());
 		
 		// language=Cypher
 		const string totalCountQuery = """
 		                               MATCH (m:Movie)
-		                               WHERE toLower(m.Title) CONTAINS toLower($Title)
-		                               AND ($Actor IS NULL OR $Actor = "" OR EXISTS {
-		                                 MATCH (m)<-[:PLAYED_IN]-(a:Actor { Id: $Actor })
+		                               WHERE toLower(m.title) CONTAINS toLower($title)
+		                               AND ($actor IS NULL OR $actor = "" OR EXISTS {
+		                                 MATCH (m)<-[:PLAYED_IN]-(a:Actor { id: $actor })
 		                               })
-		                               WITH COUNT(m) as TotalCount
-		                               RETURN TotalCount
+		                               RETURN COUNT(m) AS totalCount
 		                               """;
+		
+		var totalCountParameters = new
+		{
+			title = queryParams.Title,
+			actor = queryParams.Actor.ToString()
+		};
 
-		var totalCountCursor = await tx.RunAsync(totalCountQuery,
-			new {queryParams.Title, Actor = queryParams.Actor.ToString()});
-		var totalCount = await totalCountCursor.SingleAsync(record => record["TotalCount"].As<int>());
+		var totalCountCursor = await tx.RunAsync(totalCountQuery, totalCountParameters);
+		var totalCount = await totalCountCursor.SingleAsync(record => record["totalCount"].As<int>());
 		return new PagedList<MovieDto>(items, queryParams.PageNumber, queryParams.PageSize, totalCount);
 	}
 }

@@ -1,6 +1,7 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 using MoviesApi.DTOs.Requests;
+using MoviesApi.Extensions;
 using MoviesApi.Models;
 using MoviesApi.Repository.Contracts;
 using Neo4j.Driver;
@@ -18,25 +19,31 @@ public class AccountRepository : IAccountRepository
         // language=Cypher
         const string query = """
                              CREATE (a:User {
-                               Id: randomUUID(),
-                               Name: $Name,
-                               Email: $Email,
-                               PasswordHash: $PasswordHash,
-                               PasswordSalt: $PasswordSalt,
-                               Role: "User",
-                               LastActive: datetime()
+                               id: apoc.create.uuid(),
+                               name: $name,
+                               email: $email,
+                               passwordHash: $passwordHash,
+                               passwordSalt: $passwordSalt,
+                               role: "User",
+                               lastActive: datetime()
                              })
-                             RETURN a.Name as name, a.Email as email, a.Role as role, a.Id as id
+                             RETURN
+                               a.id AS id,
+                               a.name AS name,
+                               a.email AS email,
+                               a.role AS role
                              """;
-
-        var cursor = await tx.RunAsync(query, new
+        
+        var parameters = new
         {
-            registerDto.Name, registerDto.Email,
-            PasswordHash = Convert.ToBase64String(passwordHash), PasswordSalt = Convert.ToBase64String(passwordSalt)
-        });
-        var node = await cursor.SingleAsync();
+            name = registerDto.Name,
+            email = registerDto.Email,
+            passwordHash = Convert.ToBase64String(passwordHash),
+            passwordSalt = Convert.ToBase64String(passwordSalt)
+        };
 
-        return GetUserFromNode(node);
+        var cursor = await tx.RunAsync(query, parameters);
+        return await cursor.SingleAsync(record => record.ConvertToUser());
     }
 
     public async Task<User?> LoginAsync(IAsyncQueryRunner tx, LoginDto loginDto)
@@ -45,23 +52,30 @@ public class AccountRepository : IAccountRepository
         {
             // language=Cypher
             const string query = """
-                                 MATCH (a:User { Email: $Email })
-                                 RETURN a.Name as name, a.Email as email, a.Role as role, a.PasswordHash as passwordHash, a.PasswordSalt as passwordSalt, a.Id as id
+                                 MATCH (a:User { email: $email })
+                                 RETURN
+                                   a.id AS id,
+                                   a.name AS name,
+                                   a.email AS email,
+                                   a.role AS role,
+                                   a.passwordHash AS passwordHash,
+                                   a.passwordSalt AS passwordSalt
                                  """;
-            var cursor = await tx.RunAsync(query, new { loginDto.Email });
-            var node = await cursor.SingleAsync();
+            
+            var cursor = await tx.RunAsync(query, new { email = loginDto.Email });
+            var record = await cursor.SingleAsync();
 
-            if (node is null)
+            if (record is null)
                 return null;
 
-            var storedPasswordHash = node["passwordHash"].As<string>();
-            var storedPasswordSalt = node["passwordSalt"].As<string>();
+            var storedPasswordHash = record["passwordHash"].As<string>();
+            var storedPasswordSalt = record["passwordSalt"].As<string>();
 
             using HMACSHA512 hmac = new(Convert.FromBase64String(storedPasswordSalt));
             var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(loginDto.Password));
             var storedHash = Convert.FromBase64String(storedPasswordHash);
 
-            return computedHash.Where((t, i) => t != storedHash[i]).Any() ? null : GetUserFromNode(node);
+            return computedHash.Where((t, i) => t != storedHash[i]).Any() ? null : record.ConvertToUser();
         }
         catch (InvalidOperationException)
         {
@@ -73,22 +87,13 @@ public class AccountRepository : IAccountRepository
     {
         // language=Cypher
         const string query = """
-                             MATCH (u:User { Email: $Email })
+                             MATCH (u:User { email: $email })
                              WITH COUNT(u) > 0  as node_exists
                              RETURN node_exists
                              """;
 
-        var accountCursor = await tx.RunAsync(query, new { Email = email });
+        var accountCursor = await tx.RunAsync(query, new { email });
         var result = await accountCursor.SingleAsync();
         return result["node_exists"].As<bool>();
     }
-    
-    private static User GetUserFromNode(IRecord node) =>
-        new
-        (
-            Id: Guid.Parse(node["id"].As<string>()),
-            Email: node["email"].As<string>(),
-            Name: node["name"].As<string>(),
-            Role: node["role"].As<string>()
-        );
 }

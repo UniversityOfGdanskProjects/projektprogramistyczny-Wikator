@@ -23,8 +23,8 @@ namespace MoviesApi.Helpers
         {
             // language=Cypher
             const string query =  """
-                                  MATCH (u:User { Id: $userId })
-                                  SET u.LastActive = datetime()
+                                  MATCH (u:User { id: $userId })
+                                  SET u.lastActive = datetime()
                                   """;
             
             await using var session = driver.AsyncSession();

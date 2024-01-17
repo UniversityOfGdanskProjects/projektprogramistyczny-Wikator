@@ -12,54 +12,56 @@ public class ReviewRepository : IReviewRepository
     {
         // language=Cypher
         const string query = """
-                             MATCH (u:User { Id: $userId}), (m:Movie { Id: $movieId })
-                             CREATE (u)-[r:REVIEWED { Id: randomUUID(), Score: $score}]->(m)
-                             RETURN {
-                               Id: r.Id,
-                               UserId: u.Id,
-                               MovieId: m.Id,
-                               Score: r.Score
-                             } AS Review
+                             MATCH (u:User { id: $userId}), (m:Movie { id: $movieId })
+                             CREATE (u)-[r:REVIEWED { id: apoc.create.uuid(), score: $score}]->(m)
+                             RETURN
+                               r.id AS id,
+                               u.id AS userId,
+                               m.id AS movieId,
+                               r.score AS score
                              """;
+        
+        var parameters = new
+        {
+            userId = userId.ToString(),
+            movieId = reviewDto.MovieId.ToString(),
+            score = reviewDto.Score
+        };
 
-        var cursor =
-            await tx.RunAsync(query,
-                new { userId = userId.ToString(), movieId = reviewDto.MovieId.ToString(), score = reviewDto.Score });
-
-        return await cursor.SingleAsync(record =>
-            record["Review"].As<IDictionary<string, object>>().ConvertToReviewDto());
+        var cursor = await tx.RunAsync(query,parameters);
+        return await cursor.SingleAsync(record => record.ConvertToReviewDto());
     }
 
-    public async Task<ReviewDto> UpdateReview(IAsyncQueryRunner tx, Guid userId, Guid reviewId, UpdateReviewDto reviewDto)
+    public async Task<ReviewDto> UpdateReview(IAsyncQueryRunner tx,
+        Guid userId, Guid reviewId, UpdateReviewDto reviewDto)
     {
         // language=Cypher
         const string query = """
-                             MATCH(u:User { Id: $userId })-[r:REVIEWED { Id: $id }]->(m:Movie)
-                             SET r.Score = $score
-                             RETURN {
-                               Id: r.Id,
-                               UserId: u.Id,
-                               MovieId: m.Id,
-                               Score: r.Score
-                             } AS Review
+                             MATCH(u:User { id: $userId })-[r:REVIEWED { id: $id }]->(m:Movie)
+                             SET r.score = $score
+                             RETURN
+                               r.id AS id,
+                               u.id AS userId,
+                               m.id AS movieId,
+                               r.score AS score
                              """;
+        
+        var parameters = new
+        {
+            id = reviewId.ToString(),
+            userId = userId.ToString(),
+            score = reviewDto.Score
+        };
 
-        var cursor = await tx.RunAsync(query,
-            new
-            {
-                id = reviewId.ToString(), userId = userId.ToString(),
-                score = reviewDto.Score
-            });
-
-        return await cursor.SingleAsync(record =>
-            record["Review"].As<IDictionary<string, object>>().ConvertToReviewDto());
+        var cursor = await tx.RunAsync(query, parameters);
+        return await cursor.SingleAsync(record => record.ConvertToReviewDto());
     }
 
     public async Task DeleteReview(IAsyncQueryRunner tx, Guid userId, Guid reviewId)
     {
         // language=Cypher
         const string query = """
-                             MATCH (:User { Id: $userId })-[r:REVIEWED { Id: $reviewId }]->(:Movie)
+                             MATCH (:User { id: $userId })-[r:REVIEWED { id: $reviewId }]->(:Movie)
                              DELETE r
                              """;
 
@@ -70,10 +72,10 @@ public class ReviewRepository : IReviewRepository
     {
         // language=Cypher
         const string query = """
-                             MATCH(:User { Id: $userId })-[r:REVIEWED { Id: $id }]->(:Movie)
-                             WITH COUNT(r) > 0 AS reviewExists
-                             RETURN reviewExists
+                             MATCH(:User { id: $userId })-[r:REVIEWED { id: $id }]->(:Movie)
+                             RETURN COUNT(r) > 0 AS reviewExists
                              """;
+        
         var cursor = await tx.RunAsync(query, new { id = id.ToString(), userId = userId.ToString() });
         return await cursor.SingleAsync(record => record["reviewExists"].As<bool>());
     }
@@ -82,10 +84,10 @@ public class ReviewRepository : IReviewRepository
     {
         // language=Cypher
         const string query = """
-                             MATCH(:User { Id: $userId })-[r:REVIEWED]->(:Movie { Id: $movieId })
-                             WITH COUNT(r) > 0 AS reviewExists
-                             RETURN reviewExists
+                             MATCH(:User { id: $userId })-[r:REVIEWED]->(:Movie { id: $movieId })
+                             RETURN COUNT(r) > 0 AS reviewExists
                              """;
+        
         var cursor = await tx.RunAsync(query, new { userId = userId.ToString(), movieId = movieId.ToString() });
         return await cursor.SingleAsync(record => record["reviewExists"].As<bool>());
     }

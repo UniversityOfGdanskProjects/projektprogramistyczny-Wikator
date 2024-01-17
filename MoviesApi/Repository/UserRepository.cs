@@ -11,9 +11,9 @@ public class UserRepository : IUserRepository
         // language=Cypher
         const string query = """
                              MATCH (u:User)
-                             WHERE $userId IS NULL OR u.Id <> $userId
+                             WHERE $userId IS NULL OR u.id <> $userId
                              RETURN u
-                             ORDER BY u.LastActive DESC
+                             ORDER BY u.lastActive DESC
                              """;
 
         var result = await tx.RunAsync(query, new { userId = userId.ToString() });
@@ -22,10 +22,10 @@ public class UserRepository : IUserRepository
             var user = record["u"].As<INode>();
 
             return new MemberDto(
-                Id: Guid.Parse(user["Id"].As<string>()),
-                Username: user["Name"].As<string>(),
-                Role: user["Role"].As<string>(),
-                LastActive: DateTime.Parse(user["LastActive"].As<string>())
+                Id: Guid.Parse(user["id"].As<string>()),
+                Username: user["name"].As<string>(),
+                Role: user["role"].As<string>(),
+                LastActive: DateTime.Parse(user["lastActive"].As<string>())
             );
         });
     }
