@@ -48,21 +48,23 @@ public class CommentRepository : ICommentRepository
                                createdAt: $dateTime,
                                isEdited: false
                              }]->(m)
-                             FOREACH(ignoreMe IN CASE WHEN u2 IS NOT NULL THEN [1] ELSE [] END |
-                               CREATE (u2)<-[:NOTIFICATION {
+                             WITH m, u, u2, r
+                             CALL apoc.do.when(u2 IS NOT NULL,
+                               'CREATE (u2)<-[:NOTIFICATION {
                                  id: apoc.create.uuid(),
                                  relatedEntityId: r.id,
                                  isRead: false
                                }]-(m)
-                             )
+                               RETURN u2, m, r', 
+                               'RETURN u2, m, r', {u2:u2, m:m, r:r}) YIELD value
                              RETURN
-                               r.id AS id,
-                               m.id AS movieId,
+                               value.r.id AS id,
+                               value.m.id AS movieId,
                                u.id AS userId,
                                u.name AS username,
-                               r.text AS text,
-                               r.createdAt AS createdAt,
-                               r.isEdited AS isEdited
+                               value.r.text AS text,
+                               value.r.createdAt AS createdAt,
+                               value.r.isEdited AS isEdited
                              """;
         
         var parameters = new
