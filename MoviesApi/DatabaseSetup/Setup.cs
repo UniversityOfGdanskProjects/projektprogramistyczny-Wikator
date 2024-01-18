@@ -52,6 +52,7 @@ public class Setup(IDriver driver)
     public async Task CreateAdmin(IConfiguration config)
     {
         await using var sessions = Driver.AsyncSession();
+        
         // language=Cypher
         const string adminExistQuery = "Match (u:User { role : 'Admin' }) RETURN COUNT(u) > 0 AS adminExists";
         
@@ -95,5 +96,26 @@ public class Setup(IDriver driver)
                 await tx.RunAsync(query, parameters);
             });
         }
+    }
+
+    public async Task SeedGenres()
+    {
+        await using var session = Driver.AsyncSession();
+        
+        //language=Cypher
+        const string query = """
+                             UNWIND $genres AS genre
+                             MERGE (g:Genre { name: genre })
+                             RETURN g.name as name
+                             """;
+
+        HashSet<string> genres =
+        [
+            "Action", "Adventure", "Animation", "Comedy", "Crime", "Documentary", "Drama", "Family", "Fantasy",
+            "History", "Horror", "Music", "Mystery", "Romance", "Science Fiction", "TV Movie", "Thriller", "War",
+            "Western"
+        ];
+        
+        await session.ExecuteWriteAsync(tx => tx.RunAsync(query, new {genres}));
     }
 }

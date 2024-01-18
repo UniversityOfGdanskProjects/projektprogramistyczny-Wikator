@@ -13,4 +13,5 @@ public class AddMovieDto
     public string? FileName { get; init; }
     public byte[]? FileContent { get; init; }
     public IEnumerable<Guid> ActorIds { get; init; } = Enumerable.Empty<Guid>();
+    public IEnumerable<string> Genres { get; init; } = Enumerable.Empty<string>();
 }

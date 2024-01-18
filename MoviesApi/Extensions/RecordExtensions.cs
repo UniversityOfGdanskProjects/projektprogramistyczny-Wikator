@@ -22,7 +22,8 @@ public static class RecordExtensions
             UserReviewScore: record["userReviewScore"].As<int?>(),
             ReviewsCount: record["reviewsCount"].As<int>(),
             Actors: record["actors"].As<List<IDictionary<string, object>>>().Select(ConvertToActorDto),
-            Comments: record["comments"].As<List<IDictionary<string, object>>>().Select(ConvertToCommentDto)
+            Comments: record["comments"].As<List<IDictionary<string, object>>>().Select(ConvertToCommentDto),
+            Genres: record["genres"].As<List<string>>()
         );
 
     public static MovieDto ConvertToMovieDto(this IRecord record) =>
@@ -35,7 +36,8 @@ public static class RecordExtensions
             IsFavourite: record["isFavourite"].As<bool>(),
             UserReviewScore: record["userReviewScore"].As<int?>(),
             ReviewsCount: record["reviewsCount"].As<int>(),
-            MinimumAge: record["minimumAge"].As<int>()
+            MinimumAge: record["minimumAge"].As<int>(),
+            Genres: record["genres"].As<List<string>>()
         );
 
     public static ActorDto ConvertToActorDto(this IRecord record) =>

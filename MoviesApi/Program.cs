@@ -61,5 +61,6 @@ var driver = services.GetRequiredService<IDriver>();
 var setup = new Setup(driver);
 await setup.SetupJobs();
 await setup.CreateAdmin(app.Configuration);
+await setup.SeedGenres();
 
 app.Run();

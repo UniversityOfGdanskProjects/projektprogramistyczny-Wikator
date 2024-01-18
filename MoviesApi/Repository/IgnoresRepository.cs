@@ -12,11 +12,17 @@ public class IgnoresRepository : IIgnoresRepository
         // language=Cypher
         const string query = """
                              MATCH (m:Movie)<-[:IGNORES]-(u:User { id: $userId })
+                             OPTIONAL MATCH (g:Genre)<-[:IS]-(m)
                              OPTIONAL MATCH (m)<-[r:REVIEWED]-(:User)
                              OPTIONAL MATCH (m)<-[w:WATCHLIST]-(u)
                              OPTIONAL MATCH (m)<-[f:FAVOURITE]-(u)
                              OPTIONAL MATCH (m)<-[ur:REVIEWED]-(u)
-                             WITH m, COALESCE(AVG(r.score), 0) AS averageReviewScore, w IS NOT NULL AS onWatchlist, f IS NOT NULL AS isFavourite, COUNT(r) AS reviewsCount, ur.score AS userReviewScore
+                             WITH m,
+                               COLLECT(
+                                 CASE
+                                   WHEN g IS NOT NULL THEN g.name
+                                 END
+                               ) AS genres, COALESCE(AVG(r.score), 0) AS averageReviewScore, w IS NOT NULL AS onWatchlist, f IS NOT NULL AS isFavourite, COUNT(r) AS reviewsCount, ur.score AS userReviewScore
                              RETURN
                                m.id AS id,
                                m.title AS title,
@@ -26,6 +32,7 @@ public class IgnoresRepository : IIgnoresRepository
                                isFavourite,
                                userReviewScore,
                                reviewsCount,
+                               COALESCE(genres, []) AS genres,
                                averageReviewScore
                              """;
 

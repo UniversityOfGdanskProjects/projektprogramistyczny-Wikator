@@ -15,4 +15,5 @@ public record MovieDetailsDto(
     int? UserReviewScore,
     int ReviewsCount,
     IEnumerable<ActorDto> Actors,
-    IEnumerable<CommentDto> Comments);
+    IEnumerable<CommentDto> Comments,
+    IEnumerable<string> Genres);
