@@ -1,0 +1,7 @@
+﻿GET https://localhost:7102/api/notification
+Authorization: Bearer {{admin_token}}
+
+###
+
+PUT https://localhost:7102/api/notification/4f10bead-5362-4613-a861-3718f29800a0
+Authorization: Bearer {{admin_token}}

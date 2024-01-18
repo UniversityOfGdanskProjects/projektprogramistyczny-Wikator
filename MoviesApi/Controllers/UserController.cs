@@ -22,7 +22,7 @@ public class UserController(IDriver driver, IUserRepository userRepository,
             Ok(await UserRepository.GetUsersByMostActiveAsync(tx)));
     }
     
-    [HttpPut("/username")]
+    [HttpPut("username")]
     [Authorize]
     public async Task<IActionResult> UpdateUsername(UpdateUsernameDto updateUsernameDto)
     {
@@ -34,7 +34,7 @@ public class UserController(IDriver driver, IUserRepository userRepository,
         });
     }
     
-    [HttpPut("/{id:guid}/username")]
+    [HttpPut("{id:guid}/username")]
     [Authorize(Policy = "RequireAdminRole")]
     public async Task<IActionResult> UpdateUsername(Guid id, UpdateUsernameDto updateUsernameDto)
     {
@@ -48,7 +48,7 @@ public class UserController(IDriver driver, IUserRepository userRepository,
         });
     }
     
-    [HttpPut("/{id:guid}/role")]
+    [HttpPut("{id:guid}/role")]
     [Authorize(Policy = "RequireAdminRole")]
     public async Task<IActionResult> ChangeUserRoleToAdmin(Guid id)
     {
@@ -62,7 +62,7 @@ public class UserController(IDriver driver, IUserRepository userRepository,
         });
     }
     
-    [HttpDelete("/{id:guid}")]
+    [HttpDelete("{id:guid}")]
     [Authorize(Policy = "RequireAdminRole")]
     public async Task<IActionResult> DeleteUserAsAdmin(Guid id)
     {

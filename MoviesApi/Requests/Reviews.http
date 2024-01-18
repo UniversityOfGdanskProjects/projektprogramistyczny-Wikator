@@ -1,16 +1,16 @@
-﻿POST https://localhost:7102/api/Reviews
-Authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJuYW1laWQiOiJlMzdlYjA2NC05OTdjLTQwNzEtOWNkOS1hNzRkOGZmNzM3MGUiLCJ1bmlxdWVfbmFtZSI6IlRlc3QzIiwicm9sZSI6IlVzZXIiLCJuYmYiOjE3MDQzMTQ1OTcsImV4cCI6MTcwNDkxOTM5NywiaWF0IjoxNzA0MzE0NTk3LCJpc3MiOiJsb2NhbGhvc3QifQ.fqTmxCt0T-WiCofRZARKaqmiMrbR7vRO5UqjDzKF7pD_2FPX35SZn8S1NBRc2TvESE36pdo2Kv044SQQWS5FPQ
+﻿POST https://localhost:7102/api/review
+Authorization: Bearer {{user_token}}
 Content-Type: application/json
 
 {
-  "movieId": "b8bf6a62-af04-43dc-83c9-6cf1449f57cb",
+  "movieId": "5635b4ff-a7ab-4e36-80f4-cd1684779660",
   "score": 3
 }
 
 ###
 
-PUT https://localhost:7102/api/Reviews/32096e0c-a287-4390-a49d-bbbf0dff3ce4
-Authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJuYW1laWQiOiJlMzdlYjA2NC05OTdjLTQwNzEtOWNkOS1hNzRkOGZmNzM3MGUiLCJ1bmlxdWVfbmFtZSI6IlRlc3QzIiwicm9sZSI6IlVzZXIiLCJuYmYiOjE3MDQzMTQ1OTcsImV4cCI6MTcwNDkxOTM5NywiaWF0IjoxNzA0MzE0NTk3LCJpc3MiOiJsb2NhbGhvc3QifQ.fqTmxCt0T-WiCofRZARKaqmiMrbR7vRO5UqjDzKF7pD_2FPX35SZn8S1NBRc2TvESE36pdo2Kv044SQQWS5FPQ
+PUT https://localhost:7102/api/review/94c5cc64-e24a-4210-8f13-fbf9d0035a20
+Authorization: Bearer {{user_token}}
 Content-Type: application/json
 
 {
@@ -19,6 +19,5 @@ Content-Type: application/json
 
 ###
 
-DELETE https://localhost:7102/api/Reviews/32096e0c-a287-4390-a49d-bbbf0dff3ce4
-Authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJuYW1laWQiOiJlMzdlYjA2NC05OTdjLTQwNzEtOWNkOS1hNzRkOGZmNzM3MGUiLCJ1bmlxdWVfbmFtZSI6IlRlc3QzIiwicm9sZSI6IlVzZXIiLCJuYmYiOjE3MDQzMTQ1OTcsImV4cCI6MTcwNDkxOTM5NywiaWF0IjoxNzA0MzE0NTk3LCJpc3MiOiJsb2NhbGhvc3QifQ.fqTmxCt0T-WiCofRZARKaqmiMrbR7vRO5UqjDzKF7pD_2FPX35SZn8S1NBRc2TvESE36pdo2Kv044SQQWS5FPQ
-
+DELETE https://localhost:7102/api/Reviews/94c5cc64-e24a-4210-8f13-fbf9d0035a20
+Authorization: Bearer {{user_token}}

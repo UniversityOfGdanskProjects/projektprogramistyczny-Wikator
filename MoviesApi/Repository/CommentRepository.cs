@@ -85,7 +85,7 @@ public class CommentRepository : ICommentRepository
         // language=Cypher
         const string query = """
                              MATCH (u:User)-[r:COMMENTED { id: $commentId }]->(m:Movie)
-                             WHERE u.id = $userId OR u.role = 'Admin'
+                             WHERE u.id = $userId OR EXISTS { MATCH (:User { id: $userId, role: 'Admin' }) }
                              SET r.text = $text, r.isEdited = true
                              RETURN
                                r.id AS id,
@@ -113,7 +113,7 @@ public class CommentRepository : ICommentRepository
         // language=Cypher
         const string query = """
                              MATCH (u:User)-[r:COMMENTED { id: $commentId }]->(:Movie)
-                             WHERE u.id = $userId OR u.role = 'Admin'
+                             WHERE u.id = $userId OR EXISTS { MATCH (:User { id: $userId, role: 'Admin' }) }
                              DELETE r
                              """;
 
@@ -125,7 +125,7 @@ public class CommentRepository : ICommentRepository
         // language=Cypher
         const string query = """
                              MATCH (u:User)-[r:COMMENTED { id: $commentId }]->(:Movie)
-                             WHERE u.id = $userId OR u.role = 'Admin'
+                             WHERE u.id = $userId OR EXISTS { MATCH (:User { id: $userId, role: 'Admin' }) }
                              RETURN COUNT(r) > 0 AS commentsExists
                              """;
 
