@@ -77,42 +77,14 @@ public class ActorController(IDriver driver, IPhotoService photoService, IActorR
     }
     
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> UpdateActor(Guid id, UpdateActorDto actorDto)
+    public async Task<IActionResult> UpdateActor(Guid id, EditActorDto actorDto)
     {
         return await ExecuteWriteAsync<IActionResult>(async tx =>
         {
             if (!await ActorRepository.ActorExists(tx, id))
                 return NotFound($"Actor with id {id} was not found");
             
-            string? pictureAbsoluteUri = null;
-            string? picturePublicId = null;
-
-            if (actorDto.FileContent is not null)
-            {
-                var publicId = await ActorRepository.GetPublicId(tx, id);
-                if (publicId is not null)
-                {
-                    var deletionResult = await PhotoService.DeleteAsync(publicId);
-                    if (deletionResult.Error is not null)
-                        throw new PhotoServiceException("Failed to delete photo, please try again in few minutes");
-                }
-                
-                var file = new FormFile(
-                    new MemoryStream(actorDto.FileContent),
-                    0,
-                    actorDto.FileContent.Length,
-                    "file", actorDto.FileName ?? $"movie-{new Guid()}"
-                );
-
-                var uploadResult = await PhotoService.AddPhotoAsync(file);
-                if (uploadResult.Error is not null)
-                    throw new PhotoServiceException("Photo failed to save, please try again in few minutes");
-
-                pictureAbsoluteUri = uploadResult.SecureUrl.AbsoluteUri;
-                picturePublicId = uploadResult.PublicId;
-            }
-            
-            var actor = await ActorRepository.UpdateActor(tx, id, actorDto, pictureAbsoluteUri, picturePublicId);
+            var actor = await ActorRepository.UpdateActor(tx, id, actorDto);
             return Ok(actor);
         });
     }
@@ -134,6 +106,87 @@ public class ActorController(IDriver driver, IPhotoService photoService, IActorR
             }
             
             await ActorRepository.DeleteActor(tx, id);
+            return NoContent();
+        });
+    }
+    
+    [HttpPost("{id:guid}/picture")]
+    public async Task<IActionResult> AddActorPicture(Guid id, UpsertPictureDto pictureDto)
+    {
+        return await ExecuteWriteAsync<IActionResult>(async tx =>
+        {
+            if (!await ActorRepository.ActorExists(tx, id))
+                return NotFound($"Actor with id {id} was not found");
+
+            if (await ActorRepository.ActorPictureExists(tx, id))
+                return BadRequest("Actor already has a picture");
+            
+            var file = new FormFile(
+                new MemoryStream(pictureDto.FileContent),
+                0,
+                pictureDto.FileContent.Length,
+                "file", $"movie-{new Guid()}"
+            );
+
+            var uploadResult = await PhotoService.AddPhotoAsync(file);
+            if (uploadResult.Error is not null)
+                throw new PhotoServiceException("Photo failed to save, please try again in few minutes");
+
+            await ActorRepository.AddActorPicture(tx, id, uploadResult.SecureUrl.AbsoluteUri, uploadResult.PublicId);
+            return Ok();
+        });
+    }
+
+    [HttpPut("{id:guid}/picture")]
+    public async Task<IActionResult> EditActorPicture(Guid id, UpsertPictureDto pictureDto)
+    {
+        return await ExecuteWriteAsync<IActionResult>(async tx =>
+        {
+            if (!await ActorRepository.ActorExists(tx, id))
+                return NotFound($"Actor with id {id} was not found");
+
+            var publicId = await ActorRepository.GetPublicId(tx, id);
+
+            if (publicId is not null)
+            {
+                var deletionResult = await PhotoService.DeleteAsync(publicId);
+                if (deletionResult.Error is not null)
+                    throw new PhotoServiceException("Failed to delete photo, please try again in few minutes");
+            }
+
+            var file = new FormFile(
+                new MemoryStream(pictureDto.FileContent),
+                0,
+                pictureDto.FileContent.Length,
+                "file", $"movie-{new Guid()}"
+            );
+
+            var uploadResult = await PhotoService.AddPhotoAsync(file);
+            if (uploadResult.Error is not null)
+                throw new PhotoServiceException("Photo failed to save, please try again in few minutes");
+
+            await ActorRepository.AddActorPicture(tx, id, uploadResult.SecureUrl.AbsoluteUri, uploadResult.PublicId);
+            return NoContent();
+        });
+    }
+    
+    [HttpDelete("{id:guid}/picture")]
+    public async Task<IActionResult> DeleteActorPicture(Guid id)
+    {
+        return await ExecuteWriteAsync<IActionResult>(async tx =>
+        {
+            if (!await ActorRepository.ActorExists(tx, id))
+                return NotFound($"Actor with id {id} was not found");
+
+            var publicId = await ActorRepository.GetPublicId(tx, id);
+            if (publicId is null)
+                return BadRequest("Actor does not have a picture");
+            
+            var deletionResult = await PhotoService.DeleteAsync(publicId);
+            if (deletionResult.Error is not null)
+                throw new PhotoServiceException("Failed to delete photo, please try again in few minutes");
+
+            await ActorRepository.DeleteActorPicture(tx, id);
             return NoContent();
         });
     }

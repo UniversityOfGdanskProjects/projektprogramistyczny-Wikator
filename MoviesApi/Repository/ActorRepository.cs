@@ -88,19 +88,16 @@ public class ActorRepository : IActorRepository
         return await cursor.SingleAsync(record => record.ConvertToActorDto());
     }
 
-    public async Task<ActorDto> UpdateActor(IAsyncQueryRunner tx, Guid id,
-        UpdateActorDto actorDto, string? pictureAbsoluteUri, string? picturePublicId)
+    public async Task<ActorDto> UpdateActor(IAsyncQueryRunner tx, Guid id, EditActorDto actorDto)
     {
         // language=Cypher
         const string query = """
                                   MATCH (a:Actor {id: $id})
                                   SET
-                                    a.firstName = coalesce($firstName, a.firstName),
-                                    a.lastName = coalesce($lastName, a.lastName),
-                                    a.dateOfBirth = coalesce($dateOfBirth, a.dateOfBirth),
-                                    a.biography = $biography,
-                                    a.pictureAbsoluteUri = $pictureAbsoluteUri,
-                                    a.picturePublicId = $picturePublicId
+                                    a.firstName = $firstName,
+                                    a.lastName = $lastName,
+                                    a.dateOfBirth = $dateOfBirth,
+                                    a.biography = $biography
                                   RETURN
                                     a.id AS id,
                                     a.firstName AS firstName,
@@ -116,9 +113,7 @@ public class ActorRepository : IActorRepository
             firstName = actorDto.FirstName, 
             lastName = actorDto.LastName,
             dateOfBirth = actorDto.DateOfBirth,
-            biography = actorDto.Biography,
-            pictureAbsoluteUri,
-            picturePublicId
+            biography = actorDto.Biography
         });
 
         return await cursor.SingleAsync(record => record.ConvertToActorDto());
@@ -129,6 +124,39 @@ public class ActorRepository : IActorRepository
         // language=Cypher
         const string deleteQuery = "MATCH (a:Actor) WHERE a.id = $id DETACH DELETE a";
         await tx.RunAsync(deleteQuery, new { id = id.ToString() });
+    }
+
+    public async Task AddActorPicture(IAsyncQueryRunner tx, Guid actorId, string pictureAbsoluteUri, string picturePublicId)
+    {
+        // language=Cypher
+        const string query = """
+                             MATCH (a:Actor {id: $id})
+                             SET
+                               a.pictureAbsoluteUri = $pictureAbsoluteUri,
+                               a.picturePublicId = $picturePublicId
+                             """;
+        
+        var parameters = new
+        {
+            id = actorId.ToString(),
+            pictureAbsoluteUri,
+            picturePublicId
+        };
+        
+        await tx.RunAsync(query, parameters);
+    }
+
+    public async Task DeleteActorPicture(IAsyncQueryRunner tx, Guid actorId)
+    {
+        // language=Cypher
+        const string query = """
+                             MATCH (a:Actor {id: $id})
+                             SET
+                               a.pictureAbsoluteUri = NULL,
+                               a.picturePublicId = NULL
+                             """;
+        
+        await tx.RunAsync(query, new { id = actorId.ToString() });
     }
 
     public async Task<bool> ActorExists(IAsyncQueryRunner tx, Guid id)
@@ -149,5 +177,17 @@ public class ActorRepository : IActorRepository
         const string matchQuery = "MATCH (a:Actor) WHERE a.id = $id RETURN a.picturePublicId AS picturePublicId";
         var cursor = await tx.RunAsync(matchQuery, new { id = actorId.ToString() });
         return await cursor.SingleAsync(record => record["picturePublicId"].As<string?>());
+    }
+
+    public async Task<bool> ActorPictureExists(IAsyncQueryRunner tx, Guid actorId)
+    {
+        // language=Cypher
+        const string query = """
+                             MATCH (a:Actor {id: $id})
+                             RETURN a.picturePublicId IS NOT NULL AS actorPictureExists
+                             """;
+        
+        var cursor = await tx.RunAsync(query, new { id = actorId.ToString() });
+        return await cursor.SingleAsync(record => record["actorPictureExists"].As<bool>());
     }
 }

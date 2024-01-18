@@ -106,23 +106,107 @@ public class MovieController(IDriver driver, IMovieRepository movieRepository,
 	{
 		return await ExecuteWriteAsync<IActionResult>(async tx =>
 		{
-			try
-			{
-				var publicId = await MovieRepository.GetPublicId(tx, id);
-				if (publicId is not null)
-				{
-					var deleteResult = await PhotoService.DeleteAsync(publicId);
-					if (deleteResult.Error is not null)
-						throw new PhotoServiceException("Photo failed to delete, please try again in few minutes");
-				}
-
-				await MovieRepository.DeleteMovie(tx, id);
-				return NoContent();
-			}
-			catch (InvalidOperationException)
-			{
+			if (!await MovieRepository.MovieExists(tx, id))
 				return NotFound("Movie does not exist");
+			
+			var publicId = await MovieRepository.GetPublicId(tx, id);
+			if (publicId is not null)
+			{
+				var deleteResult = await PhotoService.DeleteAsync(publicId);
+				if (deleteResult.Error is not null)
+					throw new PhotoServiceException("Photo failed to delete, please try again in few minutes");
 			}
+
+			await MovieRepository.DeleteMovie(tx, id);
+			return NoContent();
+		});
+	}
+	
+	[HttpPost("{id:guid}/picture")]
+	public async Task<IActionResult> AddMoviePicture(Guid id, UpsertPictureDto pictureDto)
+	{
+		return await ExecuteWriteAsync<IActionResult>(async tx =>
+		{
+			if (!await MovieRepository.MovieExists(tx, id))
+				return NotFound("Movie does not exist");
+			
+			if (await MovieRepository.MoviePictureExists(tx, id))
+				return BadRequest("Movie already has a picture");
+			
+			var file = new FormFile(
+				new MemoryStream(pictureDto.FileContent),
+				0,
+				pictureDto.FileContent.Length,
+				"file", $"movie-{new Guid()}"
+			);
+
+			var uploadResult = await PhotoService.AddPhotoAsync(file);
+			if (uploadResult.Error is not null)
+				throw new PhotoServiceException("Photo failed to save, please try again in few minutes");
+
+			var pictureAbsoluteUri = uploadResult.SecureUrl.AbsoluteUri;
+			var picturePublicId = uploadResult.PublicId;
+			
+			await MovieRepository.AddMoviePicture(tx, id, pictureAbsoluteUri, picturePublicId);
+			return NoContent();
+		});
+	}
+
+	[HttpPut("{id:guid}/picture")]
+	public async Task<IActionResult> EditMoviePicture(Guid id, UpsertPictureDto pictureDto)
+	{
+		return await ExecuteWriteAsync<IActionResult>(async tx =>
+		{
+			if (!await MovieRepository.MovieExists(tx, id))
+				return NotFound("Movie does not exist");
+
+			var publicId = await MovieRepository.GetPublicId(tx, id);
+
+			if (publicId is not null)
+			{
+				var deleteResult = await PhotoService.DeleteAsync(publicId);
+				if (deleteResult.Error is not null)
+					throw new PhotoServiceException("Photo failed to delete, please try again in few minutes");
+			}
+
+			var file = new FormFile(
+				new MemoryStream(pictureDto.FileContent),
+				0,
+				pictureDto.FileContent.Length,
+				"file", $"movie-{new Guid()}"
+			);
+
+			var uploadResult = await PhotoService.AddPhotoAsync(file);
+			if (uploadResult.Error is not null)
+				throw new PhotoServiceException("Photo failed to save, please try again in few minutes");
+
+			var pictureAbsoluteUri = uploadResult.SecureUrl.AbsoluteUri;
+			var picturePublicId = uploadResult.PublicId;
+
+			await MovieRepository.AddMoviePicture(tx, id, pictureAbsoluteUri, picturePublicId);
+			return NoContent();
+		});
+	}
+	
+	[HttpDelete("{id:guid}/picture")]
+	public async Task<IActionResult> DeleteMoviePicture(Guid id)
+	{
+		return await ExecuteWriteAsync<IActionResult>(async tx =>
+		{
+			if (!await MovieRepository.MovieExists(tx, id))
+				return NotFound("Movie does not exist");
+
+			var publicId = await MovieRepository.GetPublicId(tx, id);
+
+			if (publicId is null)
+				return BadRequest("Movie does not have a picture");
+
+			var deleteResult = await PhotoService.DeleteAsync(publicId);
+			if (deleteResult.Error is not null)
+				throw new PhotoServiceException("Photo failed to delete, please try again in few minutes");
+
+			await MovieRepository.DeleteMoviePicture(tx, id);
+			return NoContent();
 		});
 	}
 }

@@ -291,6 +291,49 @@ public class MovieRepository : IMovieRepository
 		return await cursor.SingleAsync(record => record.ConvertToMovieDetailsDto());
 	}
 
+	public async Task<bool> MoviePictureExists(IAsyncQueryRunner tx, Guid movieId)
+	{
+		// language=cypher
+		const string query = """
+		                     MATCH (m:Movie { id: $movieId })
+		                     RETURN m.pictureAbsoluteUri IS NOT NULL OR m.picturePublicId IS NOT NULL AS moviePictureExists
+		                     """;
+
+		var cursor = await tx.RunAsync(query, new { movieId = movieId.ToString() });
+		return await cursor.SingleAsync(record => record["moviePictureExists"].As<bool>());
+	}
+
+	public async Task DeleteMoviePicture(IAsyncQueryRunner tx, Guid movieId)
+	{
+		// language=cypher
+		const string query = """
+		                     MATCH (m:Movie { id: $movieId })
+		                     SET m.pictureAbsoluteUri = null,
+		                         m.picturePublicId = null
+		                     """;
+
+		await tx.RunAsync(query, new { movieId = movieId.ToString() });
+	}
+
+	public async Task AddMoviePicture(IAsyncQueryRunner tx, Guid movieId, string pictureAbsoluteUri, string picturePublicId)
+	{
+		// language=cypher
+		const string query = """
+		                     MATCH (m:Movie { id: $movieId })
+		                     SET m.pictureAbsoluteUri = $pictureAbsoluteUri,
+		                         m.picturePublicId = $picturePublicId
+		                     """;
+		
+		var parameters = new
+		{
+			movieId = movieId.ToString(),
+			pictureAbsoluteUri,
+			picturePublicId
+		};
+
+		await tx.RunAsync(query, parameters);
+	}
+
 	public async Task DeleteMovie(IAsyncQueryRunner tx, Guid movieId)
 	{
 		// language=cypher
