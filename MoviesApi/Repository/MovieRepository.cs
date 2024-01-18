@@ -201,6 +201,96 @@ public class MovieRepository : IMovieRepository
 		return await movieCursor.SingleAsync(record => record.ConvertToMovieDetailsDto());
 	}
 
+	public async Task<MovieDetailsDto> EditMovie(IAsyncQueryRunner tx, Guid movieId, EditMovieDto movieDto)
+	{
+		// language=Cypher
+		const string query = """
+		                     MATCH (m:Movie { id: $movieId })
+		                     SET m.title = $title,
+		                         m.description = $description,
+		                         m.inTheaters = $inTheaters,
+		                         m.releaseDate = $releaseDate,
+		                         m.minimumAge = $minimumAge,
+		                         m.trailerAbsoluteUri = $trailerAbsoluteUri
+		                     WITH m
+		                     OPTIONAL MATCH (m)-[r:IS]->(:Genre)
+		                     DELETE r
+		                     WITH m
+		                     OPTIONAL MATCH (m)<-[r:PLAYED_IN]-(:Actor)
+		                     DELETE r
+		                     WITH m
+		                     OPTIONAL MATCH (a:Actor)
+		                     WHERE a.id IN $actorIds
+		                     CALL apoc.do.when(
+		                       a IS NOT NULL,
+		                       'CREATE (a)-[:PLAYED_IN]->(m)
+		                        RETURN a',
+		                       'RETURN a',
+		                       { a: a, m: m }
+		                     ) YIELD value AS actors
+		                     WITH m, actors
+		                     OPTIONAL MATCH (g:Genre)
+		                     WHERE g.name IN $genres
+		                     CALL apoc.do.when(
+		                       g IS NOT NULL,
+		                       'CREATE (m)-[:IS]->(g)
+		                        RETURN g',
+		                       'RETURN g',
+		                       { g: g, m: m }
+		                     ) YIELD value AS genres
+		                     WITH m, COLLECT(
+		                       CASE
+		                         WHEN genres.g IS NOT NULL THEN genres.g.name
+		                       END
+		                     ) AS genres, COLLECT(
+		                       CASE
+		                         WHEN actors.a IS NULL THEN null
+		                         ELSE {
+		                           id: actors.a.id,
+		                           firstName: actors.a.firstName,
+		                           lastName: actors.a.lastName,
+		                           dateOfBirth: actors.a.dateOfBirth,
+		                           biography: actors.a.biography,
+		                           pictureAbsoluteUri: actors.a.pictureAbsoluteUri
+		                         }
+		                       END
+		                     ) AS actors
+		                     RETURN
+		                       m.id AS id,
+		                       m.title AS title,
+		                       m.description AS description,
+		                       m.inTheaters AS inTheaters,
+		                       m.trailerAbsoluteUri AS trailerAbsoluteUri,
+		                       m.pictureAbsoluteUri AS pictureAbsoluteUri,
+		                       m.releaseDate AS releaseDate,
+		                       m.minimumAge AS minimumAge,
+		                       false AS onWatchlist,
+		                       false AS isFavourite,
+		                       null AS userReviewScore,
+		                       0 AS reviewsCount,
+		                       COALESCE(actors, []) AS actors,
+		                       COALESCE(genres, []) AS genres,
+		                       [] AS comments,
+		                       0 AS averageReviewScore
+		                     """;
+
+		var parameters = new
+		{
+			movieId = movieId.ToString(),
+			title = movieDto.Title,
+			actorIds = movieDto.ActorIds.Select(a => a.ToString()),
+			genres = movieDto.Genres,
+			description = movieDto.Description,
+			inTheaters = movieDto.InTheaters,
+			releaseDate = movieDto.ReleaseDate,
+			minimumAge = movieDto.MinimumAge,
+			trailerAbsoluteUri = movieDto.TrailerUrl
+		};
+		
+		var cursor = await tx.RunAsync(query, parameters);
+		return await cursor.SingleAsync(record => record.ConvertToMovieDetailsDto());
+	}
+
 	public async Task DeleteMovie(IAsyncQueryRunner tx, Guid movieId)
 	{
 		// language=cypher

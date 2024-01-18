@@ -87,6 +87,19 @@ public class MovieController(IDriver driver, IMovieRepository movieRepository,
 			return CreatedAtAction(nameof(GetMovies), movie);
 		});
 	}
+	
+	[HttpPut("{id:guid}")]
+	public async Task<IActionResult> EditMovie(Guid id, EditMovieDto movieDto)
+	{
+		return await ExecuteWriteAsync<IActionResult>(async tx =>
+		{
+			if (!await MovieRepository.MovieExists(tx, id))
+				return NotFound("Movie does not exist");
+			
+			var movie = await MovieRepository.EditMovie(tx, id, movieDto);
+			return Ok(movie);
+		});
+	}
 
 	[HttpDelete("{id:guid}")]
 	public async Task<IActionResult> DeleteMovie(Guid id)

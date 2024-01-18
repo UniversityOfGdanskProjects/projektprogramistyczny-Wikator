@@ -2,7 +2,7 @@
 
 ###
 
-GET https://localhost:7102/api/movies/abc1eb6d-bb6a-4bca-ba63-79a65a16086c
+GET https://localhost:7102/api/movie/3e8e7d4a-0b7f-4231-9f39-bca11e883c3d
 
 ###
 
@@ -14,7 +14,8 @@ GET https://localhost:7102/api/movies?SortBy=title&SortOrder=Ascending
 
 ###
 
-POST https://localhost:7102/api/movies
+POST https://localhost:7102/api/movie
+Authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJuYW1laWQiOiJkYjAzOTZmZS02YTZlLTQzMTctYWU3Zi1mNTQyYzA4MWI2NWIiLCJ1bmlxdWVfbmFtZSI6IkFkbWluIiwicm9sZSI6IkFkbWluIiwibmJmIjoxNzA1NTk5MDI2LCJleHAiOjE3MDYyMDM4MjYsImlhdCI6MTcwNTU5OTAyNiwiaXNzIjoiaHR0cHM6Ly9tb3ZpZXNhcGl3ZWJ0ZXN0LmF6dXJld2Vic2l0ZXMubmV0In0.w6GAjQsKogjuGLYPnLk68WXssO4vSDRb5DXToJYbTcgAsQOs4dXVmUEtsqrQEYnvjm2Edg5Yk6npBWfh1wKKmA
 Content-Type: application/json
 
 {
@@ -24,7 +25,25 @@ Content-Type: application/json
     "releaseDate": "1999-03-31",
     "TrailerUrl": "https://www.youtube.com/watch?v=vKQi3bBA1y8",
     "description": "A computer hacker learns from mysterious rebels about the true nature of his reality and his role in the war against its controllers.",
-    "actorIds": []
+    "actorIds": [],
+    "genres": ["Action", "Adventure", "fsfsd"]
+}
+
+###
+
+PUT https://localhost:7102/api/movie/4b5f1d5b-d0a4-423b-b594-66ba6e3b3b50
+Authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJuYW1laWQiOiJkYjAzOTZmZS02YTZlLTQzMTctYWU3Zi1mNTQyYzA4MWI2NWIiLCJ1bmlxdWVfbmFtZSI6IkFkbWluIiwicm9sZSI6IkFkbWluIiwibmJmIjoxNzA1NTk5MDI2LCJleHAiOjE3MDYyMDM4MjYsImlhdCI6MTcwNTU5OTAyNiwiaXNzIjoiaHR0cHM6Ly9tb3ZpZXNhcGl3ZWJ0ZXN0LmF6dXJld2Vic2l0ZXMubmV0In0.w6GAjQsKogjuGLYPnLk68WXssO4vSDRb5DXToJYbTcgAsQOs4dXVmUEtsqrQEYnvjm2Edg5Yk6npBWfh1wKKmA
+Content-Type: application/json
+
+{
+  "title": "The Matrix",
+  "inTheaters": true,
+  "minimumAge": 13,
+  "releaseDate": "1999-03-31",
+  "TrailerUrl": "https://www.youtube.com/watch?v=vKQi3bBA1y8",
+  "description": "A computer hacker learns from mysterious rebels about the true nature of his reality and his role in the war against its controllers.",
+  "actorIds": [],
+  "genres": ["Action", "Adventure", "fsfsd"]
 }
 
 ###
