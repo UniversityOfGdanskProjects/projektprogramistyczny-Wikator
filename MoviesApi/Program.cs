@@ -50,6 +50,7 @@ app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseMiddleware<UserExistsInDatabaseMiddleware>();
+app.UseMiddleware<LogUserActivityMiddleware>();
 app.UseAuthorization();
 
 app.MapControllers();

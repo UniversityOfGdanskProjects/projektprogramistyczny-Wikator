@@ -11,27 +11,42 @@ public class Setup(IDriver driver)
     public async Task SetupJobs()
     {
         await using var session = Driver.AsyncSession();
+        
         // language=Cypher
-        const string jobExistsQuery = "CALL apoc.periodic.list() YIELD name AS job";
+        const string jobExists = "CALL apoc.periodic.list() YIELD name AS job";
 
         var result = await session.ExecuteReadAsync(async tx =>
         {
-            var cursor = await tx.RunAsync(jobExistsQuery);
+            var cursor = await tx.RunAsync(jobExists);
             return await cursor.ToListAsync(record => record["job"].As<string>());
         });
         
         if (result.All(job => job != "decrease popularity"))
         {
             // language=Cypher
-            const string createJobQuery = """
+            const string createPopularityJobQuery = """
                                           CALL apoc.periodic.repeat(
                                               'decrease popularity',
                                               'MATCH (m:Movie) SET m.popularity = m.popularity / 2',
                                               60 * 60 * 12
                                           )
                                           """;
-            await session.ExecuteWriteAsync(async tx => await tx.RunAsync(createJobQuery));
+            await session.ExecuteWriteAsync(async tx => await tx.RunAsync(createPopularityJobQuery));
         }
+        
+        if (result.All(job => job != "decrease activity score"))
+        {
+            // language=Cypher
+            const string createActivityScoreJobQuery = """
+                                          CALL apoc.periodic.repeat(
+                                              'decrease activity score',
+                                              'MATCH (u:User) SET u.activityScore = u.activityScore / 2',
+                                              60 * 60 * 24 * 3
+                                          )
+                                          """;
+            await session.ExecuteWriteAsync(async tx => await tx.RunAsync(createActivityScoreJobQuery));
+        }
+        
     }
 
     public async Task CreateAdmin(IConfiguration config)

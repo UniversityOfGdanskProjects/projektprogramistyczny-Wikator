@@ -6,17 +6,16 @@ namespace MoviesApi.Repository;
 
 public class UserRepository : IUserRepository
 {
-    public async Task<IEnumerable<MemberDto>> GetUsersByMostActiveAsync(IAsyncQueryRunner tx, Guid? userId)
+    public async Task<IEnumerable<MemberDto>> GetUsersByMostActiveAsync(IAsyncQueryRunner tx)
     {
         // language=Cypher
         const string query = """
                              MATCH (u:User)
-                             WHERE $userId IS NULL OR u.id <> $userId
                              RETURN u
-                             ORDER BY u.lastActive DESC
+                             ORDER BY u.activityScore DESC
                              """;
 
-        var result = await tx.RunAsync(query, new { userId = userId.ToString() });
+        var result = await tx.RunAsync(query);
         return await result.ToListAsync(record =>
         {
             var user = record["u"].As<INode>();

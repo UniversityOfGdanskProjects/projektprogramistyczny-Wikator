@@ -1,11 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using MoviesApi.Helpers;
 using Neo4j.Driver;
 
 namespace MoviesApi.Controllers.Base;
 
 [ApiController]
-[ServiceFilter(typeof(LogUserActivity))]
 public abstract class BaseApiController(IDriver driver) : ControllerBase
 {
     private IDriver Driver { get; } = driver;

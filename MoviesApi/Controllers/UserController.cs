@@ -1,5 +1,4 @@
-﻿using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MoviesApi.Controllers.Base;
 using MoviesApi.Repository.Contracts;
@@ -18,14 +17,7 @@ public class UserController(IDriver driver, IUserRepository userRepository,
     public async Task<IActionResult> GetByMostActive()
     {
         return await ExecuteReadAsync(async tx =>
-        {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            return userId switch
-            {
-                null => Ok(await UserRepository.GetUsersByMostActiveAsync(tx, null)),
-                _ => Ok(await UserRepository.GetUsersByMostActiveAsync(tx, Guid.Parse(userId)))
-            };
-        });
+            Ok(await UserRepository.GetUsersByMostActiveAsync(tx)));
     }
     
     [HttpDelete("/{id:guid}")]

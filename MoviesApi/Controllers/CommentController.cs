@@ -32,7 +32,6 @@ public class CommentController(IDriver driver, IMovieRepository movieRepository,
         });
     }
     
-    
     [HttpPost]
     public async Task<IActionResult> AddCommentAsync(AddCommentDto addCommentDto)
     {
