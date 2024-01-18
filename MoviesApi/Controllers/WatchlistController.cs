@@ -31,7 +31,7 @@ public class WatchlistController(IDriver driver, IWatchlistRepository watchlistR
     [HttpPost("{movieId:guid}/watchlist")]
     public async Task<IActionResult> AddToWatchList(Guid movieId)
     {
-        return await ExecuteWriteAsync<IActionResult>(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             if (!await MovieRepository.MovieExists(tx, movieId))
                 return NotFound("Movie does not exist found");
@@ -49,7 +49,7 @@ public class WatchlistController(IDriver driver, IWatchlistRepository watchlistR
     [HttpDelete("{movieId:guid}/watchlist")]
     public async Task<IActionResult> RemoveFromWatchList(Guid movieId)
     {
-        return await ExecuteWriteAsync<IActionResult>(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             if (!await MovieRepository.MovieExists(tx, movieId))
                 return NotFound("Movie does not exist");

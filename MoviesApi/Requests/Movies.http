@@ -36,7 +36,7 @@ Content-Type: application/json
 
 ###
 
-PUT https://localhost:7102/api/movie/4b5f1d5b-d0a4-423b-b594-66ba6e3b3b50
+PUT https://localhost:7102/api/movie/7ec9c273-b55b-4b08-9cc8-357bb2122bb0
 Authorization: Bearer {{admin_token}}
 Content-Type: application/json
 
@@ -53,4 +53,5 @@ Content-Type: application/json
 
 ###
 
-DELETE  https://localhost:7102/api/movies/b2bf4718-4349-4b14-a229-e810d21ada59
+DELETE  https://localhost:7102/api/movie/133aadee-bc16-4bdd-b62f-29a1e7da3c9b
+Authorization: Bearer {{admin_token}}

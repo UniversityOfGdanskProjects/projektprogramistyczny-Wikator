@@ -14,7 +14,7 @@ public class LogUserActivityMiddleware(RequestDelegate next)
         var userId = context.User.Claims
             .FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value;
         
-        if (userId == null)
+        if (userId is null)
             return;
 
         _ = LogUserActivityInBackground(driver, Guid.Parse(userId));

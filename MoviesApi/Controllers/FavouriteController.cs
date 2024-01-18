@@ -31,7 +31,7 @@ public class FavouriteController(IDriver driver, IFavouriteRepository favouriteR
     [HttpPost("{movieId:guid}/favourite")]
     public async Task<IActionResult> AddToFavouriteList(Guid movieId)
     {
-        return await ExecuteWriteAsync<IActionResult>(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             if (!await MovieRepository.MovieExists(tx, movieId))
                 return NotFound("Movie does not exist found");
@@ -49,7 +49,7 @@ public class FavouriteController(IDriver driver, IFavouriteRepository favouriteR
     [HttpDelete("{movieId:guid}/favourite")]
     public async Task<IActionResult> RemoveFromFavourites(Guid movieId)
     {
-        return await ExecuteWriteAsync<IActionResult>(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             if (!await MovieRepository.MovieExists(tx, movieId))
                 return NotFound("Movie does not exist");

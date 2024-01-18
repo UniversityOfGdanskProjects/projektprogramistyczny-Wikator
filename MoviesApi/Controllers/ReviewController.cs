@@ -20,7 +20,7 @@ public class ReviewController(IDriver driver, IMovieRepository movieRepository,
     [HttpPost]
     public async Task<IActionResult> CreateReview(AddReviewDto reviewDto)
     {
-        return await ExecuteWriteAsync<IActionResult>(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             if (!await MovieRepository.MovieExists(tx, reviewDto.MovieId))
                 return BadRequest("Movie you are trying to review does not exist");
@@ -38,7 +38,7 @@ public class ReviewController(IDriver driver, IMovieRepository movieRepository,
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> UpdateReview(Guid id, UpdateReviewDto reviewDto)
     {
-        return await ExecuteWriteAsync<IActionResult>(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             var userId = User.GetUserId();
 
@@ -53,7 +53,7 @@ public class ReviewController(IDriver driver, IMovieRepository movieRepository,
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> DeleteReview(Guid id)
     {
-        return await ExecuteWriteAsync<IActionResult>(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             var userId = User.GetUserId();
 

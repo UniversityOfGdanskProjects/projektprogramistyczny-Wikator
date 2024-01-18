@@ -26,7 +26,7 @@ public class UserController(IDriver driver, IUserRepository userRepository,
     [Authorize]
     public async Task<IActionResult> UpdateUsername(UpdateUsernameDto updateUsernameDto)
     {
-        return await ExecuteWriteAsync<IActionResult>(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             var userId = User.GetUserId();
             await UserRepository.UpdateUserNameAsync(tx, userId, updateUsernameDto.NewUsername);
@@ -38,7 +38,7 @@ public class UserController(IDriver driver, IUserRepository userRepository,
     [Authorize(Policy = "RequireAdminRole")]
     public async Task<IActionResult> UpdateUsername(Guid id, UpdateUsernameDto updateUsernameDto)
     {
-        return await ExecuteWriteAsync<IActionResult>(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             if (!await UserRepository.UserExistsAsync(tx, id))
                 return NotFound("User not found");
@@ -52,7 +52,7 @@ public class UserController(IDriver driver, IUserRepository userRepository,
     [Authorize(Policy = "RequireAdminRole")]
     public async Task<IActionResult> ChangeUserRoleToAdmin(Guid id)
     {
-        return await ExecuteWriteAsync<IActionResult>(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             if (!await UserRepository.UserExistsAsync(tx, id))
                 return NotFound("User not found");
@@ -66,7 +66,7 @@ public class UserController(IDriver driver, IUserRepository userRepository,
     [Authorize(Policy = "RequireAdminRole")]
     public async Task<IActionResult> DeleteUserAsAdmin(Guid id)
     {
-        return await ExecuteWriteAsync<IActionResult>(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             if (!await UserRepository.UserExistsAsync(tx, id))
                 return NotFound("User not found");
@@ -80,7 +80,7 @@ public class UserController(IDriver driver, IUserRepository userRepository,
     [Authorize]
     public async Task<IActionResult> DeleteUser()
     {
-        return await ExecuteWriteAsync<IActionResult>(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             var userId = User.GetUserId();
             await AccountRepository.DeleteUserAsync(tx, userId);

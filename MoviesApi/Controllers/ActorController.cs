@@ -34,7 +34,7 @@ public class ActorController(IDriver driver, IPhotoService photoService, IActorR
     [AllowAnonymous]
     public async Task<IActionResult> GetActor(Guid id)
     {
-        return await ExecuteReadAsync<IActionResult>(async tx =>
+        return await ExecuteReadAsync(async tx =>
         {
             var actor = await ActorRepository.GetActor(tx, id);
 
@@ -49,7 +49,7 @@ public class ActorController(IDriver driver, IPhotoService photoService, IActorR
     [HttpPost]
     public async Task<IActionResult> CreateActor(AddActorDto actorDto)
     {
-        return await ExecuteWriteAsync<IActionResult>(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             string? pictureAbsoluteUri = null;
             string? picturePublicId = null;
@@ -79,7 +79,7 @@ public class ActorController(IDriver driver, IPhotoService photoService, IActorR
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> UpdateActor(Guid id, EditActorDto actorDto)
     {
-        return await ExecuteWriteAsync<IActionResult>(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             if (!await ActorRepository.ActorExists(tx, id))
                 return NotFound($"Actor with id {id} was not found");
@@ -92,7 +92,7 @@ public class ActorController(IDriver driver, IPhotoService photoService, IActorR
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> DeleteActor(Guid id)
     {
-        return await ExecuteWriteAsync<IActionResult>(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             if (!await ActorRepository.ActorExists(tx, id))
                 return NotFound($"Actor with id {id} was not found");
@@ -113,7 +113,7 @@ public class ActorController(IDriver driver, IPhotoService photoService, IActorR
     [HttpPost("{id:guid}/picture")]
     public async Task<IActionResult> AddActorPicture(Guid id, UpsertPictureDto pictureDto)
     {
-        return await ExecuteWriteAsync<IActionResult>(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             if (!await ActorRepository.ActorExists(tx, id))
                 return NotFound($"Actor with id {id} was not found");
@@ -140,7 +140,7 @@ public class ActorController(IDriver driver, IPhotoService photoService, IActorR
     [HttpPut("{id:guid}/picture")]
     public async Task<IActionResult> EditActorPicture(Guid id, UpsertPictureDto pictureDto)
     {
-        return await ExecuteWriteAsync<IActionResult>(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             if (!await ActorRepository.ActorExists(tx, id))
                 return NotFound($"Actor with id {id} was not found");
@@ -173,7 +173,7 @@ public class ActorController(IDriver driver, IPhotoService photoService, IActorR
     [HttpDelete("{id:guid}/picture")]
     public async Task<IActionResult> DeleteActorPicture(Guid id)
     {
-        return await ExecuteWriteAsync<IActionResult>(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             if (!await ActorRepository.ActorExists(tx, id))
                 return NotFound($"Actor with id {id} was not found");

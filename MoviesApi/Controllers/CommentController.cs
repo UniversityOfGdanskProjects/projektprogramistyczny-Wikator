@@ -20,7 +20,7 @@ public class CommentController(IDriver driver, IMovieRepository movieRepository,
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetComment(Guid id)
     {
-        return await ExecuteReadAsync<IActionResult>(async tx =>
+        return await ExecuteReadAsync(async tx =>
         {
             var comment = await CommentRepository.GetCommentAsync(tx, id);
 
@@ -35,7 +35,7 @@ public class CommentController(IDriver driver, IMovieRepository movieRepository,
     [HttpPost]
     public async Task<IActionResult> AddCommentAsync(AddCommentDto addCommentDto)
     {
-        return await ExecuteWriteAsync<IActionResult>(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             if (!await MovieRepository.MovieExists(tx, addCommentDto.MovieId))
                 return BadRequest("Movie you are trying to comment on does not exist");
@@ -53,7 +53,7 @@ public class CommentController(IDriver driver, IMovieRepository movieRepository,
     [HttpPut("{commentId:guid}/")]
     public async Task<IActionResult> EditCommentAsync(Guid commentId, EditCommentDto editCommentDto)
     {
-        return await ExecuteWriteAsync<IActionResult>(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             var userId = User.GetUserId();
             
@@ -68,7 +68,7 @@ public class CommentController(IDriver driver, IMovieRepository movieRepository,
     [HttpDelete("{commentId:guid}/")]
     public async Task<IActionResult> DeleteCommentAsync(Guid commentId)
     {
-        return await ExecuteWriteAsync<IActionResult>(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             var userId = User.GetUserId();
 

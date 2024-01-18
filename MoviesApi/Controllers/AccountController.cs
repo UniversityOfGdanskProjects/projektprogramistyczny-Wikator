@@ -21,7 +21,7 @@ public class AccountController(IDriver driver, ITokenService tokenService, IAcco
 	[HttpPost("login")]
 	public async Task<IActionResult> Login(LoginDto loginDto)
 	{
-		return await ExecuteReadAsync<IActionResult>(async tx =>
+		return await ExecuteReadAsync(async tx =>
 		{
 			var user = await AccountRepository.LoginAsync(tx, loginDto);
 
@@ -36,7 +36,7 @@ public class AccountController(IDriver driver, ITokenService tokenService, IAcco
 	[HttpPost("register")]
 	public async Task<IActionResult> Register(RegisterDto registerDto)
 	{
-		return await ExecuteWriteAsync<IActionResult>(async tx =>
+		return await ExecuteWriteAsync(async tx =>
 		{
 			if (await AccountRepository.EmailExistsAsync(tx, registerDto.Email))
 				return BadRequest("Email is taken");
@@ -55,7 +55,7 @@ public class AccountController(IDriver driver, ITokenService tokenService, IAcco
 	[HttpDelete]
 	public async Task<IActionResult> DeleteAccount()
 	{
-		return await ExecuteWriteAsync<IActionResult>(async tx =>
+		return await ExecuteWriteAsync(async tx =>
 		{
 			var userId = User.GetUserId();
 			await AccountRepository.DeleteUserAsync(tx, userId);

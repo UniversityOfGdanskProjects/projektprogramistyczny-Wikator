@@ -241,7 +241,7 @@ public class MovieRepository : IMovieRepository
 		                         }
 		                       END
 		                     ) AS actors
-		                     MATCH (g:Genre)
+		                     OPTIONAL MATCH (g:Genre)
 		                     WHERE g.name IN $genres
 		                     CALL apoc.do.when(
 		                       g IS NOT NULL,

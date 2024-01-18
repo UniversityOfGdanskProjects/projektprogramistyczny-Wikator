@@ -45,7 +45,7 @@ public class MovieController(IDriver driver, IMovieRepository movieRepository,
 	[AllowAnonymous]
 	public async Task<IActionResult> GetMovie(Guid id)
 	{
-		return await ExecuteWriteAsync<IActionResult>(async tx =>
+		return await ExecuteWriteAsync(async tx =>
 		{
 			var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 			var movie = userId switch
@@ -91,7 +91,7 @@ public class MovieController(IDriver driver, IMovieRepository movieRepository,
 	[HttpPut("{id:guid}")]
 	public async Task<IActionResult> EditMovie(Guid id, EditMovieDto movieDto)
 	{
-		return await ExecuteWriteAsync<IActionResult>(async tx =>
+		return await ExecuteWriteAsync(async tx =>
 		{
 			if (!await MovieRepository.MovieExists(tx, id))
 				return NotFound("Movie does not exist");
@@ -104,7 +104,7 @@ public class MovieController(IDriver driver, IMovieRepository movieRepository,
 	[HttpDelete("{id:guid}")]
 	public async Task<IActionResult> DeleteMovie(Guid id)
 	{
-		return await ExecuteWriteAsync<IActionResult>(async tx =>
+		return await ExecuteWriteAsync(async tx =>
 		{
 			if (!await MovieRepository.MovieExists(tx, id))
 				return NotFound("Movie does not exist");
@@ -125,7 +125,7 @@ public class MovieController(IDriver driver, IMovieRepository movieRepository,
 	[HttpPost("{id:guid}/picture")]
 	public async Task<IActionResult> AddMoviePicture(Guid id, UpsertPictureDto pictureDto)
 	{
-		return await ExecuteWriteAsync<IActionResult>(async tx =>
+		return await ExecuteWriteAsync(async tx =>
 		{
 			if (!await MovieRepository.MovieExists(tx, id))
 				return NotFound("Movie does not exist");
@@ -155,7 +155,7 @@ public class MovieController(IDriver driver, IMovieRepository movieRepository,
 	[HttpPut("{id:guid}/picture")]
 	public async Task<IActionResult> EditMoviePicture(Guid id, UpsertPictureDto pictureDto)
 	{
-		return await ExecuteWriteAsync<IActionResult>(async tx =>
+		return await ExecuteWriteAsync(async tx =>
 		{
 			if (!await MovieRepository.MovieExists(tx, id))
 				return NotFound("Movie does not exist");
@@ -191,7 +191,7 @@ public class MovieController(IDriver driver, IMovieRepository movieRepository,
 	[HttpDelete("{id:guid}/picture")]
 	public async Task<IActionResult> DeleteMoviePicture(Guid id)
 	{
-		return await ExecuteWriteAsync<IActionResult>(async tx =>
+		return await ExecuteWriteAsync(async tx =>
 		{
 			if (!await MovieRepository.MovieExists(tx, id))
 				return NotFound("Movie does not exist");

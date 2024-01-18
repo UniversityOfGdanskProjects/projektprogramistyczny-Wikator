@@ -33,7 +33,7 @@ public class NotificationController(IDriver driver,
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> MarkNotificationAsRead(Guid id)
     {
-        return await ExecuteWriteAsync<IActionResult>(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             var userId = User.GetUserId();
             
@@ -48,7 +48,7 @@ public class NotificationController(IDriver driver,
     [HttpPut]
     public async Task<IActionResult> MarkAllNotificationsAsRead()
     {
-        return await ExecuteWriteAsync<IActionResult>(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             var userId = User.GetUserId();
             await NotificationRepository.MarkAllNotificationsAsReadAsync(tx, userId);
@@ -59,7 +59,7 @@ public class NotificationController(IDriver driver,
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> DeleteNotification(Guid id)
     {
-        return await ExecuteWriteAsync<IActionResult>(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             var userId = User.GetUserId();
             
@@ -74,7 +74,7 @@ public class NotificationController(IDriver driver,
     [HttpDelete]
     public async Task<IActionResult> DeleteAllNotifications()
     {
-        return await ExecuteWriteAsync<IActionResult>(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             var userId = User.GetUserId();
             await NotificationRepository.DeleteAllNotificationsAsync(tx, userId);

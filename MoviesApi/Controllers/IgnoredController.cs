@@ -29,7 +29,7 @@ public class IgnoredController(IDriver driver, IIgnoresRepository ignoresReposit
     [HttpPost("{movieId:guid}/ignored")]
     public async Task<IActionResult> IgnoreMovie(Guid movieId)
     {
-        return await ExecuteWriteAsync<IActionResult>(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             if (!await MovieRepository.MovieExists(tx, movieId))
                 return NotFound("Movie does not exist");
@@ -47,7 +47,7 @@ public class IgnoredController(IDriver driver, IIgnoresRepository ignoresReposit
     [HttpDelete("{movieId:guid}/ignored")]
     public async Task<IActionResult> RemoveMovieFromIgnored(Guid movieId)
     {
-        return await ExecuteWriteAsync<IActionResult>(async tx =>
+        return await ExecuteWriteAsync(async tx =>
         {
             if (!await MovieRepository.MovieExists(tx, movieId))
                 return NotFound("Movie does not exist");
