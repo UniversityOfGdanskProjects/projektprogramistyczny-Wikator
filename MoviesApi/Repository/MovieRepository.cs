@@ -101,56 +101,6 @@ public class MovieRepository : IMovieRepository
 	public async Task<MovieDetailsDto> AddMovie(IAsyncQueryRunner tx,
 		AddMovieDto movieDto, string? pictureAbsoluteUri, string? picturePublicId)
 	{
-		if (!movieDto.ActorIds.Any())
-		{
-			// language=Cypher
-			const string createMovieQuery = """
-			                                CREATE (m:Movie {
-			                                  id: apoc.create.uuid(),
-			                                  title: $title,
-			                                  description: $description,
-			                                  pictureAbsoluteUri: $pictureAbsoluteUri,
-			                                  picturePublicId: $picturePublicId,
-			                                  inTheaters: $inTheaters,
-			                                  releaseDate: $releaseDate,
-			                                  minimumAge: $minimumAge,
-			                                  trailerAbsoluteUri: $trailerAbsoluteUri,
-			                                  popularity: 0
-			                                })
-			                                RETURN
-			                                  m.id AS id,
-			                                  m.title AS title,
-			                                  m.description AS description,
-			                                  m.inTheaters AS inTheaters,
-			                                  m.trailerAbsoluteUri AS trailerAbsoluteUri,
-			                                  m.pictureAbsoluteUri AS pictureAbsoluteUri,
-			                                  m.releaseDate AS releaseDate,
-			                                  m.minimumAge AS minimumAge,
-			                                  false AS onWatchlist,
-			                                  false AS isFavourite,
-			                                  null AS userReviewScore,
-			                                  0 AS reviewsCount,
-			                                  [] AS actors,
-			                                  [] AS comments,
-			                                  0 AS averageReviewScore
-			                                """;
-
-			var movieWithoutActorsParameters = new
-			{
-				title = movieDto.Title,
-				description = movieDto.Description,
-				inTheaters = movieDto.InTheaters,
-				releaseDate = movieDto.ReleaseDate,
-				minimumAge = movieDto.MinimumAge,
-				trailerAbsoluteUri = movieDto.TrailerUrl,
-				pictureAbsoluteUri,
-				picturePublicId
-			};
-
-			var movieCursorWithoutActors = await tx.RunAsync(createMovieQuery, movieWithoutActorsParameters);
-			return await movieCursorWithoutActors.SingleAsync(record => record.ConvertToMovieDetailsDto());
-		}
-		
 		// language=Cypher
 		const string createQuery = """
 		                           CREATE (m:Movie {
@@ -166,19 +116,25 @@ public class MovieRepository : IMovieRepository
 		                             trailerAbsoluteUri: $trailerAbsoluteUri
 		                           })
 		                           WITH m
-		                           UNWIND $actorIds AS actorId
-		                           MATCH (a:Actor { id: actorId })
-		                           CREATE (a)-[:PLAYED_IN]->(m)
+		                           OPTIONAL MATCH (a:Actor)
+		                           WHERE a.id IN $actorIds
+		                           CALL apoc.do.when(
+		                             a IS NOT NULL,
+		                             'CREATE (a)-[:PLAYED_IN]->(m)
+		                              RETURN a',
+		                             'RETURN a',
+		                             { a: a, m: m }
+		                           ) YIELD value
 		                           WITH m, COLLECT(
 		                             CASE
-		                               WHEN a IS NULL THEN null
+		                               WHEN value.a IS NULL THEN null
 		                               ELSE {
-		                                 id: a.id,
-		                                 firstName: a.firstName,
-		                                 lastName: a.lastName,
-		                                 dateOfBirth: a.dateOfBirth,
-		                                 biography: a.biography,
-		                                 pictureAbsoluteUri: a.pictureAbsoluteUri
+		                                 id: value.a.id,
+		                                 firstName: value.a.firstName,
+		                                 lastName: value.a.lastName,
+		                                 dateOfBirth: value.a.dateOfBirth,
+		                                 biography: value.a.biography,
+		                                 pictureAbsoluteUri: value.a.pictureAbsoluteUri
 		                               }
 		                             END
 		                           ) AS actors
@@ -195,7 +151,7 @@ public class MovieRepository : IMovieRepository
 		                             false AS isFavourite,
 		                             null AS userReviewScore,
 		                             0 AS reviewsCount,
-		                             actors,
+		                             COALESCE(actors, []) AS actors,
 		                             [] AS comments,
 		                             0 AS averageReviewScore
 		                           """;

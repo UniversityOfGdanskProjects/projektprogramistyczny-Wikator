@@ -55,8 +55,8 @@ public class CommentRepository : ICommentRepository
                                  relatedEntityId: r.id,
                                  isRead: false
                                }]-(m)
-                               RETURN u2, m, r', 
-                               'RETURN u2, m, r', {u2:u2, m:m, r:r}) YIELD value
+                               RETURN m, r', 
+                               'RETURN m, r', {u2:u2, m:m, r:r}) YIELD value
                              RETURN
                                value.r.id AS id,
                                value.m.id AS movieId,
