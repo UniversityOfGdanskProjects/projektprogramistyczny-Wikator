@@ -42,7 +42,7 @@ public class CommentController(IDriver driver, IMovieRepository movieRepository,
 
             var userId = User.GetUserId();
 
-            if (await CommentRepository.CommentExists(tx, addCommentDto.MovieId, userId))
+            if (await CommentRepository.CommentExistsAsOwnerOrAdmin(tx, addCommentDto.MovieId, userId))
                 return BadRequest("You already commented on this movie");
 
             var comment = await CommentRepository.AddCommentAsync(tx, userId, addCommentDto);
@@ -57,12 +57,10 @@ public class CommentController(IDriver driver, IMovieRepository movieRepository,
         {
             var userId = User.GetUserId();
             
-            if (!await CommentRepository.CommentExists(tx, commentId, userId))
+            if (!await CommentRepository.CommentExistsAsOwnerOrAdmin(tx, commentId, userId))
                 return NotFound("Either the comment doesn't exist or you don't have permission to edit it");
 
-            var comment =
-                await CommentRepository.EditCommentAsync(tx, commentId, userId,
-                    editCommentDto);
+            var comment = await CommentRepository.EditCommentAsync(tx, commentId, userId, editCommentDto);
             return Ok(comment);
         });
     }
@@ -74,7 +72,7 @@ public class CommentController(IDriver driver, IMovieRepository movieRepository,
         {
             var userId = User.GetUserId();
 
-            if (!await CommentRepository.CommentExists(tx, commentId, userId))
+            if (!await CommentRepository.CommentExistsAsOwnerOrAdmin(tx, commentId, userId))
                 return NotFound("Either the comment doesn't exist or you don't have permission to delete it");
 
             await CommentRepository.DeleteCommentAsync(tx, commentId, userId);

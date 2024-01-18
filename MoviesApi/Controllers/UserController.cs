@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MoviesApi.Controllers.Base;
+using MoviesApi.DTOs.Responses;
+using MoviesApi.Extensions;
 using MoviesApi.Repository.Contracts;
 using Neo4j.Driver;
 
@@ -20,9 +22,49 @@ public class UserController(IDriver driver, IUserRepository userRepository,
             Ok(await UserRepository.GetUsersByMostActiveAsync(tx)));
     }
     
+    [HttpPut("/username")]
+    [Authorize]
+    public async Task<IActionResult> UpdateUsername(UpdateUsernameDto updateUsernameDto)
+    {
+        return await ExecuteWriteAsync<IActionResult>(async tx =>
+        {
+            var userId = User.GetUserId();
+            await UserRepository.UpdateUserNameAsync(tx, userId, updateUsernameDto.NewUsername);
+            return NoContent();
+        });
+    }
+    
+    [HttpPut("/{id:guid}/username")]
+    [Authorize(Policy = "RequireAdminRole")]
+    public async Task<IActionResult> UpdateUsername(Guid id, UpdateUsernameDto updateUsernameDto)
+    {
+        return await ExecuteWriteAsync<IActionResult>(async tx =>
+        {
+            if (!await UserRepository.UserExistsAsync(tx, id))
+                return NotFound("User not found");
+
+            await UserRepository.UpdateUserNameAsync(tx, id, updateUsernameDto.NewUsername);
+            return NoContent();
+        });
+    }
+    
+    [HttpPut("/{id:guid}/role")]
+    [Authorize(Policy = "RequireAdminRole")]
+    public async Task<IActionResult> ChangeUserRoleToAdmin(Guid id)
+    {
+        return await ExecuteWriteAsync<IActionResult>(async tx =>
+        {
+            if (!await UserRepository.UserExistsAsync(tx, id))
+                return NotFound("User not found");
+
+            await UserRepository.ChangeUserRoleToAdminAsync(tx, id);
+            return NoContent();
+        });
+    }
+    
     [HttpDelete("/{id:guid}")]
     [Authorize(Policy = "RequireAdminRole")]
-    public async Task<IActionResult> DeleteUser(Guid id)
+    public async Task<IActionResult> DeleteUserAsAdmin(Guid id)
     {
         return await ExecuteWriteAsync<IActionResult>(async tx =>
         {
@@ -30,6 +72,18 @@ public class UserController(IDriver driver, IUserRepository userRepository,
                 return NotFound("User not found");
 
             await AccountRepository.DeleteUserAsync(tx, id);
+            return NoContent();
+        });
+    }
+    
+    [HttpDelete]
+    [Authorize]
+    public async Task<IActionResult> DeleteUser()
+    {
+        return await ExecuteWriteAsync<IActionResult>(async tx =>
+        {
+            var userId = User.GetUserId();
+            await AccountRepository.DeleteUserAsync(tx, userId);
             return NoContent();
         });
     }

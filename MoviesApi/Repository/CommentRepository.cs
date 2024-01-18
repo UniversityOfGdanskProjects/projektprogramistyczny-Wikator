@@ -84,7 +84,8 @@ public class CommentRepository : ICommentRepository
     {
         // language=Cypher
         const string query = """
-                             MATCH (u:User { id: $userId })-[r:COMMENTED { id: $commentId }]->(m:Movie)
+                             MATCH (u:User)-[r:COMMENTED { id: $commentId }]->(m:Movie)
+                             WHERE u.id = $userId OR u.role = 'Admin'
                              SET r.text = $text, r.isEdited = true
                              RETURN
                                r.id AS id,
@@ -111,18 +112,20 @@ public class CommentRepository : ICommentRepository
     {
         // language=Cypher
         const string query = """
-                             MATCH (:User { id: $userId })-[r:COMMENTED { id: $commentId }]->(:Movie)
+                             MATCH (u:User)-[r:COMMENTED { id: $commentId }]->(:Movie)
+                             WHERE u.id = $userId OR u.role = 'Admin'
                              DELETE r
                              """;
 
         await tx.RunAsync(query, new { commentId = commentId.ToString(), userId = userId.ToString() });
     }
 
-    public async Task<bool> CommentExists(IAsyncQueryRunner tx, Guid commentId, Guid userId)
+    public async Task<bool> CommentExistsAsOwnerOrAdmin(IAsyncQueryRunner tx, Guid commentId, Guid userId)
     {
         // language=Cypher
         const string query = """
-                             MATCH (:User { id: $userId })-[r:COMMENTED { id: $commentId }]->(:Movie)
+                             MATCH (u:User)-[r:COMMENTED { id: $commentId }]->(:Movie)
+                             WHERE u.id = $userId OR u.role = 'Admin'
                              RETURN COUNT(r) > 0 AS commentsExists
                              """;
 

@@ -10,5 +10,5 @@ public interface ICommentRepository
     Task<CommentDto> AddCommentAsync(IAsyncQueryRunner tx, Guid userId, AddCommentDto addCommentDto);
     Task<CommentDto> EditCommentAsync(IAsyncQueryRunner tx, Guid commentId, Guid userId, EditCommentDto addCommentDto);
     Task DeleteCommentAsync(IAsyncQueryRunner tx, Guid commentId, Guid userId);
-    Task<bool> CommentExists(IAsyncQueryRunner tx, Guid commentId, Guid userId);
+    Task<bool> CommentExistsAsOwnerOrAdmin(IAsyncQueryRunner tx, Guid commentId, Guid userId);
 }

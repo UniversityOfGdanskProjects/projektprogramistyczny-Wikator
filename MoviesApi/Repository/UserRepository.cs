@@ -29,6 +29,28 @@ public class UserRepository : IUserRepository
         });
     }
 
+    public async Task UpdateUserNameAsync(IAsyncQueryRunner tx, Guid userId, string newUsername)
+    {
+        // language=Cypher
+        const string query = """
+                             MATCH (u:User { id: $userId })
+                             SET u.name = $newUsername
+                             """;
+        
+        await tx.RunAsync(query, new { userId = userId.ToString(), newUsername });
+    }
+
+    public async Task ChangeUserRoleToAdminAsync(IAsyncQueryRunner tx, Guid userId)
+    {
+        // language=Cypher
+        const string query = """
+                             MATCH (u:User { id: $userId })
+                             SET u.role = 'Admin'
+                             """;
+        
+        await tx.RunAsync(query, new { userId = userId.ToString() });
+    }
+
     public async Task<bool> UserExistsAsync(IAsyncQueryRunner tx, Guid userId)
     {
         // language=Cypher
