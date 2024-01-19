@@ -112,9 +112,10 @@ public class CommentRepository : ICommentRepository
     {
         // language=Cypher
         const string query = """
-                             MATCH (u:User)-[r:COMMENTED { id: $commentId }]->(:Movie)
+                             MATCH (u:User)-[r:COMMENTED { id: $commentId }]->(m:Movie)
                              WHERE u.id = $userId OR EXISTS { MATCH (:User { id: $userId, role: 'Admin' }) }
-                             DELETE r
+                             OPTIONAL MATCH (m)-[r2:NOTIFICATION { relatedEntityId: $commentId }]->(:User)
+                             DELETE r2, r
                              """;
 
         await tx.RunAsync(query, new { commentId = commentId.ToString(), userId = userId.ToString() });
