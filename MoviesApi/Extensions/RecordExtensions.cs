@@ -19,7 +19,7 @@ public static class RecordExtensions
             MinimumAge: record["minimumAge"].As<int>(),
             OnWatchlist: record["onWatchlist"].As<bool>(),
             IsFavourite: record["isFavourite"].As<bool>(),
-            UserReviewScore: record["userReviewScore"].As<int?>(),
+            UserReview: ConvertToReviewIdAndScoreDto(record["userReviewScore"].As<IDictionary<string, object>?>()),
             ReviewsCount: record["reviewsCount"].As<int>(),
             Actors: record["actors"].As<List<IDictionary<string, object>>>().Select(ConvertToActorDto),
             Comments: record["comments"].As<List<IDictionary<string, object>>>().Select(ConvertToCommentDto),
@@ -34,7 +34,7 @@ public static class RecordExtensions
             PictureUri: record["pictureAbsoluteUri"].As<string?>(),
             OnWatchlist: record["onWatchlist"].As<bool>(),
             IsFavourite: record["isFavourite"].As<bool>(),
-            UserReviewScore: record["userReviewScore"].As<int?>(),
+            UserReview: ConvertToReviewIdAndScoreDto(record["userReviewScore"].As<IDictionary<string, object>?>()),
             ReviewsCount: record["reviewsCount"].As<int>(),
             MinimumAge: record["minimumAge"].As<int>(),
             Genres: record["genres"].As<List<string>>()
@@ -108,4 +108,16 @@ public static class RecordExtensions
             CreatedAt: dictionary["createdAt"].As<DateTime>(),
             IsEdited: dictionary["isEdited"].As<bool>()
         );
+
+    private static ReviewIdAndScoreDto? ConvertToReviewIdAndScoreDto(IDictionary<string, object>? dictionary)
+    {
+        return dictionary switch
+        {
+            null => null,
+            _ => new ReviewIdAndScoreDto(
+                Id: Guid.Parse(dictionary["id"].As<string>()),
+                Score: dictionary["score"].As<int>()
+            )
+        };
+    }
 }

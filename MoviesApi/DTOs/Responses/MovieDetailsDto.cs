@@ -12,7 +12,7 @@ public record MovieDetailsDto(
     string? PictureUri,
     bool OnWatchlist,
     bool IsFavourite,
-    int? UserReviewScore,
+    ReviewIdAndScoreDto? UserReview,
     int ReviewsCount,
     IEnumerable<ActorDto> Actors,
     IEnumerable<CommentDto> Comments,

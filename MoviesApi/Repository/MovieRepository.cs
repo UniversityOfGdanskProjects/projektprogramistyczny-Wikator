@@ -32,7 +32,7 @@ public class MovieRepository : IMovieRepository
 		                     OPTIONAL MATCH (m)<-[w:WATCHLIST]-(:User { id: $userId })
 		                     OPTIONAL MATCH (m)<-[f:FAVOURITE]-(:User { id: $userId })
 		                     OPTIONAL MATCH (m)<-[ur:REVIEWED]-(:User { id: $userId })
-		                     WITH m, COALESCE(AVG(r.score), 0) AS averageReviewScore, COUNT(w) > 0 AS onWatchlist, COUNT(f) > 0 AS isFavourite, COUNT(r) AS reviewsCount, ur.score AS userReviewScore,
+		                     WITH m, COALESCE(AVG(r.score), 0) AS averageReviewScore, COUNT(w) > 0 AS onWatchlist, COUNT(f) > 0 AS isFavourite, COUNT(r) AS reviewsCount, CASE WHEN ur IS NULL THEN NULL ELSE { id: ur.id, score: ur.score } END AS userReviewScore,
 		                       COLLECT(
 		                         CASE
 		                           WHEN g IS NOT NULL THEN g.name
@@ -201,7 +201,7 @@ public class MovieRepository : IMovieRepository
 		return await movieCursor.SingleAsync(record => record.ConvertToMovieDetailsDto());
 	}
 
-	public async Task<MovieDetailsDto> EditMovie(IAsyncQueryRunner tx, Guid movieId, EditMovieDto movieDto)
+	public async Task<MovieDetailsDto> EditMovie(IAsyncQueryRunner tx, Guid movieId, Guid userId, EditMovieDto movieDto)
 	{
 		// language=Cypher
 		const string query = """
@@ -255,6 +255,25 @@ public class MovieRepository : IMovieRepository
 		                         WHEN genres.g IS NOT NULL THEN genres.g.name
 		                       END
 		                     ) AS genres, actors
+		                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(:User)
+		                     OPTIONAL MATCH (m)<-[c:COMMENTED]-(u:User)
+		                     OPTIONAL MATCH (m)<-[w:WATCHLIST]-(:User { id: $userId })
+		                     OPTIONAL MATCH (m)<-[f:FAVOURITE]-(:User { id: $userId })
+		                     OPTIONAL MATCH (m)<-[ur:REVIEWED]-(:User { id: $userId })
+		                     WITH m, genres, actors,
+		                     COLLECT(
+		                       CASE
+		                         WHEN u is NOT NULL AND c is NOT NULL THEN {
+		                           id: c.id,
+		                           movieId: m.id,
+		                           userId: u.id,
+		                           username: u.name,
+		                           text: c.text,
+		                           createdAt: c.createdAt,
+		                           isEdited: c.isEdited
+		                         }
+		                       END
+		                     ) AS comments, AVG(r.score) AS averageReviewScore, COUNT(w) > 0 AS onWatchlist, COUNT(f) > 0 AS isFavourite, COUNT(r) AS reviewsCount, CASE WHEN ur IS NULL THEN NULL ELSE { id: ur.id, score: ur.score } END AS userReviewScore
 		                     RETURN
 		                       m.id AS id,
 		                       m.title AS title,
@@ -264,18 +283,19 @@ public class MovieRepository : IMovieRepository
 		                       m.pictureAbsoluteUri AS pictureAbsoluteUri,
 		                       m.releaseDate AS releaseDate,
 		                       m.minimumAge AS minimumAge,
-		                       false AS onWatchlist,
-		                       false AS isFavourite,
-		                       null AS userReviewScore,
-		                       0 AS reviewsCount,
+		                       onWatchlist AS onWatchlist,
+		                       isFavourite AS isFavourite,
+		                       userReviewScore AS userReviewScore,
+		                       reviewsCount AS reviewsCount,
 		                       COALESCE(actors, []) AS actors,
 		                       COALESCE(genres, []) AS genres,
-		                       [] AS comments,
+		                       COALESCE(comments, []) AS comments,
 		                       0 AS averageReviewScore
 		                     """;
 
 		var parameters = new
 		{
+			userId = userId.ToString(),
 			movieId = movieId.ToString(),
 			title = movieDto.Title,
 			actorIds = movieDto.ActorIds.Select(a => a.ToString()),
@@ -402,7 +422,7 @@ public class MovieRepository : IMovieRepository
 			                       CASE
 			                         WHEN g IS NOT NULL THEN g.name
 			                       END
-			                     ) AS genres, AVG(r.score) AS averageReviewScore, COUNT(w) > 0 AS onWatchlist, COUNT(f) > 0 AS isFavourite, COUNT(r) AS reviewsCount, ur.score AS userReviewScore 
+			                     ) AS genres, AVG(r.score) AS averageReviewScore, COUNT(w) > 0 AS onWatchlist, COUNT(f) > 0 AS isFavourite, COUNT(r) AS reviewsCount, CASE WHEN ur IS NULL THEN NULL ELSE { id: ur.id, score: ur.score } END AS userReviewScore 
 			                     RETURN
 			                       m.id AS id,
 			                       m.title AS title,

@@ -96,7 +96,7 @@ public class MovieController(IDriver driver, IMovieRepository movieRepository,
 			if (!await MovieRepository.MovieExists(tx, id))
 				return NotFound("Movie does not exist");
 			
-			var movie = await MovieRepository.EditMovie(tx, id, movieDto);
+			var movie = await MovieRepository.EditMovie(tx, id, User.GetUserId(), movieDto);
 			return Ok(movie);
 		});
 	}

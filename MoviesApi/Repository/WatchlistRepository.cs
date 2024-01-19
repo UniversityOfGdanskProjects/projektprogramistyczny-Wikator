@@ -21,7 +21,7 @@ public class WatchlistRepository : IWatchlistRepository
                                     CASE
                                     WHEN g IS NOT NULL THEN g.name
                                     END
-                                ) AS genres, COALESCE(AVG(r.score), 0) AS averageReviewScore, f IS NOT NULL AS isFavourite, COUNT(r) AS reviewsCount, ur.score AS userReviewScore
+                                ) AS genres, COALESCE(AVG(r.score), 0) AS averageReviewScore, f IS NOT NULL AS isFavourite, COUNT(r) AS reviewsCount, CASE WHEN ur IS NULL THEN NULL ELSE { id: ur.id, score: ur.score } END AS userReviewScore
                              RETURN
                                m.id AS id,
                                m.title AS title,
