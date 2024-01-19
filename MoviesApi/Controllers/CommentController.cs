@@ -41,10 +41,6 @@ public class CommentController(IDriver driver, IMovieRepository movieRepository,
                 return BadRequest("Movie you are trying to comment on does not exist");
 
             var userId = User.GetUserId();
-
-            if (await CommentRepository.CommentExistsAsOwnerOrAdmin(tx, addCommentDto.MovieId, userId))
-                return BadRequest("You already commented on this movie");
-
             var comment = await CommentRepository.AddCommentAsync(tx, userId, addCommentDto);
             return CreatedAtAction(nameof(GetComment), new { id = comment.Id }, comment);
         });
