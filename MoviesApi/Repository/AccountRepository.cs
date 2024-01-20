@@ -25,7 +25,8 @@ public class AccountRepository : IAccountRepository
                                passwordHash: $passwordHash,
                                passwordSalt: $passwordSalt,
                                role: "User",
-                               lastActive: datetime()
+                               lastActive: datetime(),
+                               activityScore: 0
                              })
                              RETURN
                                a.id AS id,
