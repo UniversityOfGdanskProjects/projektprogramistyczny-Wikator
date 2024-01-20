@@ -13,23 +13,23 @@ public class IgnoresRepository : IIgnoresRepository
         const string query = """
                              MATCH (m:Movie)<-[:IGNORES]-(u:User { id: $userId })
                              OPTIONAL MATCH (g:Genre)<-[:IS]-(m)
-                             OPTIONAL MATCH (m)<-[r:REVIEWED]-(:User)
-                             OPTIONAL MATCH (m)<-[w:WATCHLIST]-(u)
-                             OPTIONAL MATCH (m)<-[f:FAVOURITE]-(u)
-                             OPTIONAL MATCH (m)<-[ur:REVIEWED]-(u)
-                             WITH m,
+                             WITH m, u,
                                COLLECT(
                                  CASE
                                    WHEN g IS NOT NULL THEN g.name
                                  END
-                               ) AS genres, COALESCE(AVG(r.score), 0) AS averageReviewScore, w IS NOT NULL AS onWatchlist, f IS NOT NULL AS isFavourite, COUNT(r) AS reviewsCount, CASE WHEN ur IS NULL THEN NULL ELSE { id: ur.id, score: ur.score } END AS userReviewScore
+                               ) AS genres
+                             OPTIONAL MATCH (:User)-[r:REVIEWED]->(m)
+                             WITH m, u, genres, COUNT(r) AS reviewsCount, COALESCE(AVG(r.score), 0) AS averageReviewScore
+                             OPTIONAL MATCH (u)-[r:REVIEWED]->(m)
+                             WITH m, u, genres, reviewsCount, averageReviewScore, CASE WHEN r IS NOT NULL THEN { id: r.id, score: r.score } END AS userReviewScore
                              RETURN
                                m.id AS id,
                                m.title AS title,
                                m.pictureAbsoluteUri AS pictureAbsoluteUri,
                                m.minimumAge AS minimumAge,
-                               onWatchlist,
-                               isFavourite,
+                               EXISTS { MATCH (u)-[:WATCHLIST]->(m) } AS onWatchlist,
+                               EXISTS { MATCH (u)-[:FAVOURITE]->(m) } AS isFavourite,
                                userReviewScore,
                                reviewsCount,
                                COALESCE(genres, []) AS genres,

@@ -27,17 +27,15 @@ public class MovieRepository : IMovieRepository
 		                       })
 		                       AND ($inTheaters IS NULL OR m.inTheaters = $inTheaters)
 		                     OPTIONAL MATCH (g:Genre)<-[:IS]-(m)
-		                     WHERE ($genre IS NULL OR $genre = "" OR g.name = $genre)
-		                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(:User)
-		                     OPTIONAL MATCH (m)<-[w:WATCHLIST]-(:User { id: $userId })
-		                     OPTIONAL MATCH (m)<-[f:FAVOURITE]-(:User { id: $userId })
+		                     WITH m, COLLECT(
+		                       CASE
+		                         WHEN g IS NOT NULL THEN g.name
+		                       END
+		                     ) AS genres
 		                     OPTIONAL MATCH (m)<-[ur:REVIEWED]-(:User { id: $userId })
-		                     WITH m, COALESCE(AVG(r.score), 0) AS averageReviewScore, COUNT(w) > 0 AS onWatchlist, COUNT(f) > 0 AS isFavourite, COUNT(r) AS reviewsCount, CASE WHEN ur IS NULL THEN NULL ELSE { id: ur.id, score: ur.score } END AS userReviewScore,
-		                       COLLECT(
-		                         CASE
-		                           WHEN g IS NOT NULL THEN g.name
-		                         END
-		                       ) AS genres
+		                     WITH m, CASE WHEN ur IS NOT NULL THEN { id: ur.id, score: ur.score } END AS userReviewScore, genres
+		                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(:User)
+		                     WITH m, userReviewScore, genres, COALESCE(AVG(r.score), 0) AS averageReviewScore, COUNT(r) AS reviewsCount
 		                     ORDER BY
 		                     CASE WHEN $sortOrder = "ascending" THEN CASE WHEN $sortBy = "averageReviewScore" THEN averageReviewScore ELSE m[$sortBy] END ELSE null END ASC,
 		                     CASE WHEN $sortOrder = "descending" THEN CASE WHEN $sortBy = "averageReviewScore" THEN averageReviewScore ELSE m[$sortBy] END ELSE null END DESC
@@ -46,8 +44,8 @@ public class MovieRepository : IMovieRepository
 		                       m.title AS title,
 		                       m.pictureAbsoluteUri AS pictureAbsoluteUri,
 		                       m.minimumAge AS minimumAge,
-		                       onWatchlist,
-		                       isFavourite,
+		                       EXISTS { MATCH (:User { id: $userId })-[:WATCHLIST]->(m) } AS onWatchlist,
+		                       EXISTS { MATCH (:User { id: $userId })-[:FAVOURITE]->(m) } AS isFavourite,
 		                       userReviewScore,
 		                       reviewsCount,
 		                       averageReviewScore,
@@ -84,6 +82,10 @@ public class MovieRepository : IMovieRepository
 		                                 WHERE a.id = $actor
 		                               })
 		                               AND ($inTheaters IS NULL OR m.inTheaters = $inTheaters)
+		                               AND ($genre IS NULL OR $genre = "" OR EXISTS {
+		                                 MATCH (m)-[:IS]->(g:Genre)
+		                                 WHERE toLower(g.name) = toLower($genre)
+		                               })
 		                               RETURN COUNT(m) AS totalCount
 		                               """;
 
@@ -92,7 +94,8 @@ public class MovieRepository : IMovieRepository
 			userId = userId.ToString(),
 			title = queryParams.Title,
 			actor = queryParams.Actor.ToString(),
-			inTheaters = queryParams.InTheaters
+			inTheaters = queryParams.InTheaters,
+			genre = queryParams.Genre
 		};
 
 		var totalCountCursor = await tx.RunAsync(totalCountQuery, totalCountParameters);
@@ -161,11 +164,11 @@ public class MovieRepository : IMovieRepository
 		                             'RETURN g',
 		                             { g: g, m: m }
 		                           ) YIELD value AS genres
-		                           WITH m, COLLECT(
+		                           WITH m, actors, COLLECT(
 		                             CASE
 		                               WHEN genres.g IS NOT NULL THEN genres.g.name
 		                             END
-		                           ) AS genres, actors
+		                           ) AS genres
 		                           RETURN
 		                             m.id AS id,
 		                             m.title AS title,
@@ -232,8 +235,7 @@ public class MovieRepository : IMovieRepository
 		                     ) YIELD value AS actors
 		                     WITH m, COLLECT(
 		                       CASE
-		                         WHEN actors.a IS NULL THEN null
-		                         ELSE {
+		                         WHEN actors.a IS NOT NULL THEN {
 		                           id: actors.a.id,
 		                           firstName: actors.a.firstName,
 		                           lastName: actors.a.lastName,
@@ -252,20 +254,16 @@ public class MovieRepository : IMovieRepository
 		                       'RETURN g',
 		                       { g: g, m: m }
 		                     ) YIELD value AS genres
-		                     WITH m, COLLECT(
+		                     WITH m, actors, COLLECT(
 		                       CASE
 		                         WHEN genres.g IS NOT NULL THEN genres.g.name
 		                       END
-		                     ) AS genres, actors
-		                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(:User)
+		                     ) AS genres
 		                     OPTIONAL MATCH (m)<-[c:COMMENTED]-(u:User)
-		                     OPTIONAL MATCH (m)<-[w:WATCHLIST]-(:User { id: $userId })
-		                     OPTIONAL MATCH (m)<-[f:FAVOURITE]-(:User { id: $userId })
-		                     OPTIONAL MATCH (m)<-[ur:REVIEWED]-(:User { id: $userId })
 		                     WITH m, genres, actors,
 		                     COLLECT(
 		                       CASE
-		                         WHEN u is NOT NULL AND c is NOT NULL THEN {
+		                         WHEN u is NOT NULL THEN {
 		                           id: c.id,
 		                           movieId: m.id,
 		                           userId: u.id,
@@ -275,7 +273,11 @@ public class MovieRepository : IMovieRepository
 		                           isEdited: c.isEdited
 		                         }
 		                       END
-		                     ) AS comments, AVG(r.score) AS averageReviewScore, COUNT(w) > 0 AS onWatchlist, COUNT(f) > 0 AS isFavourite, COUNT(r) AS reviewsCount, CASE WHEN ur IS NULL THEN NULL ELSE { id: ur.id, score: ur.score } END AS userReviewScore
+		                     ) AS comments
+		                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(:User)
+		                     WITH m, actors, genres, comments, COALESCE(AVG(r.score), 0) AS averageReviewScore, COUNT(r) AS reviewsCount
+		                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(:User { id: $userId })
+		                     WITH m, actors, genres, comments, averageReviewScore, reviewsCount, CASE WHEN r IS NULL THEN NULL ELSE { id: r.id, score: r.score } END AS userReviewScore
 		                     RETURN
 		                       m.id AS id,
 		                       m.title AS title,
@@ -285,8 +287,8 @@ public class MovieRepository : IMovieRepository
 		                       m.pictureAbsoluteUri AS pictureAbsoluteUri,
 		                       m.releaseDate AS releaseDate,
 		                       m.minimumAge AS minimumAge,
-		                       onWatchlist AS onWatchlist,
-		                       isFavourite AS isFavourite,
+		                       EXISTS { MATCH (:User { id: $userId })-[:WATCHLIST]->(m) } AS onWatchlist,
+		                       EXISTS { MATCH (:User { id: $userId })-[:FAVOURITE]->(m) } AS isFavourite,
 		                       userReviewScore AS userReviewScore,
 		                       reviewsCount AS reviewsCount,
 		                       COALESCE(actors, []) AS actors,
@@ -370,10 +372,7 @@ public class MovieRepository : IMovieRepository
 	public async Task<bool> MovieExists(IAsyncQueryRunner tx, Guid movieId)
 	{
 		// language=Cypher
-		const string query = """
-                             MATCH (m:Movie { id: $movieId })
-                             RETURN COUNT(m) > 0 AS movieExists
-                             """;
+		const string query = "RETURN EXISTS { (m:Movie { id: $movieId }) } AS movieExists";
 
 		var cursor = await tx.RunAsync(query, new { movieId = movieId.ToString() });
 		return await cursor.SingleAsync(record => record["movieExists"].As<bool>());
@@ -388,14 +387,8 @@ public class MovieRepository : IMovieRepository
 			                     MATCH (m:Movie { id: $movieId })
 			                     SET m.popularity = m.popularity + 1
 			                     WITH m
-			                     OPTIONAL MATCH (m)-[:IS]->(g:Genre)
 			                     OPTIONAL MATCH (m)<-[:PLAYED_IN]-(a:Actor)
-			                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(:User)
-			                     OPTIONAL MATCH (m)<-[c:COMMENTED]-(u:User)
-			                     OPTIONAL MATCH (m)<-[w:WATCHLIST]-(:User { id: $userId })
-			                     OPTIONAL MATCH (m)<-[f:FAVOURITE]-(:User { id: $userId })
-			                     OPTIONAL MATCH (m)<-[ur:REVIEWED]-(:User { id: $userId })
-			                     WITH m, COLLECT(DISTINCT
+			                     WITH m, COLLECT(
 			                       CASE
 			                         WHEN a IS NOT NULL THEN {
 			                           id: a.id,
@@ -406,8 +399,9 @@ public class MovieRepository : IMovieRepository
 			                           pictureAbsoluteUri: a.pictureAbsoluteUri
 			                         }
 			                       END
-			                     ) AS actors, 
-			                     COLLECT(DISTINCT
+			                     ) AS actors
+			                     OPTIONAL MATCH (m)<-[c:COMMENTED]-(u:User)
+			                     WITH m, actors, COLLECT(
 			                       CASE
 			                         WHEN u is NOT NULL AND c is NOT NULL THEN {
 			                           id: c.id,
@@ -419,12 +413,17 @@ public class MovieRepository : IMovieRepository
 			                           isEdited: c.isEdited
 			                         }
 			                       END
-			                     ) AS comments,
-			                     COLLECT(DISTINCT
+			                     ) AS comments
+			                     OPTIONAL MATCH (m)-[:IS]->(g:Genre)
+			                     WITH m, actors, comments, COLLECT(
 			                       CASE
 			                         WHEN g IS NOT NULL THEN g.name
 			                       END
-			                     ) AS genres, AVG(r.score) AS averageReviewScore, COUNT(w) > 0 AS onWatchlist, COUNT(f) > 0 AS isFavourite, COUNT(r) AS reviewsCount, CASE WHEN ur IS NULL THEN NULL ELSE { id: ur.id, score: ur.score } END AS userReviewScore 
+			                     ) AS genres
+			                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(:User)
+			                     WITH m, actors, comments, genres, COALESCE(AVG(r.score), 0) AS averageReviewScore, COUNT(r) AS reviewsCount
+			                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(:User { id: $userId })
+			                     WITH m, actors, comments, genres, averageReviewScore, reviewsCount, CASE WHEN r IS NULL THEN NULL ELSE { id: r.id, score: r.score } END AS userReviewScore 
 			                     RETURN
 			                       m.id AS id,
 			                       m.title AS title,
@@ -434,14 +433,14 @@ public class MovieRepository : IMovieRepository
 			                       m.pictureAbsoluteUri AS pictureAbsoluteUri,
 			                       m.releaseDate AS releaseDate,
 			                       m.minimumAge AS minimumAge,
-			                       false AS onWatchlist,
-			                       false AS isFavourite,
-			                       null AS userReviewScore,
-			                       0 AS reviewsCount,
+			                       EXISTS { MATCH (:User { id: $userId })-[:WATCHLIST]->(m) } AS onWatchlist,
+			                       EXISTS { MATCH (:User { id: $userId })-[:FAVOURITE]->(m) } AS isFavourite,
+			                       userReviewScore AS userReviewScore,
+			                       reviewsCount AS reviewsCount,
 			                       actors,
 			                       comments,
 			                       COALESCE(genres, []) AS genres,
-			                       0 AS averageReviewScore
+			                       averageReviewScore AS averageReviewScore
 			                     """;
 			
 			var cursor = await tx.RunAsync(query, new {  movieId = movieId.ToString(), userId = userId?.ToString() });
@@ -467,13 +466,15 @@ public class MovieRepository : IMovieRepository
 		                         WHERE toLower(g.name) = toLower($genre)
 		                       })
 		                       AND ($inTheaters IS NULL OR m.inTheaters = $inTheaters)
+		                     WITH m
 		                     OPTIONAL MATCH (g:Genre)<-[:IS]-(m)
-		                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(:User)
-		                     WITH m, COALESCE(AVG(r.score), 0) AS averageReviewScore, COUNT(r) AS reviewsCount, COLLECT(
+		                     WITH m, COLLECT(
 		                       CASE
 		                         WHEN g IS NOT NULL THEN g.name
 		                       END
 		                     ) AS genres
+		                     OPTIONAL MATCH (m)<-[r:REVIEWED]-(:User)
+		                     WITH m, COALESCE(AVG(r.score), 0) AS averageReviewScore, COUNT(r) AS reviewsCount, genres
 		                     ORDER BY
 		                     CASE WHEN $sortOrder = "ascending" THEN CASE WHEN $sortBy = "averageReviewScore" THEN averageReviewScore ELSE m[$sortBy] END ELSE null END ASC,
 		                     CASE WHEN $sortOrder = "descending" THEN CASE WHEN $sortBy = "averageReviewScore" THEN averageReviewScore ELSE m[$sortBy] END ELSE null END DESC
@@ -516,6 +517,10 @@ public class MovieRepository : IMovieRepository
 		                                 MATCH (m)<-[:PLAYED_IN]-(a:Actor { id: $actor })
 		                               })
 		                               AND ($inTheaters IS NULL OR m.inTheaters = $inTheaters)
+		                               AND ($genre IS NULL OR $genre = "" OR EXISTS {
+		                                 MATCH (m)-[:IS]->(g:Genre)
+		                                 WHERE toLower(g.name) = toLower($genre)
+		                               })
 		                               RETURN COUNT(m) AS totalCount
 		                               """;
 		
@@ -523,7 +528,8 @@ public class MovieRepository : IMovieRepository
 		{
 			title = queryParams.Title,
 			actor = queryParams.Actor.ToString(),
-			inTheaters = queryParams.InTheaters
+			inTheaters = queryParams.InTheaters,
+			genre = queryParams.Genre
 		};
 
 		var totalCountCursor = await tx.RunAsync(totalCountQuery, totalCountParameters);

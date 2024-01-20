@@ -13,21 +13,21 @@ public class FavouriteRepository : IFavouriteRepository
         const string query = """
                              MATCH (m:Movie)<-[:FAVOURITE]-(u:User { id: $userId })
                              OPTIONAL MATCH (g:Genre)<-[:IS]-(m)
-                             OPTIONAL MATCH (m)<-[r:REVIEWED]-(:User)
-                             OPTIONAL MATCH (m)<-[w:WATCHLIST]-(u)
-                             OPTIONAL MATCH (m)<-[ur:REVIEWED]-(u)
-                             WITH m, 
-                               COLLECT(
-                                 CASE
-                                   WHEN g IS NOT NULL THEN g.name
-                                 END
-                               ) AS genres, COALESCE(AVG(r.score), 0) AS averageReviewScore, w IS NOT NULL AS onWatchlist, COUNT(r) AS reviewsCount, CASE WHEN ur IS NULL THEN NULL ELSE { id: ur.id, score: ur.score } END AS userReviewScore
+                             WITH m, u, COLLECT(
+                               CASE
+                                 WHEN g IS NOT NULL THEN g.name
+                               END
+                             ) AS genres
+                             OPTIONAL MATCH (:User)-[r:REVIEWED]->(m)
+                             WITH m, u, genres, COUNT(r) AS reviewsCount, AVG(r.score) AS averageReviewScore
+                             OPTIONAL MATCH (u)-[r:REVIEWED]->(m)
+                             WITH m, u, genres, reviewsCount, averageReviewScore, CASE WHEN r IS NOT NULL THEN { id: r.id, score: r.score } END AS userReviewScore
                              RETURN
                                m.id AS id,
                                m.title AS title,
                                m.pictureAbsoluteUri AS pictureAbsoluteUri,
                                m.minimumAge AS minimumAge,
-                               onWatchlist,
+                               EXISTS { (u)-[:WATCHLIST]->(m) } AS onWatchlist,
                                true AS isFavourite,
                                userReviewScore,
                                reviewsCount,
