@@ -83,6 +83,7 @@ public class MovieRepository : IMovieRepository
 		                                 MATCH (m)<-[:PLAYED_IN]-(a:Actor)
 		                                 WHERE a.id = $actor
 		                               })
+		                               AND ($inTheaters IS NULL OR m.inTheaters = $inTheaters)
 		                               RETURN COUNT(m) AS totalCount
 		                               """;
 
@@ -90,7 +91,8 @@ public class MovieRepository : IMovieRepository
 		{
 			userId = userId.ToString(),
 			title = queryParams.Title,
-			actor = queryParams.Actor.ToString()
+			actor = queryParams.Actor.ToString(),
+			inTheaters = queryParams.InTheaters
 		};
 
 		var totalCountCursor = await tx.RunAsync(totalCountQuery, totalCountParameters);
@@ -513,13 +515,15 @@ public class MovieRepository : IMovieRepository
 		                               AND ($actor IS NULL OR $actor = "" OR EXISTS {
 		                                 MATCH (m)<-[:PLAYED_IN]-(a:Actor { id: $actor })
 		                               })
+		                               AND ($inTheaters IS NULL OR m.inTheaters = $inTheaters)
 		                               RETURN COUNT(m) AS totalCount
 		                               """;
 		
 		var totalCountParameters = new
 		{
 			title = queryParams.Title,
-			actor = queryParams.Actor.ToString()
+			actor = queryParams.Actor.ToString(),
+			inTheaters = queryParams.InTheaters
 		};
 
 		var totalCountCursor = await tx.RunAsync(totalCountQuery, totalCountParameters);
