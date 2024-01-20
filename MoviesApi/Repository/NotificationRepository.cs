@@ -24,6 +24,7 @@ public class NotificationRepository : INotificationRepository
                                c.text AS commentText,
                                m.id AS movieId,
                                m.title AS movieTitle
+                             ORDER BY isRead ASC, createdAt DESC
                              SKIP $skip
                              LIMIT $limit
                              """;
