@@ -4,8 +4,7 @@ namespace MoviesApi.DTOs.Requests;
 
 public class RegisterDto
 {
-    [EmailAddress]
-    public required string Email { get; init; }
-    public required string Name { get; init; }
-    public required string Password { get; init; }
+    [EmailAddress, Required] public required string Email { get; init; }
+    [Required] public required string Name { get; init; }
+    [Required, MinLength(6)] public required string Password { get; init; }
 }

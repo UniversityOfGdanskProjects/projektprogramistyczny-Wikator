@@ -60,7 +60,7 @@ public class ActorController(IDriver driver, IPhotoService photoService, IActorR
                     new MemoryStream(actorDto.FileContent),
                     0,
                     actorDto.FileContent.Length,
-                    "file", actorDto.FileName ?? $"movie-{new Guid()}"
+                    "file", $"movie-{new Guid()}"
                     );
 
                 var uploadResult = await PhotoService.AddPhotoAsync(file, Gravity.Face);

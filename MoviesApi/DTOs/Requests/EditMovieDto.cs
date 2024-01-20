@@ -4,8 +4,8 @@ namespace MoviesApi.DTOs.Requests;
 
 public class EditMovieDto
 {
-    public required string Title { get; init; }
-    public required string Description { get; init; }
+    [Required]  public required string Title { get; init; }
+    [Required]  public required string Description { get; init; }
     [Required] public bool? InTheaters { get; init; }
     [Required] public DateOnly? ReleaseDate { get; init; }
     [Range(0, 18), Required] public int? MinimumAge { get; init; }

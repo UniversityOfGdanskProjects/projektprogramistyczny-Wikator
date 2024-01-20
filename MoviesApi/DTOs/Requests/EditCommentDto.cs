@@ -1,6 +1,8 @@
-﻿namespace MoviesApi.DTOs.Requests;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace MoviesApi.DTOs.Requests;
 
 public class EditCommentDto
 {
-    public required string Text { get; init; }
+     [Required]  public required string Text { get; init; }
 }

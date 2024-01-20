@@ -72,7 +72,7 @@ public class MovieController(IDriver driver, IMovieRepository movieRepository,
 					new MemoryStream(movieDto.FileContent),
 					0,
 					movieDto.FileContent.Length,
-					"file", movieDto.FileName ?? $"movie-{new Guid()}"
+					"file", $"movie-{new Guid()}"
 					);
 
 				var uploadResult = await PhotoService.AddPhotoAsync(file);

@@ -1,9 +1,11 @@
-﻿namespace MoviesApi.DTOs.Requests;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace MoviesApi.DTOs.Requests;
 
 public class EditActorDto
 {
-    public required string FirstName { get; init; }
-    public required string LastName { get; init; }
-    public required DateOnly DateOfBirth { get; init; }
+    [Required] public required string FirstName { get; init; }
+    [Required] public required string LastName { get; init; }
+    [Required] public required DateOnly DateOfBirth { get; init; }
     public string? Biography { get; init; }
 }
