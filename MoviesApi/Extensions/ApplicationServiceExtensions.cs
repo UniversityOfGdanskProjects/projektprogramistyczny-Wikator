@@ -31,6 +31,7 @@ public static class ApplicationServiceExtensions
 		services.AddScoped<IFavouriteRepository, FavouriteRepository>();
 		services.AddScoped<IIgnoresRepository, IgnoresRepository>();
 		services.AddScoped<ICommentRepository, CommentRepository>();
+		services.AddScoped<IGenreRepository, GenreRepository>();
 		services.AddScoped<ITokenService, TokenService>();
 	}
 }
