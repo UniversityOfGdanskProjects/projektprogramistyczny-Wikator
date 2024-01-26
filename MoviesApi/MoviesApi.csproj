@@ -10,6 +10,7 @@
   <ItemGroup>
     <PackageReference Include="CloudinaryDotNet" Version="1.24.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.12" />
+    <PackageReference Include="MQTTnet" Version="4.3.3.952" />
     <PackageReference Include="Neo4j.Driver" Version="5.13.0" />
   </ItemGroup>
 

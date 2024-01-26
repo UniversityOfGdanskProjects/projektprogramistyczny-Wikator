@@ -61,6 +61,22 @@ public static class RecordExtensions
             IsEdited: record["isEdited"].As<bool>()
         );
 
+    public static CommentWithNotification ConvertToCommentWithNotification(this IRecord record)
+    {
+        var comment = record.ConvertToCommentDto();
+        
+        var notificationDictionary = record["notification"].As<IDictionary<string, object>>();
+        var notification = new RealTimeNotification(
+            CommentUsername: notificationDictionary["commentUsername"].As<string>(),
+            CommentText: notificationDictionary["commentText"].As<string>(),
+            MovieTitle: notificationDictionary["movieTitle"].As<string>(),
+            MovieId: Guid.Parse(notificationDictionary["movieId"].As<string>()));
+
+        return new CommentWithNotification(
+            Comment: comment,
+            Notification: notification);
+    }
+
     public static ReviewDto ConvertToReviewDto(this IRecord record) =>
         new(
             Id: Guid.Parse(record["id"].As<string>()),

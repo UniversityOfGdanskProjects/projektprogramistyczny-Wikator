@@ -1,6 +1,7 @@
 ﻿using MoviesApi.DTOs.Requests;
 using MoviesApi.DTOs.Responses;
 using MoviesApi.Extensions;
+using MoviesApi.Models;
 using MoviesApi.Repository.Contracts;
 using Neo4j.Driver;
 
@@ -36,7 +37,7 @@ public class CommentRepository : ICommentRepository
         }
     }
 
-    public async Task<CommentDto> AddCommentAsync(IAsyncQueryRunner tx, Guid userId, AddCommentDto addCommentDto)
+    public async Task<CommentWithNotification> AddCommentAsync(IAsyncQueryRunner tx, Guid userId, AddCommentDto addCommentDto)
     {
         // language=Cypher
         const string query = """
@@ -64,7 +65,13 @@ public class CommentRepository : ICommentRepository
                                u.name AS username,
                                value.r.text AS text,
                                value.r.createdAt AS createdAt,
-                               value.r.isEdited AS isEdited
+                               value.r.isEdited AS isEdited,
+                               {
+                                commentUsername: u.name,
+                                commentText: r.text,
+                                movieTitle: m.title,
+                                movieId: m.id
+                               } AS notification
                              """;
         
         var parameters = new
@@ -76,7 +83,7 @@ public class CommentRepository : ICommentRepository
         };
         
         var cursor = await tx.RunAsync(query, parameters);
-        return await cursor.SingleAsync(record => record.ConvertToCommentDto());
+        return await cursor.SingleAsync(record => record.ConvertToCommentWithNotification());
     }
 
     public async Task<CommentDto> EditCommentAsync(IAsyncQueryRunner tx, Guid commentId, Guid userId,

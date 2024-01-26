@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MoviesApi.Controllers.Base;
 using MoviesApi.DTOs.Requests;
 using MoviesApi.Extensions;
 using MoviesApi.Repository.Contracts;
+using MoviesApi.Services.Contracts;
 using Neo4j.Driver;
 
 namespace MoviesApi.Controllers;
@@ -11,10 +13,11 @@ namespace MoviesApi.Controllers;
 [Authorize]
 [Route("api/[controller]")]
 public class CommentController(IDriver driver, IMovieRepository movieRepository,
-    ICommentRepository commentRepository) : BaseApiController(driver)
+    ICommentRepository commentRepository, IMqttService mqttService) : BaseApiController(driver)
 {
     private ICommentRepository CommentRepository { get; } = commentRepository;
     private IMovieRepository MovieRepository { get; } = movieRepository;
+    private IMqttService MqttService { get; } = mqttService;
     
 
     [HttpGet("{id:guid}")]
@@ -41,8 +44,16 @@ public class CommentController(IDriver driver, IMovieRepository movieRepository,
                 return BadRequest("Movie you are trying to comment on does not exist");
 
             var userId = User.GetUserId();
-            var comment = await CommentRepository.AddCommentAsync(tx, userId, addCommentDto);
-            return CreatedAtAction(nameof(GetComment), new { id = comment.Id }, comment);
+            var commentWithNotification = await CommentRepository.AddCommentAsync(tx, userId, addCommentDto);
+            
+            JsonSerializerOptions options = new()
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            };
+
+            var payload = JsonSerializer.Serialize(commentWithNotification.Notification, options);
+            await MqttService.SendNotificationAsync($"notification/movie/{commentWithNotification.Notification.MovieId}", payload);
+            return CreatedAtAction(nameof(GetComment), new { id = commentWithNotification.Comment.Id }, commentWithNotification.Comment);
         });
     }
     

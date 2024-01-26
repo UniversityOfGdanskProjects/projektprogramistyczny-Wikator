@@ -7,7 +7,10 @@ using MoviesApi.Exceptions;
 using MoviesApi.Extensions;
 using MoviesApi.Helpers;
 using MoviesApi.Repository.Contracts;
+using MoviesApi.Services;
 using MoviesApi.Services.Contracts;
+using MQTTnet;
+using MQTTnet.Client;
 using Neo4j.Driver;
 
 namespace MoviesApi.Controllers;
