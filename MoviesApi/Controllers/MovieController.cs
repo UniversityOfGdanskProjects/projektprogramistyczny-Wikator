@@ -151,7 +151,7 @@ public class MovieController(IDriver driver, IMovieRepository movieRepository,
 			var picturePublicId = uploadResult.PublicId;
 			
 			await MovieRepository.AddMoviePicture(tx, id, pictureAbsoluteUri, picturePublicId);
-			return NoContent();
+			return Ok(new {pictureUri = pictureAbsoluteUri});
 		});
 	}
 
@@ -187,7 +187,7 @@ public class MovieController(IDriver driver, IMovieRepository movieRepository,
 			var picturePublicId = uploadResult.PublicId;
 
 			await MovieRepository.AddMoviePicture(tx, id, pictureAbsoluteUri, picturePublicId);
-			return NoContent();
+			return Ok(new {pictureUri = pictureAbsoluteUri});
 		});
 	}
 	
