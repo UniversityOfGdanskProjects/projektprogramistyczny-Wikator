@@ -11,6 +11,8 @@ public interface IReviewRepository
     public Task<ReviewDto> UpdateReview(IAsyncQueryRunner tx, Guid userId, Guid reviewId, UpdateReviewDto reviewDto);
     public Task DeleteReview(IAsyncQueryRunner tx, Guid userId, Guid reviewId);
     Task<bool> ReviewExists(IAsyncQueryRunner tx, Guid id, Guid userId);
+    Task<Guid?> GetMovieIdFromReviewId(IAsyncQueryRunner tx, Guid reviewId, Guid userId);
     Task<bool> ReviewExistsByMovieId(IAsyncQueryRunner tx, Guid movieId, Guid userId);
-    Task<ReviewAverageAndCount> GetAverageAndCount(IAsyncQueryRunner tx, Guid reviewId);
+    Task<ReviewAverageAndCount> GetAverageAndCountFromReviewId(IAsyncQueryRunner tx, Guid reviewId);
+    Task<ReviewAverageAndCount> GetAverageAndCountFromMovieId(IAsyncQueryRunner tx, Guid movieId);
 }

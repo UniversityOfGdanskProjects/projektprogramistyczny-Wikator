@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using MoviesApi.Controllers.Base;
 using MoviesApi.DTOs.Requests;
 using MoviesApi.Extensions;
+using MoviesApi.Models;
 using MoviesApi.Repository.Contracts;
 using MoviesApi.Services.Contracts;
 using Neo4j.Driver;
@@ -40,7 +41,7 @@ public class ReviewController(IDriver driver, IMovieRepository movieRepository,
         });
         
         if (id is not null)
-            _ = SendMqttNewReview(id.Value);
+            _ = SendMqttNewReview(id.Value, ReviewRepository.GetAverageAndCountFromReviewId);
 
         return result;
     }
@@ -60,7 +61,7 @@ public class ReviewController(IDriver driver, IMovieRepository movieRepository,
         });
         
         if (result is OkObjectResult)
-            _ = SendMqttNewReview(id);
+            _ = SendMqttNewReview(id, ReviewRepository.GetAverageAndCountFromReviewId);
         
         return result;
     }
@@ -68,11 +69,13 @@ public class ReviewController(IDriver driver, IMovieRepository movieRepository,
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> DeleteReview(Guid id)
     {
+        Guid? movieId = null;
         var result = await ExecuteWriteAsync(async tx =>
         {
             var userId = User.GetUserId();
-
-            if (!await ReviewRepository.ReviewExists(tx, id, userId))
+            movieId = await ReviewRepository.GetMovieIdFromReviewId(tx, id, userId);
+            
+            if (movieId is null)
                 return NotFound("Review does not exist, or you don't have permission to delete it");
 
             await ReviewRepository.DeleteReview(tx, userId, id);
@@ -80,17 +83,17 @@ public class ReviewController(IDriver driver, IMovieRepository movieRepository,
         });
         
         if (result is NoContentResult)
-            _ = SendMqttNewReview(id);
+            _ = SendMqttNewReview(movieId!.Value, ReviewRepository.GetAverageAndCountFromMovieId);
         
         return result;
     }
     
     
-    private async Task SendMqttNewReview(Guid reviewId)
+    private async Task SendMqttNewReview(Guid id, Func<IAsyncQueryRunner, Guid, Task<ReviewAverageAndCount>> getAverageAndCount)
     {
         await using var session = Driver.AsyncSession();
         
-        var reviewAverageAndCount = await session.ExecuteReadAsync(tx => ReviewRepository.GetAverageAndCount(tx, reviewId));
+        var reviewAverageAndCount = await session.ExecuteReadAsync(tx => getAverageAndCount(tx, id));
         
         JsonSerializerOptions options = new()
         {
@@ -98,8 +101,6 @@ public class ReviewController(IDriver driver, IMovieRepository movieRepository,
         };
         
         var payload = JsonSerializer.Serialize(reviewAverageAndCount, options);
-        Console.WriteLine(payload);
-        Console.WriteLine($"movie/{reviewAverageAndCount.MovieId}/updated-reviews");
         await MqttService.SendNotificationAsync($"movie/{reviewAverageAndCount.MovieId}/updated-reviews", payload);
     }
 }
