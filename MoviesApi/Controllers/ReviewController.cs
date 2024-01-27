@@ -82,8 +82,8 @@ public class ReviewController(IDriver driver, IMovieRepository movieRepository,
             return NoContent();
         });
         
-        if (result is NoContentResult)
-            _ = SendMqttNewReview(movieId!.Value, ReviewRepository.GetAverageAndCountFromMovieId);
+        if (result is NoContentResult && movieId is not null)
+            _ = SendMqttNewReview(movieId.Value, ReviewRepository.GetAverageAndCountFromMovieId);
         
         return result;
     }

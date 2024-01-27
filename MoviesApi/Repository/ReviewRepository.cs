@@ -134,14 +134,18 @@ public class ReviewRepository : IReviewRepository
     
     public async Task<ReviewAverageAndCount> GetAverageAndCountFromMovieId(IAsyncQueryRunner tx, Guid movieId)
     {
+        Console.WriteLine(movieId);
         // language=Cypher
         const string query = """
-                             MATCH(m:Movie {id: $movieId})<-[r:REVIEWED]-(:User)
-                             WITH m, COUNT(r) AS count, COALESCE(r.score, 0) AS score
-                             RETURN
-                               m.id AS movieId,
-                               AVG(score) AS average,
-                               count
+                             OPTIONAL MATCH(m:Movie {id: $movieId})<-[r:REVIEWED]-(:User)
+                             WITH m, r
+                             CALL apoc.when(
+                               m IS NULL,
+                               'RETURN movieId, 0 AS reviewAverage, 0 AS reviewCount',
+                               'RETURN m.id AS movieId, AVG(r.score) AS reviewAverage, COUNT(r) AS reviewCount',
+                               { m: m, r: r, movieId: $movieId }
+                             ) YIELD value
+                             RETURN value.movieId AS movieId, value.reviewAverage AS average, value.reviewCount AS count
                              """;
         
         var cursor = await tx.RunAsync(query, new { movieId = movieId.ToString() });
