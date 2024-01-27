@@ -32,7 +32,7 @@ public class FavouriteRepository : IFavouriteRepository
                                userReviewScore,
                                reviewsCount,
                                COALESCE(genres, []) AS genres,
-                               averageReviewScore
+                               COALESCE(averageReviewScore, 0) AS averageReviewScore
                              """;
 
         var result = await tx.RunAsync(query, new { userId = userId.ToString() });
