@@ -7,7 +7,7 @@ public class LogUserActivityMiddleware(RequestDelegate next)
 {
     private RequestDelegate Next { get; } = next;
     
-    public async Task InvokeAsync(HttpContext context, IDriver driver)
+    public async Task InvokeAsync(HttpContext context, IDriver driver, ILogger<LogUserActivityMiddleware> logger)
     {
         await Next(context);
 
@@ -17,10 +17,10 @@ public class LogUserActivityMiddleware(RequestDelegate next)
         if (userId is null)
             return;
 
-        _ = LogUserActivityInBackground(driver, Guid.Parse(userId));
+        _ = LogUserActivityInBackground(driver, Guid.Parse(userId), logger);
     }
 
-    private static async Task LogUserActivityInBackground(IDriver driver, Guid userId)
+    private static async Task LogUserActivityInBackground(IDriver driver, Guid userId, ILogger<LogUserActivityMiddleware> logger)
     {
         // language=Cypher
         const string query =  """
@@ -33,5 +33,7 @@ public class LogUserActivityMiddleware(RequestDelegate next)
         {
             await tx.RunAsync(query, new { userId = userId.ToString() });
         });
+        
+        logger.LogInformation($"User with id {userId} has been updated.");
     }
 }

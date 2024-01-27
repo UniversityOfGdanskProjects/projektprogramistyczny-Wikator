@@ -6,6 +6,7 @@ using MoviesApi.Configurations;
 using MoviesApi.DatabaseSetup;
 using MoviesApi.Middleware;
 using Neo4j.Driver;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,6 +34,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy("RequireAdminRole", policy => policy.RequireRole("Admin"));
+
+builder.Host.UseSerilog((ctx, lc) => 
+	lc.WriteTo.Console().ReadFrom.Configuration(ctx.Configuration));
 
 var app = builder.Build();
 
