@@ -1,4 +1,6 @@
 ﻿using MoviesApi.DTOs.Responses;
+using MoviesApi.Extensions;
+using MoviesApi.Models;
 using MoviesApi.Repository.Contracts;
 using Neo4j.Driver;
 
@@ -29,15 +31,21 @@ public class UserRepository : IUserRepository
         });
     }
 
-    public async Task UpdateUserNameAsync(IAsyncQueryRunner tx, Guid userId, string newUsername)
+    public async Task<User> UpdateUserNameAsync(IAsyncQueryRunner tx, Guid userId, string newUsername)
     {
         // language=Cypher
         const string query = """
                              MATCH (u:User { id: $userId })
                              SET u.name = $newUsername
+                             RETURN 
+                               u.id AS id,
+                               u.name AS name,
+                               u.email as email,
+                               u.role AS role
                              """;
         
-        await tx.RunAsync(query, new { userId = userId.ToString(), newUsername });
+        var cursor = await tx.RunAsync(query, new { userId = userId.ToString(), newUsername });
+        return await cursor.SingleAsync(record => record.ConvertToUser());
     }
 
     public async Task ChangeUserRoleToAdminAsync(IAsyncQueryRunner tx, Guid userId)

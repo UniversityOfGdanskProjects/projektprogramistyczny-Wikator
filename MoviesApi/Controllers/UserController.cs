@@ -4,16 +4,19 @@ using MoviesApi.Controllers.Base;
 using MoviesApi.DTOs.Responses;
 using MoviesApi.Extensions;
 using MoviesApi.Repository.Contracts;
+using MoviesApi.Services.Contracts;
 using Neo4j.Driver;
 
 namespace MoviesApi.Controllers;
 
 [Route("api/[controller]")]
 public class UserController(IDriver driver, IUserRepository userRepository,
-    IAccountRepository accountRepository) : BaseApiController(driver)
+    IAccountRepository accountRepository, ITokenService tokenService) : BaseApiController(driver)
 {
     private IUserRepository UserRepository { get; } = userRepository;
     private IAccountRepository AccountRepository { get; } = accountRepository;
+    private ITokenService TokenService { get; } = tokenService;
+    
 
     [HttpGet]
     public async Task<IActionResult> GetByMostActive()
@@ -29,8 +32,10 @@ public class UserController(IDriver driver, IUserRepository userRepository,
         return await ExecuteWriteAsync(async tx =>
         {
             var userId = User.GetUserId();
-            await UserRepository.UpdateUserNameAsync(tx, userId, updateUsernameDto.NewUsername);
-            return NoContent();
+            var user = await UserRepository.UpdateUserNameAsync(tx, userId, updateUsernameDto.NewUsername);
+            
+            var userDto = new UserDto(user.Id, user.Name, user.Role, TokenService.CreateToken(user));
+            return Ok(userDto);
         });
     }
     

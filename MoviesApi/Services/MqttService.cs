@@ -1,35 +1,54 @@
-﻿using MoviesApi.Services.Contracts;
-using MQTTnet;
+﻿using MQTTnet;
 using MQTTnet.Client;
+using MoviesApi.Services.Contracts;
 
-namespace MoviesApi.Services;
-
-public class MqttService(IConfiguration config) : IMqttService
+namespace MoviesApi.Services
 {
-    private IConfiguration Config { get; } = config;
-    
-    public async Task SendNotificationAsync(string topic, object message)
+    public class MqttService : IMqttService
     {
-        var mqttFactory = new MqttFactory();
+        private readonly IMqttClient _mqttClient;
+        private readonly IConfiguration _config;
 
-        using var mqttClient = mqttFactory.CreateMqttClient();
-        var mqttClientOptions = new MqttClientOptionsBuilder().WithTcpServer("85e67d8c7c8a4955a07dbd76348a5bba.s2.eu.hivemq.cloud", 8883)
-            .WithCredentials("Wiktor", Config["MqttPassword"])
-            .WithTlsOptions(
-                o => o.WithCertificateValidationHandler(_ => true))
-            .Build();
-        
-        using (var timeout = new CancellationTokenSource(5000))
+        public MqttService(IConfiguration config)
         {
-            await mqttClient.ConnectAsync(mqttClientOptions, timeout.Token);
+            var mqttFactory = new MqttFactory();
+            _mqttClient = mqttFactory.CreateMqttClient();
+
+            var mqttClientOptions = new MqttClientOptionsBuilder()
+                .WithTcpServer("85e67d8c7c8a4955a07dbd76348a5bba.s2.eu.hivemq.cloud", 8883)
+                .WithCredentials("Wiktor", config["MqttPassword"])
+                .WithTlsOptions(o => o.WithCertificateValidationHandler(_ => true))
+                .Build();
+
+            _mqttClient.ConnectAsync(mqttClientOptions, CancellationToken.None).Wait();
+            _config = config;
         }
-        
-        
-        var applicationMessage = new MqttApplicationMessageBuilder()
-            .WithTopic(topic)
-            .WithPayload(message.ToString())
-            .Build();
-        
-        await mqttClient.PublishAsync(applicationMessage);
+
+        public async Task SendNotificationAsync(string topic, object message)
+        {
+            if (!_mqttClient.IsConnected)
+            {
+                Console.WriteLine("Reconnecting...");
+                var mqttClientOptions = new MqttClientOptionsBuilder()
+                    .WithTcpServer("85e67d8c7c8a4955a07dbd76348a5bba.s2.eu.hivemq.cloud", 8883)
+                    .WithCredentials("Wiktor", _config["MqttPassword"])
+                    .WithTlsOptions(o => o.WithCertificateValidationHandler(_ => true))
+                    .Build();
+
+                await _mqttClient.ConnectAsync(mqttClientOptions, CancellationToken.None);
+                if (!_mqttClient.IsConnected)
+                {
+                    Console.WriteLine("Reconnecting failed");
+                    return;
+                }
+            }
+            
+            var applicationMessage = new MqttApplicationMessageBuilder()
+                .WithTopic(topic)
+                .WithPayload(message.ToString())
+                .Build();
+
+            await _mqttClient.PublishAsync(applicationMessage);
+        }
     }
 }

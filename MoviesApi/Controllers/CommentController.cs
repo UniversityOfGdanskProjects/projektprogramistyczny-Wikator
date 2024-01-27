@@ -52,7 +52,7 @@ public class CommentController(IDriver driver, IMovieRepository movieRepository,
             };
 
             var payload = JsonSerializer.Serialize(commentWithNotification.Notification, options);
-            await MqttService.SendNotificationAsync($"notification/movie/{commentWithNotification.Notification.MovieId}", payload);
+            _ = MqttService.SendNotificationAsync($"notification/movie/{commentWithNotification.Notification.MovieId}", payload);
             return CreatedAtAction(nameof(GetComment), new { id = commentWithNotification.Comment.Id }, commentWithNotification.Comment);
         });
     }
