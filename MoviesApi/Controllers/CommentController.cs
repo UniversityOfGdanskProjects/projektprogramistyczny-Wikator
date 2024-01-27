@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MoviesApi.Controllers.Base;
 using MoviesApi.DTOs.Requests;
+using MoviesApi.DTOs.Responses;
 using MoviesApi.Extensions;
+using MoviesApi.Models;
 using MoviesApi.Repository.Contracts;
 using MoviesApi.Services.Contracts;
 using Neo4j.Driver;
@@ -45,14 +47,7 @@ public class CommentController(IDriver driver, IMovieRepository movieRepository,
 
             var userId = User.GetUserId();
             var commentWithNotification = await CommentRepository.AddCommentAsync(tx, userId, addCommentDto);
-            
-            JsonSerializerOptions options = new()
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            };
-
-            var payload = JsonSerializer.Serialize(commentWithNotification.Notification, options);
-            _ = MqttService.SendNotificationAsync($"notification/movie/{commentWithNotification.Notification.MovieId}", payload);
+            _ = SendNewMqttCommentNotificationAsync(commentWithNotification);
             return CreatedAtAction(nameof(GetComment), new { id = commentWithNotification.Comment.Id }, commentWithNotification.Comment);
         });
     }
@@ -68,6 +63,7 @@ public class CommentController(IDriver driver, IMovieRepository movieRepository,
                 return NotFound("Either the comment doesn't exist or you don't have permission to edit it");
 
             var comment = await CommentRepository.EditCommentAsync(tx, commentId, userId, editCommentDto);
+            _ = SendUpdatedMqttCommentNotificationAsync(comment);
             return Ok(comment);
         });
     }
@@ -78,12 +74,49 @@ public class CommentController(IDriver driver, IMovieRepository movieRepository,
         return await ExecuteWriteAsync(async tx =>
         {
             var userId = User.GetUserId();
-
-            if (!await CommentRepository.CommentExistsAsOwnerOrAdmin(tx, commentId, userId))
+            var movieId = await CommentRepository.GetMovieIdFromCommentAsOwnerOrAdminAsync(tx, commentId, userId);
+            
+            if (movieId is null)
                 return NotFound("Either the comment doesn't exist or you don't have permission to delete it");
 
             await CommentRepository.DeleteCommentAsync(tx, commentId, userId);
+            _ = SendDeletedMqttCommentNotificationAsync(commentId, movieId.Value);
             return NoContent();
         });
+    }
+    
+    private async Task SendNewMqttCommentNotificationAsync(CommentWithNotification commentWithNotification)
+    {
+        JsonSerializerOptions options = new()
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
+
+        var commentPayload = JsonSerializer.Serialize(commentWithNotification.Comment, options);
+        await MqttService.SendNotificationAsync($"movie/{commentWithNotification.Comment.MovieId}/new-comment", commentPayload);
+        var notificationPayload = JsonSerializer.Serialize(commentWithNotification.Notification, options);
+        await MqttService.SendNotificationAsync($"notification/movie/{commentWithNotification.Notification.MovieId}", notificationPayload);
+    }
+    
+    private async Task SendUpdatedMqttCommentNotificationAsync(CommentDto commentDto)
+    {
+        JsonSerializerOptions options = new()
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
+
+        var payload = JsonSerializer.Serialize(commentDto, options);
+        await MqttService.SendNotificationAsync($"movie/{commentDto.MovieId}/updated-comment", payload);
+    }
+    
+    private async Task SendDeletedMqttCommentNotificationAsync(Guid commentId, Guid movieId)
+    {
+        JsonSerializerOptions options = new()
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
+
+        var payload = JsonSerializer.Serialize(new { commentId }, options);
+        await MqttService.SendNotificationAsync($"movie/{movieId}/deleted-comment", payload);
     }
 }

@@ -140,4 +140,24 @@ public class CommentRepository : ICommentRepository
         var cursor = await tx.RunAsync(query, new { commentId = commentId.ToString(), userId = userId.ToString() });
         return await cursor.SingleAsync(record => record["commentsExists"].As<bool>());
     }
+
+    public async Task<Guid?> GetMovieIdFromCommentAsOwnerOrAdminAsync(IAsyncQueryRunner tx, Guid commentId, Guid userId)
+    {
+        try
+        {
+            // language=Cypher
+            const string query = """
+                                 MATCH (u:User)-[r:COMMENTED { id: $commentId }]->(m:Movie)
+                                 WHERE u.id = $userId OR EXISTS { MATCH (:User { id: $userId, role: 'Admin' }) }
+                                 RETURN m.id AS movieId
+                                 """;
+            
+            var cursor = await tx.RunAsync(query, new { commentId = commentId.ToString(), userId = userId.ToString() });
+            return await cursor.SingleAsync(record => Guid.Parse(record["movieId"].As<string>()));
+        }
+        catch (InvalidOperationException)
+        {
+            return null;
+        }
+    }
 }
