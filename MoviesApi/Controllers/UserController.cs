@@ -25,6 +25,13 @@ public class UserController(IDriver driver, IUserRepository userRepository,
             Ok(await UserRepository.GetUsersByMostActiveAsync(tx)));
     }
     
+    [HttpGet("active-today-count")]
+    public async Task<IActionResult> GetActiveTodayCount()
+    {
+        return await ExecuteReadAsync(async tx =>
+            Ok(await UserRepository.GetUserActiveTodayCount(tx)));
+    }
+    
     [HttpPut("username")]
     [Authorize]
     public async Task<IActionResult> UpdateUsername(UpdateUsernameDto updateUsernameDto)

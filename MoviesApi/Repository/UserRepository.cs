@@ -31,6 +31,19 @@ public class UserRepository : IUserRepository
         });
     }
 
+    public async Task<int> GetUserActiveTodayCount(IAsyncQueryRunner tx)
+    {
+        // language=Cypher
+        const string query = """
+                             MATCH (u:User)
+                             WHERE date(u.lastActive) = date()
+                             RETURN COUNT(u) AS activeTodayCount
+                             """;
+        
+        var cursor = await tx.RunAsync(query);
+        return await cursor.SingleAsync(record => record["activeTodayCount"].As<int>());
+    }
+
     public async Task<User> UpdateUserNameAsync(IAsyncQueryRunner tx, Guid userId, string newUsername)
     {
         // language=Cypher
