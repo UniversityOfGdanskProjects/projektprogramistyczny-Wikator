@@ -1,5 +1,6 @@
 ﻿using MoviesApi.DTOs.Requests;
 using MoviesApi.DTOs.Responses;
+using MoviesApi.Models;
 using Neo4j.Driver;
 
 namespace MoviesApi.Repository.Contracts;
@@ -11,4 +12,5 @@ public interface IReviewRepository
     public Task DeleteReview(IAsyncQueryRunner tx, Guid userId, Guid reviewId);
     Task<bool> ReviewExists(IAsyncQueryRunner tx, Guid id, Guid userId);
     Task<bool> ReviewExistsByMovieId(IAsyncQueryRunner tx, Guid movieId, Guid userId);
+    Task<ReviewAverageAndCount> GetAverageAndCount(IAsyncQueryRunner tx, Guid reviewId);
 }

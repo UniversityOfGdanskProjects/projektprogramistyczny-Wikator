@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MoviesApi.Controllers.Base;
 using MoviesApi.DTOs.Requests;
 using MoviesApi.Extensions;
 using MoviesApi.Repository.Contracts;
+using MoviesApi.Services.Contracts;
 using Neo4j.Driver;
 
 namespace MoviesApi.Controllers;
@@ -11,16 +13,18 @@ namespace MoviesApi.Controllers;
 [Authorize]
 [Route("api/[controller]")]
 public class ReviewController(IDriver driver, IMovieRepository movieRepository,
-    IReviewRepository reviewRepository) : BaseApiController(driver)
+    IReviewRepository reviewRepository, IMqttService mqttService) : BaseApiController(driver)
 {
     private IReviewRepository ReviewRepository { get; } = reviewRepository;
     private IMovieRepository MovieRepository { get; } = movieRepository;
+    private IMqttService MqttService { get; } = mqttService;
     
 
     [HttpPost]
     public async Task<IActionResult> CreateReview(AddReviewDto reviewDto)
     {
-        return await ExecuteWriteAsync(async tx =>
+        Guid? id = null;
+        var result = await ExecuteWriteAsync(async tx =>
         {
             if (!await MovieRepository.MovieExists(tx, reviewDto.MovieId))
                 return BadRequest("Movie you are trying to review does not exist");
@@ -31,14 +35,20 @@ public class ReviewController(IDriver driver, IMovieRepository movieRepository,
                 return BadRequest("You already reviewed this movie");
 
             var review = await ReviewRepository.AddReview(tx, userId, reviewDto);
+            id = review.Id;
             return Ok(review);
         });
+        
+        if (id is not null)
+            _ = SendMqttNewReview(id.Value);
+
+        return result;
     }
 
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> UpdateReview(Guid id, UpdateReviewDto reviewDto)
     {
-        return await ExecuteWriteAsync(async tx =>
+        var result = await ExecuteWriteAsync(async tx =>
         {
             var userId = User.GetUserId();
 
@@ -48,12 +58,17 @@ public class ReviewController(IDriver driver, IMovieRepository movieRepository,
             var review = await ReviewRepository.UpdateReview(tx, userId, id, reviewDto);
             return Ok(review);
         });
+        
+        if (result is OkObjectResult)
+            _ = SendMqttNewReview(id);
+        
+        return result;
     }
 
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> DeleteReview(Guid id)
     {
-        return await ExecuteWriteAsync(async tx =>
+        var result = await ExecuteWriteAsync(async tx =>
         {
             var userId = User.GetUserId();
 
@@ -63,5 +78,28 @@ public class ReviewController(IDriver driver, IMovieRepository movieRepository,
             await ReviewRepository.DeleteReview(tx, userId, id);
             return NoContent();
         });
+        
+        if (result is NoContentResult)
+            _ = SendMqttNewReview(id);
+        
+        return result;
+    }
+    
+    
+    private async Task SendMqttNewReview(Guid reviewId)
+    {
+        await using var session = Driver.AsyncSession();
+        
+        var reviewAverageAndCount = await session.ExecuteReadAsync(tx => ReviewRepository.GetAverageAndCount(tx, reviewId));
+        
+        JsonSerializerOptions options = new()
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
+        
+        var payload = JsonSerializer.Serialize(reviewAverageAndCount, options);
+        Console.WriteLine(payload);
+        Console.WriteLine($"movie/{reviewAverageAndCount.MovieId}/updated-reviews");
+        await MqttService.SendNotificationAsync($"movie/{reviewAverageAndCount.MovieId}/updated-reviews", payload);
     }
 }

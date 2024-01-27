@@ -1,6 +1,7 @@
 ﻿using MoviesApi.DTOs.Requests;
 using MoviesApi.DTOs.Responses;
 using MoviesApi.Extensions;
+using MoviesApi.Models;
 using MoviesApi.Repository.Contracts;
 using Neo4j.Driver;
 
@@ -90,5 +91,26 @@ public class ReviewRepository : IReviewRepository
         
         var cursor = await tx.RunAsync(query, new { userId = userId.ToString(), movieId = movieId.ToString() });
         return await cursor.SingleAsync(record => record["reviewExists"].As<bool>());
+    }
+
+    public async Task<ReviewAverageAndCount> GetAverageAndCount(IAsyncQueryRunner tx, Guid reviewId)
+    {
+        // language=Cypher
+        const string query = """
+                             MATCH(m:Movie)<-[:REVIEWED { id: $reviewId }]-(:User)
+                             OPTIONAL MATCH(m)<-[r:REVIEWED]-(:User)
+                             WITH m, COUNT(r) AS count, COALESCE(r.score, 0) AS score
+                             RETURN
+                               m.id AS movieId,
+                               AVG(score) AS average,
+                               count
+                             """;
+        
+        var cursor = await tx.RunAsync(query, new { reviewId = reviewId.ToString() });
+        return await cursor.SingleAsync(record =>
+            new ReviewAverageAndCount(
+                Guid.Parse(record["movieId"].As<string>()),
+                record["average"].As<double>(),
+                record["count"].As<int>()));
     }
 }

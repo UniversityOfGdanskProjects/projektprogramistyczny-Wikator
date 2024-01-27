@@ -6,7 +6,7 @@ namespace MoviesApi.Controllers.Base;
 [ApiController]
 public abstract class BaseApiController(IDriver driver) : ControllerBase
 {
-    private IDriver Driver { get; } = driver;
+    protected IDriver Driver { get; } = driver;
     
     protected async Task<IActionResult> ExecuteReadAsync(Func<IAsyncQueryRunner, Task<IActionResult>> query)
     {
