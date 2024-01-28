@@ -18,4 +18,5 @@ public interface IMovieRepository
 	Task AddMoviePicture(IAsyncQueryRunner tx, Guid movieId, string pictureAbsoluteUri, string picturePublicId);
 	Task DeleteMovie(IAsyncQueryRunner tx,Guid movieId);
 	Task<string?> GetPublicId(IAsyncQueryRunner tx, Guid movieId);
+	Task<string> GetMostPopularMovieTitle(IAsyncQueryRunner tx);
 }

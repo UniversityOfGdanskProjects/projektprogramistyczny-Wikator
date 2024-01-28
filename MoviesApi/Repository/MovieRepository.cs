@@ -115,6 +115,20 @@ public class MovieRepository : IMovieRepository
 		return await cursor.SingleAsync(record => record["picturePublicId"].As<string?>());
 	}
 
+	public async Task<string> GetMostPopularMovieTitle(IAsyncQueryRunner tx)
+	{
+		// language=Cypher
+		const string query = """
+		                     MATCH (m:Movie)
+		                     RETURN m.title AS title
+		                     ORDER BY m.popularity DESC
+		                     LIMIT 1
+		                     """;
+
+		var cursor = await tx.RunAsync(query);
+		return await cursor.SingleAsync(record => record["title"].As<string>());
+	}
+
 	public async Task<MovieDetailsDto> AddMovie(IAsyncQueryRunner tx,
 		AddMovieDto movieDto, string? pictureAbsoluteUri, string? picturePublicId)
 	{

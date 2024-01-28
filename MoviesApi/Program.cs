@@ -57,6 +57,7 @@ app.UseMiddleware<UserExistsInDatabaseMiddleware>();
 app.UseMiddleware<LogUserActivityMiddleware>();
 app.UseAuthorization();
 
+
 app.MapControllers();
 
 using var scope = app.Services.CreateScope();
