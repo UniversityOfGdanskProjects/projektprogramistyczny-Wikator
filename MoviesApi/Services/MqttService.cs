@@ -93,7 +93,7 @@ public class MqttService : IMqttService
         var applicationMessage = new MqttApplicationMessageBuilder()
             .WithTopic(topic)
             .WithPayload(message.ToString())
-            .Build();
+            .Build();;
 
         await _mqttClient.PublishAsync(applicationMessage);
     }

@@ -27,7 +27,7 @@ public class ServerSentEventController(IDriver driver, IMovieRepository movieRep
                 .WriteAsync($"data: {movieTitle}\r\r");
 
             await response.Body.FlushAsync();
-            await Task.Delay(5 * 60 * 1000);
+            await Task.Delay(3 * 60 * 1000);
         }
         // ReSharper disable once FunctionNeverReturns
     }

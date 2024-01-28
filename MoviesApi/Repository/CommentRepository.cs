@@ -42,30 +42,34 @@ public class CommentRepository : ICommentRepository
         // language=Cypher
         const string query = """
                              MATCH (m:Movie { id: $movieId }), (u:User { id: $userId })
-                             OPTIONAL MATCH (m)<-[:FAVOURITE]-(u2:User) WHERE u2.id <> $userId
                              CREATE (u)-[r:COMMENTED {
                                id: apoc.create.uuid(),
                                text: $text,
                                createdAt: $dateTime,
                                isEdited: false
                              }]->(m)
-                             WITH m, u, u2, r
-                             CALL apoc.do.when(u2 IS NOT NULL,
+                             WITH m, u, r
+                             OPTIONAL MATCH (m)<-[:FAVOURITE]-(u2:User) WHERE u2.id <> $userId
+                             CALL apoc.do.when(
+                               u2 IS NOT NULL,
                                'CREATE (u2)<-[:NOTIFICATION {
                                  id: apoc.create.uuid(),
                                  relatedEntityId: r.id,
                                  isRead: false
                                }]-(m)
-                               RETURN m, r', 
-                               'RETURN m, r', {u2:u2, m:m, r:r}) YIELD value
+                                RETURN m',
+                               'RETURN m',
+                               { u2: u2, m: m, r: r }
+                             ) YIELD value
+                             WITH m, u, r, COLLECT(value) AS ignore
                              RETURN
-                               value.r.id AS id,
-                               value.m.id AS movieId,
+                               r.id AS id,
+                               m.id AS movieId,
                                u.id AS userId,
                                u.name AS username,
-                               value.r.text AS text,
-                               value.r.createdAt AS createdAt,
-                               value.r.isEdited AS isEdited,
+                               r.text AS text,
+                               r.createdAt AS createdAt,
+                               r.isEdited AS isEdited,
                                {
                                 commentUsername: u.name,
                                 commentText: r.text,
