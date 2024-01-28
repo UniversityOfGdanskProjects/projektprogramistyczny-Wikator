@@ -133,7 +133,7 @@ public class ActorController(IDriver driver, IPhotoService photoService, IActorR
                 throw new PhotoServiceException("Photo failed to save, please try again in few minutes");
 
             await ActorRepository.AddActorPicture(tx, id, uploadResult.SecureUrl.AbsoluteUri, uploadResult.PublicId);
-            return Ok();
+            return Ok(new {pictureUri = uploadResult.SecureUrl.AbsoluteUri});
         });
     }
 
@@ -166,7 +166,7 @@ public class ActorController(IDriver driver, IPhotoService photoService, IActorR
                 throw new PhotoServiceException("Photo failed to save, please try again in few minutes");
 
             await ActorRepository.AddActorPicture(tx, id, uploadResult.SecureUrl.AbsoluteUri, uploadResult.PublicId);
-            return NoContent();
+            return Ok(new {pictureUri = uploadResult.SecureUrl.AbsoluteUri});
         });
     }
     
