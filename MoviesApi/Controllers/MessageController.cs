@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MoviesApi.Controllers.Base;
+using MoviesApi.DTOs.Requests;
 using MoviesApi.Extensions;
 using MoviesApi.Repository.Contracts;
 using Neo4j.Driver;
@@ -24,12 +25,12 @@ public class MessageController(IDriver driver, IMessageRepository messageReposit
     
     [HttpPost]
     [Authorize]
-    public Task<IActionResult> CreateMessageAsync([FromBody] string messageContent)
+    public Task<IActionResult> CreateMessageAsync(CreateMessageDto messageDto)
     {
         return ExecuteWriteAsync(async tx =>
         {
             var userId = User.GetUserId();
-            var message = await MessageRepository.CreateMessageAsync(tx, userId, messageContent);
+            var message = await MessageRepository.CreateMessageAsync(tx, userId, messageDto.Content);
             return Ok(message);
         });
     }
