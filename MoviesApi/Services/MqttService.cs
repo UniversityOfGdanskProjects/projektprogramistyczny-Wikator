@@ -1,5 +1,6 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using System.Text.Json;
 using Microsoft.IdentityModel.Tokens;
 using MoviesApi.Repository.Contracts;
 using MQTTnet;
@@ -7,6 +8,7 @@ using MQTTnet.Client;
 using MoviesApi.Services.Contracts;
 using Neo4j.Driver;
 using Newtonsoft.Json;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace MoviesApi.Services;
     
@@ -63,8 +65,14 @@ public class MqttService : IMqttService
             
             if (messageDto is null)
                 return;
-                
-            await SendNotificationAsync("chat/message/validated", messageDto);
+            
+            JsonSerializerOptions options = new()
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            };
+        
+            var payload = JsonSerializer.Serialize(messageDto, options);
+            await SendNotificationAsync("chat/message/validated", payload);
         };
 
         _mqttClient.ConnectAsync(mqttClientOptions, CancellationToken.None).Wait();
