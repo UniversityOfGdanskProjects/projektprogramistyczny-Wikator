@@ -32,6 +32,7 @@ public static class ApplicationServiceExtensions
 		services.AddScoped<IIgnoresRepository, IgnoresRepository>();
 		services.AddScoped<ICommentRepository, CommentRepository>();
 		services.AddScoped<IGenreRepository, GenreRepository>();
+		services.AddSingleton<IMessageRepository, MessageRepository>();
 		services.AddScoped<ITokenService, TokenService>();
 		services.AddSingleton<IMqttService, MqttService>();
 	}

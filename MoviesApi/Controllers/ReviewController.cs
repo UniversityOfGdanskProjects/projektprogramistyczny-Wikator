@@ -92,8 +92,7 @@ public class ReviewController(IDriver driver, IMovieRepository movieRepository,
     private async Task SendMqttNewReview(Guid id, Func<IAsyncQueryRunner, Guid, Task<ReviewAverageAndCount>> getAverageAndCount)
     {
         await using var session = Driver.AsyncSession();
-        
-        var reviewAverageAndCount = await session.ExecuteReadAsync(tx => getAverageAndCount(tx, id));
+        var reviewAverageAndCount = await session.ExecuteReadAsync(async tx => await getAverageAndCount(tx, id));
         
         JsonSerializerOptions options = new()
         {
