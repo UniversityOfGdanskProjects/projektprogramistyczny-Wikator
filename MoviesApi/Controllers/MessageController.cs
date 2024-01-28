@@ -24,7 +24,7 @@ public class MessageController(IDriver driver, IMessageRepository messageReposit
         return ExecuteReadAsync(async tx =>
         {
             var messages = await MessageRepository.GetMostRecentMessagesAsync(tx);
-            return Ok(messages);
+            return Ok(messages.Reverse());
         });
     }
     
