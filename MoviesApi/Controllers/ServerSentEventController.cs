@@ -1,5 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using MoviesApi.Repository.Contracts;
 using Neo4j.Driver;
 
@@ -13,22 +12,25 @@ public class ServerSentEventController(IDriver driver, IMovieRepository movieRep
     
     
     [HttpGet]
-    [DoesNotReturn]
-    public async Task Get()
+    public async Task Get(CancellationToken cancellationToken, [FromQuery] int interval = 1200)
     {
         var response = Response;
         response.Headers.Append("Content-Type", "text/event-stream");
 
-        while (true)
+        while (cancellationToken.IsCancellationRequested is false)
         {
-            await using var session = Driver.AsyncSession();
-            var movieTitle = await session.ExecuteReadAsync(async tx => await MovieRepository.GetMostPopularMovieTitle(tx));
-            await response
-                .WriteAsync($"data: {movieTitle}\r\r");
-
-            await response.Body.FlushAsync();
-            await Task.Delay(3 * 60 * 1000);
+            try
+            {
+                await using var session = Driver.AsyncSession();
+                var movieTitle = await session.ExecuteReadAsync(async tx => await MovieRepository.GetMostPopularMovieTitle(tx));
+                await response.WriteAsync($"data: {movieTitle}\r\r", cancellationToken: cancellationToken);
+                await response.Body.FlushAsync(cancellationToken);
+                await Task.Delay(interval * 1000, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
         }
-        // ReSharper disable once FunctionNeverReturns
     }
 }
