@@ -25,12 +25,12 @@ public class Setup(IDriver driver)
         {
             // language=Cypher
             const string createPopularityJobQuery = """
-                                          CALL apoc.periodic.repeat(
-                                              'decrease popularity',
-                                              'MATCH (m:Movie) SET m.popularity = m.popularity / 2',
-                                              60 * 60 * 12
-                                          )
-                                          """;
+                                                    CALL apoc.periodic.repeat(
+                                                        'decrease popularity',
+                                                        'MATCH (m:Movie) SET m.popularity = m.popularity / 2',
+                                                        60 * 60 * 12
+                                                    )
+                                                    """;
             await session.ExecuteWriteAsync(async tx => await tx.RunAsync(createPopularityJobQuery));
         }
         
@@ -38,13 +38,30 @@ public class Setup(IDriver driver)
         {
             // language=Cypher
             const string createActivityScoreJobQuery = """
-                                          CALL apoc.periodic.repeat(
-                                              'decrease activity score',
-                                              'MATCH (u:User) SET u.activityScore = u.activityScore / 2',
-                                              60 * 60 * 24 * 3
-                                          )
-                                          """;
+                                                       CALL apoc.periodic.repeat(
+                                                           'decrease activity score',
+                                                           'MATCH (u:User) SET u.activityScore = u.activityScore / 2',
+                                                           60 * 60 * 24 * 3
+                                                       )
+                                                       """;
+            
             await session.ExecuteWriteAsync(async tx => await tx.RunAsync(createActivityScoreJobQuery));
+        }
+        
+        if (result.All(job => job != "delete old messages"))
+        {
+            // language=Cypher
+            const string createDeleteOldMessagesJobQuery = """
+                                                           CALL apoc.periodic.repeat(
+                                                               'delete old messages',
+                                                               'MATCH (m:Message) 
+                                                                WHERE datetime(m.createdAt) < datetime() - duration("P7D") 
+                                                                DETACH DELETE m',
+                                                               60 * 60 * 24
+                                                           )
+                                                           """;
+            
+            await session.ExecuteWriteAsync(async tx => await tx.RunAsync(createDeleteOldMessagesJobQuery));
         }
         
     }
