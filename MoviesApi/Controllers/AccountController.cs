@@ -11,11 +11,13 @@ using Neo4j.Driver;
 namespace MoviesApi.Controllers;
 
 [Route("api/[controller]")]
-public class AccountController(IDriver driver, ITokenService tokenService, IAccountRepository accountRepository)
+public class AccountController(IDriver driver, ITokenService tokenService,
+	IAccountRepository accountRepository, IMqttService mqttService)
 	: BaseApiController(driver)
 {
 	private ITokenService TokenService { get; } = tokenService;
 	private IAccountRepository AccountRepository { get; } = accountRepository;
+	private IMqttService MqttService { get; } = mqttService;
 		
 	
 	[HttpPost("login")]
@@ -43,11 +45,11 @@ public class AccountController(IDriver driver, ITokenService tokenService, IAcco
 		
 			var user = await AccountRepository.RegisterAsync(tx, registerDto);
 
-			return user switch
-			{
-				null => BadRequest("There was an error when creating new user"),
-				_ => Ok(new UserDto(user.Id, user.Name, user.Role, TokenService.CreateToken(user)))
-			};
+			if (user is null)
+				return BadRequest("There was an error when creating new user");
+			
+			_ = mqttService.SendNotificationAsync("users/new-today", "New user today!");
+			return Ok(new UserDto(user.Id, user.Name, user.Role, TokenService.CreateToken(user)));
 		});
 	}
 	
