@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>12</LangVersion>
-    <RootNamespace>MoviesService</RootNamespace>
+    <RootNamespace>MoviesService.Api</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

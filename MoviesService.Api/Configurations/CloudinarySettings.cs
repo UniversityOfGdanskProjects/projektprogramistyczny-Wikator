@@ -1,4 +1,4 @@
-﻿namespace MoviesService.Configurations;
+﻿namespace MoviesService.Api.Configurations;
 
 public class CloudinarySettings
 {

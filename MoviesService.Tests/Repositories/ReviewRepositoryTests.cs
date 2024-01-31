@@ -1,4 +1,6 @@
-﻿namespace MoviesService.Tests.Repositories;
+﻿using MoviesService.DataAccess.Extensions;
+
+namespace MoviesService.Tests.Repositories;
 
 [Collection("DatabaseCollection")]
 public class ReviewRepositoryTests

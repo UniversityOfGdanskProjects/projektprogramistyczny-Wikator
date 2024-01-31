@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Neo4j.Driver;
 
-namespace MoviesService.Controllers.Base;
+namespace MoviesService.Api.Controllers.Base;
 
 [ApiController]
 public abstract class BaseApiController(IDriver driver) : ControllerBase

@@ -2,15 +2,15 @@
 using System.Text;
 using System.Text.Json;
 using Microsoft.IdentityModel.Tokens;
+using MoviesService.Api.Services.Contracts;
 using MoviesService.DataAccess.Repositories.Contracts;
-using MoviesService.Services.Contracts;
 using MQTTnet;
 using MQTTnet.Client;
 using Neo4j.Driver;
 using Newtonsoft.Json;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
-namespace MoviesService.Services;
+namespace MoviesService.Api.Services;
     
 public class MqttService : IMqttService
 {

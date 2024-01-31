@@ -2,7 +2,7 @@
 using MoviesService.Models.DTOs.Responses;
 using Neo4j.Driver;
 
-namespace MoviesService.Core.Extensions;
+namespace MoviesService.DataAccess.Extensions;
 
 public static class RecordExtensions
 {

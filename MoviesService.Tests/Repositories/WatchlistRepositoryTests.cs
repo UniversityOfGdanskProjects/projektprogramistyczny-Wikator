@@ -1,5 +1,4 @@
 ﻿using FluentAssertions;
-using MoviesService.Tests.Extensions;
 
 namespace MoviesService.Tests.Repositories;
 
@@ -71,6 +70,24 @@ public class WatchlistRepositoryTests
             Genres: [],
             AverageScore: 0
         ));
+    }
+
+    [Fact]
+    public async Task GetAllMoviesOnWatchlist_ShouldReturnEmptyList_WhenUserHasNoFavouriteMovies()
+    {
+        // Arrange
+        var repository = new WatchlistRepository();
+        await using var session = Database.Driver.AsyncSession();
+        
+        // Act
+        var movieDtos = await session.ExecuteReadAsync(async tx =>
+        {
+            var result = await repository.GetAllMoviesOnWatchlist(tx, Database.UserId);
+            return result.ToList();
+        });
+        
+        // Assert
+        movieDtos.Should().BeEmpty();
     }
     
     [Fact]

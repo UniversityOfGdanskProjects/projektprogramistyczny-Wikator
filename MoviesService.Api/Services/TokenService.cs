@@ -2,10 +2,10 @@
 using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
+using MoviesService.Api.Services.Contracts;
 using MoviesService.Models;
-using MoviesService.Services.Contracts;
 
-namespace MoviesService.Services;
+namespace MoviesService.Api.Services;
 
 public class TokenService : ITokenService
 {

@@ -1,4 +1,4 @@
-﻿using MoviesService.Core.Extensions;
+﻿using MoviesService.DataAccess.Extensions;
 using MoviesService.DataAccess.Repositories.Contracts;
 using MoviesService.Models.DTOs.Responses;
 using Neo4j.Driver;

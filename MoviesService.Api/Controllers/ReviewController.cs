@@ -1,15 +1,15 @@
 ﻿using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using MoviesService.Controllers.Base;
-using MoviesService.Core.Extensions;
+using MoviesService.Api.Controllers.Base;
+using MoviesService.Api.Extensions;
+using MoviesService.Api.Services.Contracts;
 using MoviesService.DataAccess.Repositories.Contracts;
 using MoviesService.Models;
 using MoviesService.Models.DTOs.Requests;
-using MoviesService.Services.Contracts;
 using Neo4j.Driver;
 
-namespace MoviesService.Controllers;
+namespace MoviesService.Api.Controllers;
 
 [Authorize]
 [Route("api/[controller]")]

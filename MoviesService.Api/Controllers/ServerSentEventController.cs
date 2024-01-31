@@ -2,7 +2,7 @@
 using MoviesService.DataAccess.Repositories.Contracts;
 using Neo4j.Driver;
 
-namespace MoviesService.Controllers;
+namespace MoviesService.Api.Controllers;
 
 [Route("/api/sse")]
 public class ServerSentEventController(IDriver driver, IMovieRepository movieRepository) : Controller

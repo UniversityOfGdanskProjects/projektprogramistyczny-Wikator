@@ -2,7 +2,7 @@
 using MoviesService.Core.Exceptions;
 using Neo4j.Driver;
 
-namespace MoviesService.Middleware;
+namespace MoviesService.Api.Middleware;
 
 public class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger)
 {

@@ -2,7 +2,7 @@
 using System.Security.Claims;
 using Neo4j.Driver;
 
-namespace MoviesService.Middleware;
+namespace MoviesService.Api.Middleware;
 
 public class UserExistsInDatabaseMiddleware(RequestDelegate next)
 {

@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using MoviesService.Core.Helpers;
 
-namespace MoviesService.Extensions;
+namespace MoviesService.Api.Extensions;
 
 public static class HttpExtensions
 {

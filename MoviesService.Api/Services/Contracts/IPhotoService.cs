@@ -1,6 +1,6 @@
 ﻿using CloudinaryDotNet.Actions;
 
-namespace MoviesService.Services.Contracts;
+namespace MoviesService.Api.Services.Contracts;
 
 public interface IPhotoService
 {

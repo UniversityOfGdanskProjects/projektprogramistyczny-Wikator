@@ -1,8 +1,8 @@
 ﻿using System.Security.Claims;
-using MoviesService.Services.Contracts;
+using MoviesService.Api.Services.Contracts;
 using Neo4j.Driver;
 
-namespace MoviesService.Middleware;
+namespace MoviesService.Api.Middleware;
 
 public class LogUserActivityMiddleware(RequestDelegate next)
 {

@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using MoviesService.Configurations;
+using MoviesService.Api.Configurations;
+using MoviesService.Api.Extensions;
+using MoviesService.Api.Middleware;
 using MoviesService.DataAccess;
-using MoviesService.Extensions;
-using MoviesService.Middleware;
 using Neo4j.Driver;
 using Serilog;
 

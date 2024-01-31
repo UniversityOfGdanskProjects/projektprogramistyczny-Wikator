@@ -1,6 +1,6 @@
 ﻿using System.Security.Claims;
 
-namespace MoviesService.Core.Extensions;
+namespace MoviesService.Api.Extensions;
 
 public static class ClaimsPrincipalExtensions
 {
