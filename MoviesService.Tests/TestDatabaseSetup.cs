@@ -13,6 +13,7 @@ public class TestDatabaseSetup : IDisposable, IClassFixture<TestDatabaseSetup>
 
     public Guid UserId { get; } = Guid.NewGuid();
     public Guid MovieId { get; } = Guid.NewGuid();
+    public string AdminUserName { get; } = "Admin";
     
 
     public async Task SetupDatabase()
