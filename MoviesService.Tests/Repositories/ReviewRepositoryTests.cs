@@ -1,9 +1,4 @@
-﻿using MoviesService.Core.Extensions;
-using MoviesService.DataAccess.Repositories;
-using MoviesService.Models.DTOs.Requests;
-using Neo4j.Driver;
-
-namespace MoviesService.Tests;
+﻿namespace MoviesService.Tests.Repositories;
 
 [Collection("DatabaseCollection")]
 public class ReviewRepositoryTests
@@ -14,11 +9,12 @@ public class ReviewRepositoryTests
     public ReviewRepositoryTests(TestDatabaseSetup testDatabase)
     {
         Database = testDatabase;
+        Database.SetupDatabase().Wait();
         
         // language=Cypher
         const string query = """
-                             MATCH (u:User { id: $userId }), (m:Movie { id: $movieId })
-                             CREATE (u)-[r:REVIEWED { id: $reviewId, score: 5 }]->(m)
+                             MATCH (u1:User { id: $userId }), (m1:Movie { id: $movieId })
+                             CREATE (u1)-[:REVIEWED {id: $reviewId, score: 5}]->(m1)
                              """;
 
         var parameters = new
@@ -173,5 +169,35 @@ public class ReviewRepositoryTests
         
         // Assert
         Assert.False(reviewExists);
+    }
+    
+    [Fact]
+    public async Task GetAverageAndCountFromReviewId_ShouldReturnAverageAndCount()
+    {
+        // Arrange
+        var repository = new ReviewRepository();
+        await using var session = Database.Driver.AsyncSession();
+        
+        // Act
+        var averageAndCount = await session.ExecuteWriteAsync(async tx => await repository.GetAverageAndCountFromReviewId(tx, ReviewId));
+        
+        // Assert
+        Assert.Equal(1, averageAndCount.Count);
+        Assert.Equal(5, averageAndCount.Average);
+    }
+    
+    [Fact]
+    public async Task GetAverageAndCountFromMovieIdShouldReturnAverageAndCount()
+    {
+        // Arrange
+        var repository = new ReviewRepository();
+        await using var session = Database.Driver.AsyncSession();
+        
+        // Act
+        var averageAndCount = await session.ExecuteWriteAsync(async tx => await repository.GetAverageAndCountFromMovieId(tx, Database.MovieId));
+        
+        // Assert
+        Assert.Equal(5, averageAndCount.Average);
+        Assert.Equal(1, averageAndCount.Count);
     }
 }

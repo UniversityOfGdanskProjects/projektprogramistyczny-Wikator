@@ -45,7 +45,7 @@ public class WatchlistRepository : IWatchlistRepository
         // language=Cypher
         const string query = """
                              MATCH (u:User { id: $userId }), (m:Movie { id: $movieId })
-                             CREATE (u)-[r:WATCHLIST]->(m)
+                             CREATE (u)-[:WATCHLIST]->(m)
                              """;
         
         await tx.RunAsync(query, new { userId = userId.ToString(), movieId = movieId.ToString() });

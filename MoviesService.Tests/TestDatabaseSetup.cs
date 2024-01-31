@@ -1,30 +1,48 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 using MoviesService.DataAccess;
-using Neo4j.Driver;
 
 namespace MoviesService.Tests;
 
 // ReSharper disable once ClassNeverInstantiated.Global
 public class TestDatabaseSetup : IDisposable, IClassFixture<TestDatabaseSetup>
 {
-    public IDriver Driver { get; }
+    public IDriver Driver { get; } = GraphDatabase.Driver(
+        TestConfiguration.Neo4JUri,
+        AuthTokens.Basic(TestConfiguration.Neo4JUser, TestConfiguration.Neo4JPassword));
+
     public Guid UserId { get; } = Guid.NewGuid();
     public Guid MovieId { get; } = Guid.NewGuid();
+    
 
-    public TestDatabaseSetup()
+    public async Task SetupDatabase()
     {
-        Driver = GraphDatabase.Driver(
-            TestConfiguration.Neo4JUri,
-            AuthTokens.Basic(TestConfiguration.Neo4JUser, TestConfiguration.Neo4JPassword));
+        await using var session = Driver.AsyncSession();
         
-        var session = Driver.AsyncSession();
+        const string deleteAllQuery = "MATCH (n) DETACH DELETE n";
+        await session.ExecuteWriteAsync(async tx => await tx.RunAsync(deleteAllQuery));
         
         var setup = new DatabaseSetup(Driver);
-        setup.SetupJobs().Wait();
-        setup.SeedGenres().Wait();
+        await setup.SetupJobs();
+        await setup.SeedGenres();
         
-        const string movieQuery = "CREATE (m:Movie {id: $id, title: 'Test Movie'})";
+        // language=Cypher
+        const string movieQuery = """
+                                  CREATE (m:Movie {
+                                    id: $id,
+                                    title: "The Matrix",
+                                    description: "Description",
+                                    pictureAbsoluteUri: NULL,
+                                    picturePublicId: NULL,
+                                    inTheaters: false,
+                                    releaseDate: datetime("2000-01-01"),
+                                    minimumAge: 13,
+                                    popularity: 0,
+                                    trailerAbsoluteUri: NULL
+                                  })
+                                  """;
+        
+        
         using HMACSHA512 hmac = new();
         var passwordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes("Pa$$w0rd"));
         var passwordSalt = hmac.Key;
@@ -51,10 +69,8 @@ public class TestDatabaseSetup : IDisposable, IClassFixture<TestDatabaseSetup>
             passwordHash = Convert.ToBase64String(passwordHash),
             passwordSalt = Convert.ToBase64String(passwordSalt)
         };
-        
-        session = Driver.AsyncSession();
 
-        session.ExecuteWriteAsync(async tx =>
+        await session.ExecuteWriteAsync(async tx =>
         {
             await tx.RunAsync(movieQuery, new { id = MovieId.ToString() });
             await tx.RunAsync(adminQuery, adminParameters);
