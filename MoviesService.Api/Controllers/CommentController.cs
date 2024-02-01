@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MoviesService.Api.Controllers.Base;
-using MoviesService.Api.Extensions;
 using MoviesService.DataAccess.Repositories.Contracts;
 using MoviesService.Models;
 using MoviesService.Models.DTOs.Requests;
@@ -14,12 +13,13 @@ namespace MoviesService.Api.Controllers;
 
 [Authorize]
 [Route("api/[controller]")]
-public class CommentController(IDriver driver, IMovieRepository movieRepository,
-    ICommentRepository commentRepository, IMqttService mqttService) : BaseApiController(driver)
+public class CommentController(IDriver driver, IMovieRepository movieRepository, ICommentRepository commentRepository,
+    IMqttService mqttService, IUserClaimsProvider claimsProvider) : BaseApiController(driver)
 {
     private ICommentRepository CommentRepository { get; } = commentRepository;
     private IMovieRepository MovieRepository { get; } = movieRepository;
     private IMqttService MqttService { get; } = mqttService;
+    private IUserClaimsProvider ClaimsProvider { get; } = claimsProvider;
     
 
     [HttpGet("{id:guid}")]
@@ -45,7 +45,7 @@ public class CommentController(IDriver driver, IMovieRepository movieRepository,
             if (!await MovieRepository.MovieExists(tx, addCommentDto.MovieId))
                 return BadRequest("Movie you are trying to comment on does not exist");
 
-            var userId = User.GetUserId();
+            var userId = ClaimsProvider.GetUserId(User);
             var commentWithNotification = await CommentRepository.AddCommentAsync(tx, userId, addCommentDto);
             _ = SendNewMqttCommentNotificationAsync(commentWithNotification);
             return CreatedAtAction(nameof(GetComment), new { id = commentWithNotification.Comment.Id }, commentWithNotification.Comment);
@@ -57,7 +57,7 @@ public class CommentController(IDriver driver, IMovieRepository movieRepository,
     {
         return await ExecuteWriteAsync(async tx =>
         {
-            var userId = User.GetUserId();
+            var userId = ClaimsProvider.GetUserId(User);
             
             if (!await CommentRepository.CommentExistsAsOwnerOrAdmin(tx, commentId, userId))
                 return NotFound("Either the comment doesn't exist or you don't have permission to edit it");
@@ -73,7 +73,7 @@ public class CommentController(IDriver driver, IMovieRepository movieRepository,
     {
         return await ExecuteWriteAsync(async tx =>
         {
-            var userId = User.GetUserId();
+            var userId = ClaimsProvider.GetUserId(User);
             var movieId = await CommentRepository.GetMovieIdFromCommentAsOwnerOrAdminAsync(tx, commentId, userId);
             
             if (movieId is null)

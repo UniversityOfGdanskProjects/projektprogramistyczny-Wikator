@@ -27,7 +27,9 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\MoviesService.Api\MoviesService.Api.csproj" />
       <ProjectReference Include="..\MoviesService.DataAccess\MoviesService.DataAccess.csproj" />
+      <ProjectReference Include="..\MoviesService.Services\MoviesService.Services.csproj" />
     </ItemGroup>
 
 </Project>

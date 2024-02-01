@@ -35,5 +35,6 @@ public static class ApplicationServiceExtensions
         services.AddSingleton<IMessageRepository, MessageRepository>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddSingleton<IMqttService, MqttService>();
+        services.AddScoped<IUserClaimsProvider, UserClaimsProvider>();
     }
 }
