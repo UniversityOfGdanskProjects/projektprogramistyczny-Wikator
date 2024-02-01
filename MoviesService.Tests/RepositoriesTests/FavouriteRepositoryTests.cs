@@ -1,6 +1,6 @@
 ﻿using FluentAssertions;
 
-namespace MoviesService.Tests.Repositories;
+namespace MoviesService.Tests.RepositoriesTests;
 
 [Collection("DatabaseCollection")]
 public class FavouriteRepositoryTests

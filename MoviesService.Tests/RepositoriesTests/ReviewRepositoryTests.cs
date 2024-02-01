@@ -1,6 +1,6 @@
 ﻿using MoviesService.DataAccess.Extensions;
 
-namespace MoviesService.Tests.Repositories;
+namespace MoviesService.Tests.RepositoriesTests;
 
 [Collection("DatabaseCollection")]
 public class ReviewRepositoryTests
