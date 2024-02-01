@@ -11,4 +11,9 @@ public static class ValExtensions
     {
         return boolean.As<bool>();
     }
+    
+    public static string ToString(object boolean)
+    {
+        return boolean.As<string>();
+    }
 }

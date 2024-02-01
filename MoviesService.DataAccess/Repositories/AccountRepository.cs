@@ -11,7 +11,7 @@ namespace MoviesService.DataAccess.Repositories;
 
 public class AccountRepository : IAccountRepository
 {
-    public async Task<User?> RegisterAsync(IAsyncQueryRunner tx, RegisterDto registerDto)
+    public async Task<User> RegisterAsync(IAsyncQueryRunner tx, RegisterDto registerDto)
     {
         using HMACSHA512 hmac = new();
         var passwordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(registerDto.Password));
