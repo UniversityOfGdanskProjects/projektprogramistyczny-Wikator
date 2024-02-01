@@ -57,7 +57,8 @@ public class TestDatabaseSetup : IDisposable, IClassFixture<TestDatabaseSetup>
                                passwordHash: $passwordHash,
                                passwordSalt: $passwordSalt,
                                role: "Admin",
-                               lastActive: datetime()
+                               lastActive: datetime(),
+                               activityScore: 0
                              })
                              RETURN a.name as name, a.email as email, a.role as role, a.id as id
                              """;
