@@ -1,5 +1,4 @@
-﻿using MoviesService.Core.Extensions;
-using MoviesService.DataAccess.Extensions;
+﻿using MoviesService.DataAccess.Extensions;
 using MoviesService.DataAccess.Repositories.Contracts;
 using MoviesService.Models.DTOs.Requests;
 using MoviesService.Models.DTOs.Responses;

@@ -1,7 +1,7 @@
-﻿using MoviesService.Api.Services;
-using MoviesService.Api.Services.Contracts;
-using MoviesService.DataAccess.Repositories;
+﻿using MoviesService.DataAccess.Repositories;
 using MoviesService.DataAccess.Repositories.Contracts;
+using MoviesService.Services;
+using MoviesService.Services.Contracts;
 using Neo4j.Driver;
 
 namespace MoviesService.Api.Extensions;

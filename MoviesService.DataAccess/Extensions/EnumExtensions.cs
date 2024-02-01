@@ -1,4 +1,4 @@
-﻿namespace MoviesService.Core.Extensions;
+﻿namespace MoviesService.DataAccess.Extensions;
 
 public static class EnumExtensions
 {

@@ -1,5 +1,5 @@
 ﻿using System.Security.Claims;
-using MoviesService.Api.Services.Contracts;
+using MoviesService.Services.Contracts;
 using Neo4j.Driver;
 
 namespace MoviesService.Api.Middleware;

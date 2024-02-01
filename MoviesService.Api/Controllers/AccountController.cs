@@ -2,10 +2,10 @@
 using Microsoft.AspNetCore.Mvc;
 using MoviesService.Api.Controllers.Base;
 using MoviesService.Api.Extensions;
-using MoviesService.Api.Services.Contracts;
 using MoviesService.DataAccess.Repositories.Contracts;
 using MoviesService.Models.DTOs.Requests;
 using MoviesService.Models.DTOs.Responses;
+using MoviesService.Services.Contracts;
 using Neo4j.Driver;
 
 namespace MoviesService.Api.Controllers;
@@ -44,10 +44,6 @@ public class AccountController(IDriver driver, ITokenService tokenService,
 				return BadRequest("Email is taken");
 		
 			var user = await AccountRepository.RegisterAsync(tx, registerDto);
-
-			if (user is null)
-				return BadRequest("There was an error when creating new user");
-			
 			_ = MqttService.SendNotificationAsync("users/new-today", "New user today!");
 			return Ok(new UserDto(user.Id, user.Name, user.Role, TokenService.CreateToken(user)));
 		});

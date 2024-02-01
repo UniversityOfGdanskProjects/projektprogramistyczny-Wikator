@@ -3,11 +3,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MoviesService.Api.Controllers.Base;
 using MoviesService.Api.Extensions;
-using MoviesService.Api.Services.Contracts;
 using MoviesService.Core.Exceptions;
 using MoviesService.Core.Helpers;
 using MoviesService.DataAccess.Repositories.Contracts;
 using MoviesService.Models.DTOs.Requests;
+using MoviesService.Services.Contracts;
 using Neo4j.Driver;
 
 namespace MoviesService.Api.Controllers;

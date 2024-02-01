@@ -2,9 +2,9 @@
 using Microsoft.AspNetCore.Mvc;
 using MoviesService.Api.Controllers.Base;
 using MoviesService.Api.Extensions;
-using MoviesService.Api.Services.Contracts;
 using MoviesService.DataAccess.Repositories.Contracts;
 using MoviesService.Models.DTOs.Responses;
+using MoviesService.Services.Contracts;
 using Neo4j.Driver;
 
 namespace MoviesService.Api.Controllers;

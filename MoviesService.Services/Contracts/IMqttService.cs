@@ -1,4 +1,4 @@
-﻿namespace MoviesService.Api.Services.Contracts;
+﻿namespace MoviesService.Services.Contracts;
 
 public interface IMqttService
 {

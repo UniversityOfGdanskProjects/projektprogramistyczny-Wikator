@@ -1,22 +1,22 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using MoviesService.Api.Services.Contracts;
 using MoviesService.DataAccess.Repositories.Contracts;
+using MoviesService.Services.Contracts;
 using MQTTnet;
 using MQTTnet.Client;
-using Neo4j.Driver;
 using Newtonsoft.Json;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
-namespace MoviesService.Api.Services;
+namespace MoviesService.Services;
     
 public class MqttService : IMqttService
 {
     private readonly IMqttClient _mqttClient;
 
-    public MqttService(IConfiguration config, IDriver driver, IMessageRepository messageRepository)
+    public MqttService(IConfiguration config, IMessageRepository messageRepository)
     {
         var mqttFactory = new MqttFactory();
         _mqttClient = mqttFactory.CreateMqttClient();
@@ -58,10 +58,8 @@ public class MqttService : IMqttService
             if (userId is null)
                 return;
             
-            await using var session = driver.AsyncSession();
 
-            var messageDto = await session.ExecuteWriteAsync(async tx =>
-                await messageRepository.CreateMessageAsync(tx, Guid.Parse(userId), message.Content));
+            var messageDto = await messageRepository.CreateMessageAsync(Guid.Parse(userId), message.Content);
             
             if (messageDto is null)
                 return;
