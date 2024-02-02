@@ -1,38 +1,16 @@
-﻿using System.Security.Claims;
-using FluentAssertions;
+﻿using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
-using Moq;
 using MoviesService.Api.Controllers;
-using MoviesService.DataAccess.Contracts;
 using MoviesService.DataAccess.Repositories.Contracts;
 using MoviesService.Models;
 using MoviesService.Services.Contracts;
+using MoviesService.Tests.ControllersTests.Base;
 
 namespace MoviesService.Tests.ControllersTests;
 
-public class CommentControllerTests
+public class CommentControllerTests : ControllerTestsBase
 {
     private Mock<IMqttService> MqttServiceMock { get; } = new();
-    private Mock<IUserClaimsProvider> ClaimsProviderMock { get; }
-    private Mock<IAsyncQueryExecutor> QueryExecutorMock { get; }
-    private Guid UserId { get; } = Guid.NewGuid();
-    
-    
-    public CommentControllerTests()
-    {
-        QueryExecutorMock = new Mock<IAsyncQueryExecutor>();
-        var sessionMock = new Mock<IAsyncQueryRunner>();
-        
-        QueryExecutorMock.Setup(executor => executor.ExecuteReadAsync(It.IsAny<Func<IAsyncQueryRunner, Task<IActionResult>>>()))
-            .Returns<Func<IAsyncQueryRunner, Task<IActionResult>>>(func => func.Invoke(sessionMock.Object));
-        
-        QueryExecutorMock.Setup(executor => executor.ExecuteWriteAsync(It.IsAny<Func<IAsyncQueryRunner, Task<IActionResult>>>()))
-            .Returns<Func<IAsyncQueryRunner, Task<IActionResult>>>(func => func.Invoke(sessionMock.Object));
-        
-        ClaimsProviderMock = new Mock<IUserClaimsProvider>();
-        ClaimsProviderMock.Setup(provider => provider.GetUserId(It.IsAny<ClaimsPrincipal>()))
-            .Returns(UserId);
-    }
     
     [Fact]
     public async Task GetComment_ReturnsNotFound_IfCommentDoesNotExist()

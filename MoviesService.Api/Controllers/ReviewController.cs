@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MoviesService.Api.Controllers.Base;
-using MoviesService.Api.Extensions;
 using MoviesService.DataAccess.Contracts;
 using MoviesService.DataAccess.Repositories.Contracts;
 using MoviesService.Models;
@@ -15,11 +14,13 @@ namespace MoviesService.Api.Controllers;
 [Authorize]
 [Route("api/[controller]")]
 public class ReviewController(IAsyncQueryExecutor queryExecutor, IMovieRepository movieRepository,
-    IReviewRepository reviewRepository, IMqttService mqttService) : BaseApiController(queryExecutor)
+    IReviewRepository reviewRepository, IMqttService mqttService,
+    IUserClaimsProvider claimsProvider) : BaseApiController(queryExecutor)
 {
     private IReviewRepository ReviewRepository { get; } = reviewRepository;
     private IMovieRepository MovieRepository { get; } = movieRepository;
     private IMqttService MqttService { get; } = mqttService;
+    private IUserClaimsProvider ClaimsProvider { get; } = claimsProvider;
     
 
     [HttpPost]
@@ -31,7 +32,7 @@ public class ReviewController(IAsyncQueryExecutor queryExecutor, IMovieRepositor
             if (!await MovieRepository.MovieExists(tx, reviewDto.MovieId))
                 return BadRequest("Movie you are trying to review does not exist");
 
-            var userId = User.GetUserId();
+            var userId = ClaimsProvider.GetUserId(User);
 
             if (await ReviewRepository.ReviewExistsByMovieId(tx, reviewDto.MovieId, userId))
                 return BadRequest("You already reviewed this movie");
@@ -52,7 +53,7 @@ public class ReviewController(IAsyncQueryExecutor queryExecutor, IMovieRepositor
     {
         var result = await QueryExecutor.ExecuteWriteAsync<IActionResult>(async tx =>
         {
-            var userId = User.GetUserId();
+            var userId = ClaimsProvider.GetUserId(User);
 
             if (!await ReviewRepository.ReviewExists(tx, id, userId))
                 return NotFound("Review does not exist, or you don't have permission to edit it");
@@ -73,7 +74,7 @@ public class ReviewController(IAsyncQueryExecutor queryExecutor, IMovieRepositor
         Guid? movieId = null;
         var result = await QueryExecutor.ExecuteWriteAsync<IActionResult>(async tx =>
         {
-            var userId = User.GetUserId();
+            var userId = ClaimsProvider.GetUserId(User);
             movieId = await ReviewRepository.GetMovieIdFromReviewId(tx, id, userId);
             
             if (movieId is null)
