@@ -237,22 +237,32 @@ public class MovieRepository : IMovieRepository
 		                         m.minimumAge = $minimumAge,
 		                         m.trailerAbsoluteUri = $trailerAbsoluteUri
 		                     WITH m
-		                     OPTIONAL MATCH (m)-[r:IS]->(:Genre)
-		                     DELETE r
-		                     WITH m
-		                     OPTIONAL MATCH (m)<-[r:PLAYED_IN]-(:Actor)
-		                     DELETE r
-		                     WITH m
-		                     OPTIONAL MATCH (a:Actor)
-		                     WHERE a.id IN $actorIds
+		                     MATCH (g:Genre)
 		                     CALL apoc.do.when(
-		                       a IS NOT NULL,
-		                       'CREATE (a)-[:PLAYED_IN]->(m)
+		                       g IS NOT NULL AND g.name IN $genres,
+		                       'MERGE (m)-[:IS]->(g)
+		                        RETURN g',
+		                       'OPTIONAL MATCH (m)-[r:IS]->(g)
+		                        DELETE r
+		                        RETURN g',
+		                       { g: g, m: m }
+		                     ) YIELD value AS genres
+		                     WITH m, COLLECT(
+		                       CASE
+		                         WHEN genres.g IS NOT NULL THEN genres.g.name
+		                       END
+		                     ) AS genres
+		                     OPTIONAL MATCH (a:Actor)
+		                     CALL apoc.do.when(
+		                       a IS NOT NULL AND a.id IN $actorIds,
+		                       'MERGE (a)-[:PLAYED_IN]->(m)
 		                        RETURN a',
-		                       'RETURN a',
+		                       'OPTIONAL MATCH (a)-[r:PLAYED_IN]->(m)
+		                        DELETE r
+		                        RETURN a',
 		                       { a: a, m: m }
 		                     ) YIELD value AS actors
-		                     WITH m, COLLECT(
+		                     WITH m, genres, COLLECT(
 		                       CASE
 		                         WHEN actors.a IS NOT NULL THEN {
 		                           id: actors.a.id,
@@ -264,20 +274,6 @@ public class MovieRepository : IMovieRepository
 		                         }
 		                       END
 		                     ) AS actors
-		                     OPTIONAL MATCH (g:Genre)
-		                     WHERE g.name IN $genres
-		                     CALL apoc.do.when(
-		                       g IS NOT NULL,
-		                       'CREATE (m)-[:IS]->(g)
-		                        RETURN g',
-		                       'RETURN g',
-		                       { g: g, m: m }
-		                     ) YIELD value AS genres
-		                     WITH m, actors, COLLECT(
-		                       CASE
-		                         WHEN genres.g IS NOT NULL THEN genres.g.name
-		                       END
-		                     ) AS genres
 		                     OPTIONAL MATCH (m)<-[c:COMMENTED]-(u:User)
 		                     WITH m, genres, actors,
 		                     COLLECT(
