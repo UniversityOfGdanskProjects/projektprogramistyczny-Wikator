@@ -3,6 +3,7 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using MoviesService.Api.Controllers;
+using MoviesService.DataAccess.Contracts;
 using MoviesService.DataAccess.Repositories.Contracts;
 using MoviesService.Models;
 using MoviesService.Services.Contracts;
@@ -11,24 +12,22 @@ namespace MoviesService.Tests.ControllersTests;
 
 public class CommentControllerTests
 {
-    private Mock<IDriver> DriverMock { get; }
     private Mock<IMqttService> MqttServiceMock { get; } = new();
     private Mock<IUserClaimsProvider> ClaimsProviderMock { get; }
+    private Mock<IAsyncQueryExecutor> QueryExecutorMock { get; }
     private Guid UserId { get; } = Guid.NewGuid();
     
     
     public CommentControllerTests()
     {
-        DriverMock = new Mock<IDriver>();
-
-        var sessionMock = new Mock<IAsyncSession>();
-        DriverMock.Setup(d => d.AsyncSession()).Returns(sessionMock.Object);
+        QueryExecutorMock = new Mock<IAsyncQueryExecutor>();
+        var sessionMock = new Mock<IAsyncQueryRunner>();
         
-        sessionMock.Setup(s => s.ExecuteWriteAsync(It.IsAny<Func<IAsyncQueryRunner, Task<IActionResult>>>(), null))
-            .Returns<Func<IAsyncQueryRunner, Task<IActionResult>>, CancellationToken>((func, _) => func.Invoke(sessionMock.Object));
+        QueryExecutorMock.Setup(executor => executor.ExecuteReadAsync(It.IsAny<Func<IAsyncQueryRunner, Task<IActionResult>>>()))
+            .Returns<Func<IAsyncQueryRunner, Task<IActionResult>>>(func => func.Invoke(sessionMock.Object));
         
-        sessionMock.Setup(s => s.ExecuteReadAsync(It.IsAny<Func<IAsyncQueryRunner, Task<IActionResult>>>(), null))
-            .Returns<Func<IAsyncQueryRunner, Task<IActionResult>>, CancellationToken>((func, _) => func.Invoke(sessionMock.Object));
+        QueryExecutorMock.Setup(executor => executor.ExecuteWriteAsync(It.IsAny<Func<IAsyncQueryRunner, Task<IActionResult>>>()))
+            .Returns<Func<IAsyncQueryRunner, Task<IActionResult>>>(func => func.Invoke(sessionMock.Object));
         
         ClaimsProviderMock = new Mock<IUserClaimsProvider>();
         ClaimsProviderMock.Setup(provider => provider.GetUserId(It.IsAny<ClaimsPrincipal>()))
@@ -43,7 +42,7 @@ public class CommentControllerTests
         commentRepositoryMock.Setup(repo => repo.GetCommentAsync(It.IsAny<IAsyncQueryRunner>(), It.IsAny<Guid>()))
             .ReturnsAsync((CommentDto?)null);
         
-        var controller = new CommentController(DriverMock.Object, It.IsAny<IMovieRepository>(),
+        var controller = new CommentController(QueryExecutorMock.Object, It.IsAny<IMovieRepository>(),
             commentRepositoryMock.Object, MqttServiceMock.Object, ClaimsProviderMock.Object);
         
         // Act
@@ -62,7 +61,7 @@ public class CommentControllerTests
             .ReturnsAsync(new CommentDto(Guid.NewGuid(), Guid.NewGuid(), UserId, "admin",
                 "content", DateTime.Now, false));
         
-        var controller = new CommentController(DriverMock.Object, It.IsAny<IMovieRepository>(),
+        var controller = new CommentController(QueryExecutorMock.Object, It.IsAny<IMovieRepository>(),
             commentRepositoryMock.Object, MqttServiceMock.Object, ClaimsProviderMock.Object);
         
         // Act
@@ -90,7 +89,7 @@ public class CommentControllerTests
         commentRepositoryMock.Setup(repo => repo.AddCommentAsync(It.IsAny<IAsyncQueryRunner>(), It.IsAny<Guid>(), It.IsAny<AddCommentDto>()))
             .ReturnsAsync(SampleData(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), DateTime.Now));
         
-        var controller = new CommentController(DriverMock.Object, movieRepositoryMock.Object,
+        var controller = new CommentController(QueryExecutorMock.Object, movieRepositoryMock.Object,
             commentRepositoryMock.Object, MqttServiceMock.Object, ClaimsProviderMock.Object);
         
         // Act
@@ -122,7 +121,7 @@ public class CommentControllerTests
         commentRepositoryMock.Setup(repo => repo.AddCommentAsync(It.IsAny<IAsyncQueryRunner>(), It.IsAny<Guid>(), It.IsAny<AddCommentDto>()))
             .ReturnsAsync(SampleData(commentId, movieId, UserId, date));
         
-        var controller = new CommentController(DriverMock.Object, movieRepositoryMock.Object,
+        var controller = new CommentController(QueryExecutorMock.Object, movieRepositoryMock.Object,
             commentRepositoryMock.Object, MqttServiceMock.Object, ClaimsProviderMock.Object);
         
         // Act
@@ -152,7 +151,7 @@ public class CommentControllerTests
         commentRepositoryMock.Setup(repo => repo.AddCommentAsync(It.IsAny<IAsyncQueryRunner>(), It.IsAny<Guid>(), It.IsAny<AddCommentDto>()))
             .ReturnsAsync(SampleData(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), DateTime.Now));
         
-        var controller = new CommentController(DriverMock.Object, movieRepositoryMock.Object,
+        var controller = new CommentController(QueryExecutorMock.Object, movieRepositoryMock.Object,
             commentRepositoryMock.Object, MqttServiceMock.Object, ClaimsProviderMock.Object);
         
         // Act
@@ -175,7 +174,7 @@ public class CommentControllerTests
         commentRepositoryMock.Setup(repo => repo.CommentExistsAsOwnerOrAdmin(It.IsAny<IAsyncQueryRunner>(), It.IsAny<Guid>(), It.IsAny<Guid>()))
             .ReturnsAsync(false);
 
-        var controller = new CommentController(DriverMock.Object, It.IsAny<IMovieRepository>(),
+        var controller = new CommentController(QueryExecutorMock.Object, It.IsAny<IMovieRepository>(),
             commentRepositoryMock.Object, MqttServiceMock.Object, ClaimsProviderMock.Object);
         
         // Act
@@ -200,7 +199,7 @@ public class CommentControllerTests
         commentRepositoryMock.Setup(repo => repo.EditCommentAsync(It.IsAny<IAsyncQueryRunner>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<EditCommentDto>()))
             .ReturnsAsync(SampleData(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), DateTime.Now).Comment);
 
-        var controller = new CommentController(DriverMock.Object, It.IsAny<IMovieRepository>(),
+        var controller = new CommentController(QueryExecutorMock.Object, It.IsAny<IMovieRepository>(),
             commentRepositoryMock.Object, MqttServiceMock.Object, ClaimsProviderMock.Object);
         
         // Act
@@ -230,7 +229,7 @@ public class CommentControllerTests
         commentRepositoryMock.Setup(repo => repo.EditCommentAsync(It.IsAny<IAsyncQueryRunner>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<EditCommentDto>()))
             .ReturnsAsync(SampleData(commentId, movieId, UserId, date).Comment);
         
-        var controller = new CommentController(DriverMock.Object, It.IsAny<IMovieRepository>(),
+        var controller = new CommentController(QueryExecutorMock.Object, It.IsAny<IMovieRepository>(),
             commentRepositoryMock.Object, MqttServiceMock.Object, ClaimsProviderMock.Object);
         
         // Act
@@ -250,7 +249,7 @@ public class CommentControllerTests
         commentRepositoryMock.Setup(repo => repo.GetMovieIdFromCommentAsOwnerOrAdminAsync(It.IsAny<IAsyncQueryRunner>(), It.IsAny<Guid>(), It.IsAny<Guid>()))
             .ReturnsAsync((Guid?)null);
 
-        var controller = new CommentController(DriverMock.Object, It.IsAny<IMovieRepository>(),
+        var controller = new CommentController(QueryExecutorMock.Object, It.IsAny<IMovieRepository>(),
             commentRepositoryMock.Object, MqttServiceMock.Object, ClaimsProviderMock.Object);
         
         // Act
@@ -270,7 +269,7 @@ public class CommentControllerTests
         commentRepositoryMock.Setup(repo => repo.DeleteCommentAsync(It.IsAny<IAsyncQueryRunner>(), It.IsAny<Guid>(), It.IsAny<Guid>()))
             .Returns(Task.CompletedTask);
 
-        var controller = new CommentController(DriverMock.Object, It.IsAny<IMovieRepository>(),
+        var controller = new CommentController(QueryExecutorMock.Object, It.IsAny<IMovieRepository>(),
             commentRepositoryMock.Object, MqttServiceMock.Object, ClaimsProviderMock.Object);
         
         // Act

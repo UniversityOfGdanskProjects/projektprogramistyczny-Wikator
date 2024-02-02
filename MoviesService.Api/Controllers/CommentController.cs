@@ -2,19 +2,20 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MoviesService.Api.Controllers.Base;
+using MoviesService.DataAccess.Contracts;
 using MoviesService.DataAccess.Repositories.Contracts;
 using MoviesService.Models;
 using MoviesService.Models.DTOs.Requests;
 using MoviesService.Models.DTOs.Responses;
 using MoviesService.Services.Contracts;
-using Neo4j.Driver;
 
 namespace MoviesService.Api.Controllers;
 
 [Authorize]
 [Route("api/[controller]")]
-public class CommentController(IDriver driver, IMovieRepository movieRepository, ICommentRepository commentRepository,
-    IMqttService mqttService, IUserClaimsProvider claimsProvider) : BaseApiController(driver)
+public class CommentController(IAsyncQueryExecutor queryExecutor, IMovieRepository movieRepository,
+    ICommentRepository commentRepository, IMqttService mqttService,
+    IUserClaimsProvider claimsProvider) : BaseApiController(queryExecutor)
 {
     private ICommentRepository CommentRepository { get; } = commentRepository;
     private IMovieRepository MovieRepository { get; } = movieRepository;
@@ -25,7 +26,7 @@ public class CommentController(IDriver driver, IMovieRepository movieRepository,
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetComment(Guid id)
     {
-        return await ExecuteReadAsync(async tx =>
+        return await QueryExecutor.ExecuteReadAsync<IActionResult>(async tx =>
         {
             var comment = await CommentRepository.GetCommentAsync(tx, id);
 
@@ -40,7 +41,7 @@ public class CommentController(IDriver driver, IMovieRepository movieRepository,
     [HttpPost]
     public async Task<IActionResult> AddCommentAsync(AddCommentDto addCommentDto)
     {
-        return await ExecuteWriteAsync(async tx =>
+        return await QueryExecutor.ExecuteWriteAsync<IActionResult>(async tx =>
         {
             if (!await MovieRepository.MovieExists(tx, addCommentDto.MovieId))
                 return BadRequest("Movie you are trying to comment on does not exist");
@@ -55,7 +56,7 @@ public class CommentController(IDriver driver, IMovieRepository movieRepository,
     [HttpPut("{commentId:guid}/")]
     public async Task<IActionResult> EditCommentAsync(Guid commentId, EditCommentDto editCommentDto)
     {
-        return await ExecuteWriteAsync(async tx =>
+        return await QueryExecutor.ExecuteWriteAsync<IActionResult>(async tx =>
         {
             var userId = ClaimsProvider.GetUserId(User);
             
@@ -71,7 +72,7 @@ public class CommentController(IDriver driver, IMovieRepository movieRepository,
     [HttpDelete("{commentId:guid}/")]
     public async Task<IActionResult> DeleteCommentAsync(Guid commentId)
     {
-        return await ExecuteWriteAsync(async tx =>
+        return await QueryExecutor.ExecuteWriteAsync<IActionResult>(async tx =>
         {
             var userId = ClaimsProvider.GetUserId(User);
             var movieId = await CommentRepository.GetMovieIdFromCommentAsOwnerOrAdminAsync(tx, commentId, userId);

@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using MoviesService.DataAccess.Contracts;
 using MoviesService.DataAccess.Repositories.Contracts;
 using MoviesService.Services.Contracts;
 using MQTTnet;
@@ -16,7 +17,7 @@ public class MqttService : IMqttService
 {
     private readonly IMqttClient _mqttClient;
 
-    public MqttService(IConfiguration config, IMessageRepository messageRepository)
+    public MqttService(IConfiguration config, IAsyncQueryExecutor queryExecutor, IMessageRepository messageRepository)
     {
         var mqttFactory = new MqttFactory();
         _mqttClient = mqttFactory.CreateMqttClient();
@@ -58,8 +59,9 @@ public class MqttService : IMqttService
             if (userId is null)
                 return;
             
-
-            var messageDto = await messageRepository.CreateMessageAsync(Guid.Parse(userId), message.Content);
+        
+            var messageDto = await queryExecutor.ExecuteWriteAsync(async tx =>
+                await messageRepository.CreateMessageAsync(tx, Guid.Parse(userId), message.Content));
             
             if (messageDto is null)
                 return;

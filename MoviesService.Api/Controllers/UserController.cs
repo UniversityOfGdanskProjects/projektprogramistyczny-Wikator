@@ -2,16 +2,16 @@
 using Microsoft.AspNetCore.Mvc;
 using MoviesService.Api.Controllers.Base;
 using MoviesService.Api.Extensions;
+using MoviesService.DataAccess.Contracts;
 using MoviesService.DataAccess.Repositories.Contracts;
 using MoviesService.Models.DTOs.Responses;
 using MoviesService.Services.Contracts;
-using Neo4j.Driver;
 
 namespace MoviesService.Api.Controllers;
 
 [Route("api/[controller]")]
-public class UserController(IDriver driver, IUserRepository userRepository,
-    IAccountRepository accountRepository, ITokenService tokenService) : BaseApiController(driver)
+public class UserController(IAsyncQueryExecutor queryExecutor, IUserRepository userRepository,
+    IAccountRepository accountRepository, ITokenService tokenService) : BaseApiController(queryExecutor)
 {
     private IUserRepository UserRepository { get; } = userRepository;
     private IAccountRepository AccountRepository { get; } = accountRepository;
@@ -21,14 +21,14 @@ public class UserController(IDriver driver, IUserRepository userRepository,
     [HttpGet]
     public async Task<IActionResult> GetByMostActive()
     {
-        return await ExecuteReadAsync(async tx =>
+        return await QueryExecutor.ExecuteReadAsync<IActionResult>(async tx =>
             Ok(await UserRepository.GetUsersByMostActiveAsync(tx)));
     }
     
     [HttpGet("active-today-count")]
     public async Task<IActionResult> GetActiveTodayCount()
     {
-        return await ExecuteReadAsync(async tx =>
+        return await QueryExecutor.ExecuteReadAsync<IActionResult>(async tx =>
             Ok(await UserRepository.GetUserActiveTodayCount(tx)));
     }
     
@@ -36,7 +36,7 @@ public class UserController(IDriver driver, IUserRepository userRepository,
     [Authorize]
     public async Task<IActionResult> UpdateUsername(UpdateUsernameDto updateUsernameDto)
     {
-        return await ExecuteWriteAsync(async tx =>
+        return await QueryExecutor.ExecuteWriteAsync<IActionResult>(async tx =>
         {
             var userId = User.GetUserId();
             var user = await UserRepository.UpdateUserNameAsync(tx, userId, updateUsernameDto.NewUsername);
@@ -50,7 +50,7 @@ public class UserController(IDriver driver, IUserRepository userRepository,
     [Authorize(Policy = "RequireAdminRole")]
     public async Task<IActionResult> UpdateUsername(Guid id, UpdateUsernameDto updateUsernameDto)
     {
-        return await ExecuteWriteAsync(async tx =>
+        return await QueryExecutor.ExecuteWriteAsync<IActionResult>(async tx =>
         {
             if (!await UserRepository.UserExistsAsync(tx, id))
                 return NotFound("User not found");
@@ -64,7 +64,7 @@ public class UserController(IDriver driver, IUserRepository userRepository,
     [Authorize(Policy = "RequireAdminRole")]
     public async Task<IActionResult> ChangeUserRoleToAdmin(Guid id)
     {
-        return await ExecuteWriteAsync(async tx =>
+        return await QueryExecutor.ExecuteWriteAsync<IActionResult>(async tx =>
         {
             if (!await UserRepository.UserExistsAsync(tx, id))
                 return NotFound("User not found");
@@ -78,7 +78,7 @@ public class UserController(IDriver driver, IUserRepository userRepository,
     [Authorize(Policy = "RequireAdminRole")]
     public async Task<IActionResult> DeleteUserAsAdmin(Guid id)
     {
-        return await ExecuteWriteAsync(async tx =>
+        return await QueryExecutor.ExecuteWriteAsync<IActionResult>(async tx =>
         {
             if (!await UserRepository.UserExistsAsync(tx, id))
                 return NotFound("User not found");
@@ -92,7 +92,7 @@ public class UserController(IDriver driver, IUserRepository userRepository,
     [Authorize]
     public async Task<IActionResult> DeleteUser()
     {
-        return await ExecuteWriteAsync(async tx =>
+        return await QueryExecutor.ExecuteWriteAsync<IActionResult>(async tx =>
         {
             var userId = User.GetUserId();
             await AccountRepository.DeleteUserAsync(tx, userId);

@@ -1,13 +1,14 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using MoviesService.Api.Controllers.Base;
+using MoviesService.DataAccess.Contracts;
 using MoviesService.DataAccess.Repositories.Contracts;
-using Neo4j.Driver;
 
 namespace MoviesService.Api.Controllers;
 
 [Route("/api/sse")]
-public class ServerSentEventController(IDriver driver, IMovieRepository movieRepository) : Controller
+public class ServerSentEventController(IAsyncQueryExecutor queryExecutor,
+    IMovieRepository movieRepository) : BaseApiController(queryExecutor)
 {
-    private IDriver Driver { get; } = driver;
     private IMovieRepository MovieRepository { get; } = movieRepository;
     
     
@@ -21,8 +22,10 @@ public class ServerSentEventController(IDriver driver, IMovieRepository movieRep
         {
             try
             {
-                await using var session = Driver.AsyncSession();
-                var movieTitle = await session.ExecuteReadAsync(async tx => await MovieRepository.GetMostPopularMovieTitle(tx));
+                var movieTitle =
+                    await QueryExecutor.ExecuteReadAsync(async tx =>
+                        await MovieRepository.GetMostPopularMovieTitle(tx));
+                
                 await response.WriteAsync($"data: {movieTitle}\r\r", cancellationToken: cancellationToken);
                 await response.Body.FlushAsync(cancellationToken);
                 await Task.Delay(interval * 1000, cancellationToken);

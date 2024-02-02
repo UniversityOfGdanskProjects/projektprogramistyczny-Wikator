@@ -1,4 +1,6 @@
-﻿using MoviesService.DataAccess.Repositories;
+﻿using MoviesService.DataAccess;
+using MoviesService.DataAccess.Contracts;
+using MoviesService.DataAccess.Repositories;
 using MoviesService.DataAccess.Repositories.Contracts;
 using MoviesService.Services;
 using MoviesService.Services.Contracts;
@@ -20,6 +22,7 @@ public static class ApplicationServiceExtensions
                        ?? throw new Exception("Connection string not found");
 
         services.AddSingleton(GraphDatabase.Driver(server, AuthTokens.Basic(userName, password)));
+        services.AddScoped<IAsyncQueryExecutor, AsyncQueryExecutor>();
         services.AddScoped<IPhotoService, PhotoService>();
         services.AddScoped<IMovieRepository, MovieRepository>();
         services.AddScoped<IActorRepository, ActorRepository>();

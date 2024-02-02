@@ -2,15 +2,15 @@
 using Microsoft.AspNetCore.Mvc;
 using MoviesService.Api.Controllers.Base;
 using MoviesService.Api.Extensions;
+using MoviesService.DataAccess.Contracts;
 using MoviesService.DataAccess.Repositories.Contracts;
-using Neo4j.Driver;
 
 namespace MoviesService.Api.Controllers;
 
 [Authorize]
 [Route("api/movie")]
-public class WatchlistController(IDriver driver, IWatchlistRepository watchlistRepository,
-    IMovieRepository movieRepository) : BaseApiController(driver)
+public class WatchlistController(IAsyncQueryExecutor queryExecutor, IWatchlistRepository watchlistRepository,
+    IMovieRepository movieRepository) : BaseApiController(queryExecutor)
 {
     private IWatchlistRepository WatchlistRepository { get; } = watchlistRepository;
     private IMovieRepository MovieRepository { get; } = movieRepository;
@@ -19,7 +19,7 @@ public class WatchlistController(IDriver driver, IWatchlistRepository watchlistR
     [HttpGet("watchlist")]
     public async Task<IActionResult> GetAllMoviesOnWatchlist()
     {
-        return await ExecuteReadAsync(async tx =>
+        return await QueryExecutor.ExecuteReadAsync<IActionResult>(async tx =>
         {
             var movies = await WatchlistRepository
                 .GetAllMoviesOnWatchlist(tx, User.GetUserId());
@@ -31,7 +31,7 @@ public class WatchlistController(IDriver driver, IWatchlistRepository watchlistR
     [HttpPost("{movieId:guid}/watchlist")]
     public async Task<IActionResult> AddToWatchList(Guid movieId)
     {
-        return await ExecuteWriteAsync(async tx =>
+        return await QueryExecutor.ExecuteWriteAsync<IActionResult>(async tx =>
         {
             if (!await MovieRepository.MovieExists(tx, movieId))
                 return NotFound("Movie does not exist found");
@@ -49,7 +49,7 @@ public class WatchlistController(IDriver driver, IWatchlistRepository watchlistR
     [HttpDelete("{movieId:guid}/watchlist")]
     public async Task<IActionResult> RemoveFromWatchList(Guid movieId)
     {
-        return await ExecuteWriteAsync(async tx =>
+        return await QueryExecutor.ExecuteWriteAsync<IActionResult>(async tx =>
         {
             if (!await MovieRepository.MovieExists(tx, movieId))
                 return NotFound("Movie does not exist");

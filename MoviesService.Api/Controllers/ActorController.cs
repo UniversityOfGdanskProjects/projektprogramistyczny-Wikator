@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MoviesService.Api.Controllers.Base;
 using MoviesService.Core.Exceptions;
+using MoviesService.DataAccess.Contracts;
 using MoviesService.DataAccess.Repositories.Contracts;
 using MoviesService.Models.DTOs.Requests;
 using MoviesService.Services.Contracts;
@@ -12,8 +13,8 @@ namespace MoviesService.Api.Controllers;
 
 [Route("api/[controller]")]
 [Authorize(Policy = "RequireAdminRole")]
-public class ActorController(IDriver driver, IPhotoService photoService, IActorRepository actorRepository)
-    : BaseApiController(driver)
+public class ActorController(IAsyncQueryExecutor queryExecutor, IPhotoService photoService, IActorRepository actorRepository)
+    : BaseApiController(queryExecutor)
 {
     private IPhotoService PhotoService { get; } = photoService;
     private IActorRepository ActorRepository { get; } = actorRepository;
@@ -23,7 +24,7 @@ public class ActorController(IDriver driver, IPhotoService photoService, IActorR
     [AllowAnonymous]
     public async Task<IActionResult> GetAll()
     {
-        return await ExecuteReadAsync(async tx =>
+        return await QueryExecutor.ExecuteReadAsync<IActionResult>(async tx =>
         {
             var actors = await ActorRepository.GetAllActors(tx);
             return Ok(actors);
@@ -34,7 +35,7 @@ public class ActorController(IDriver driver, IPhotoService photoService, IActorR
     [AllowAnonymous]
     public async Task<IActionResult> GetActor(Guid id)
     {
-        return await ExecuteReadAsync(async tx =>
+        return await QueryExecutor.ExecuteWriteAsync<IActionResult>(async tx =>
         {
             var actor = await ActorRepository.GetActor(tx, id);
 
@@ -49,7 +50,7 @@ public class ActorController(IDriver driver, IPhotoService photoService, IActorR
     [HttpPost]
     public async Task<IActionResult> CreateActor(AddActorDto actorDto)
     {
-        return await ExecuteWriteAsync(async tx =>
+        return await QueryExecutor.ExecuteWriteAsync<IActionResult>(async tx =>
         {
             string? pictureAbsoluteUri = null;
             string? picturePublicId = null;
@@ -79,7 +80,7 @@ public class ActorController(IDriver driver, IPhotoService photoService, IActorR
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> UpdateActor(Guid id, EditActorDto actorDto)
     {
-        return await ExecuteWriteAsync(async tx =>
+        return await QueryExecutor.ExecuteWriteAsync<IActionResult>(async tx =>
         {
             if (!await ActorRepository.ActorExists(tx, id))
                 return NotFound($"Actor with id {id} was not found");
@@ -92,7 +93,7 @@ public class ActorController(IDriver driver, IPhotoService photoService, IActorR
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> DeleteActor(Guid id)
     {
-        return await ExecuteWriteAsync(async tx =>
+        return await QueryExecutor.ExecuteWriteAsync<IActionResult>(async tx =>
         {
             if (!await ActorRepository.ActorExists(tx, id))
                 return NotFound($"Actor with id {id} was not found");
@@ -113,7 +114,7 @@ public class ActorController(IDriver driver, IPhotoService photoService, IActorR
     [HttpPost("{id:guid}/picture")]
     public async Task<IActionResult> AddActorPicture(Guid id, UpsertPictureDto pictureDto)
     {
-        return await ExecuteWriteAsync(async tx =>
+        return await QueryExecutor.ExecuteWriteAsync<IActionResult>(async tx =>
         {
             if (!await ActorRepository.ActorExists(tx, id))
                 return NotFound($"Actor with id {id} was not found");
@@ -140,7 +141,7 @@ public class ActorController(IDriver driver, IPhotoService photoService, IActorR
     [HttpPut("{id:guid}/picture")]
     public async Task<IActionResult> EditActorPicture(Guid id, UpsertPictureDto pictureDto)
     {
-        return await ExecuteWriteAsync(async tx =>
+        return await QueryExecutor.ExecuteWriteAsync<IActionResult>(async tx =>
         {
             if (!await ActorRepository.ActorExists(tx, id))
                 return NotFound($"Actor with id {id} was not found");
@@ -173,7 +174,7 @@ public class ActorController(IDriver driver, IPhotoService photoService, IActorR
     [HttpDelete("{id:guid}/picture")]
     public async Task<IActionResult> DeleteActorPicture(Guid id)
     {
-        return await ExecuteWriteAsync(async tx =>
+        return await QueryExecutor.ExecuteWriteAsync<IActionResult>(async tx =>
         {
             if (!await ActorRepository.ActorExists(tx, id))
                 return NotFound($"Actor with id {id} was not found");

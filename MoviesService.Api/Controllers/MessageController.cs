@@ -3,17 +3,17 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MoviesService.Api.Controllers.Base;
 using MoviesService.Api.Extensions;
+using MoviesService.DataAccess.Contracts;
 using MoviesService.DataAccess.Repositories.Contracts;
 using MoviesService.Models.DTOs.Requests;
 using MoviesService.Models.DTOs.Responses;
 using MoviesService.Services.Contracts;
-using Neo4j.Driver;
 
 namespace MoviesService.Api.Controllers;
 
 [Route("api/[controller]")]
-public class MessageController(IDriver driver, IMessageRepository messageRepository,
-    IMqttService mqttService) : BaseApiController(driver)
+public class MessageController(IAsyncQueryExecutor queryExecutor, IMessageRepository messageRepository,
+    IMqttService mqttService) : BaseApiController(queryExecutor)
 {
     private IMessageRepository MessageRepository { get; } = messageRepository;
     private IMqttService MqttService { get; } = mqttService;
@@ -21,7 +21,7 @@ public class MessageController(IDriver driver, IMessageRepository messageReposit
     [HttpGet]
     public Task<IActionResult> GetMostRecentMessagesAsync()
     {
-        return ExecuteReadAsync(async tx =>
+        return QueryExecutor.ExecuteReadAsync<IActionResult>(async tx =>
         {
             var messages = await MessageRepository.GetMostRecentMessagesAsync(tx);
             return Ok(messages.Reverse());
@@ -32,7 +32,7 @@ public class MessageController(IDriver driver, IMessageRepository messageReposit
     [Authorize]
     public Task<IActionResult> CreateMessageAsync(CreateMessageDto messageDto)
     {
-        return ExecuteWriteAsync(async tx =>
+        return QueryExecutor.ExecuteWriteAsync<IActionResult>(async tx =>
         {
             var userId = User.GetUserId();
             var message = await MessageRepository.CreateMessageAsync(tx, userId, messageDto.Content);
