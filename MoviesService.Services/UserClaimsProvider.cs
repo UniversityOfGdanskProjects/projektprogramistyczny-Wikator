@@ -16,4 +16,17 @@ public class UserClaimsProvider : IUserClaimsProvider
         return Guid.Parse(user.Claims
             .FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)!.Value);
     }
+
+    /// <summary>
+    /// Gets the user id from the claims principal, or null if not present
+    /// </summary>
+    /// <param name="user">User's claims principal</param>
+    /// <returns></returns>
+    public Guid? GetUserIdOrDefault(ClaimsPrincipal user)
+    {
+        var userId = user.Claims
+            .FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value;
+        
+        return userId is null ? null : Guid.Parse(userId);
+    }
 }

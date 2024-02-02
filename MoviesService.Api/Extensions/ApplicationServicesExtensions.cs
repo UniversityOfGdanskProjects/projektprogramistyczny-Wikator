@@ -22,7 +22,7 @@ public static class ApplicationServiceExtensions
                        ?? throw new Exception("Connection string not found");
 
         services.AddSingleton(GraphDatabase.Driver(server, AuthTokens.Basic(userName, password)));
-        services.AddScoped<IAsyncQueryExecutor, AsyncQueryExecutor>();
+        services.AddSingleton<IAsyncQueryExecutor, AsyncQueryExecutor>();
         services.AddScoped<IPhotoService, PhotoService>();
         services.AddScoped<IMovieRepository, MovieRepository>();
         services.AddScoped<IActorRepository, ActorRepository>();
@@ -39,5 +39,6 @@ public static class ApplicationServiceExtensions
         services.AddScoped<ITokenService, TokenService>();
         services.AddSingleton<IMqttService, MqttService>();
         services.AddScoped<IUserClaimsProvider, UserClaimsProvider>();
+        services.AddScoped<IResponseHandler, ResponseHandler>();
     }
 }

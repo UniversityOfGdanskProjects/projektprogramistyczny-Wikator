@@ -1,26 +1,26 @@
-﻿using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MoviesService.Api.Controllers.Base;
-using MoviesService.Api.Extensions;
 using MoviesService.Core.Exceptions;
 using MoviesService.Core.Helpers;
 using MoviesService.DataAccess.Contracts;
 using MoviesService.DataAccess.Repositories.Contracts;
 using MoviesService.Models.DTOs.Requests;
 using MoviesService.Services.Contracts;
-using Neo4j.Driver;
 
 namespace MoviesService.Api.Controllers;
 
 [Authorize(Policy = "RequireAdminRole")]
 [Route("api/[controller]")]
 public class MovieController(IAsyncQueryExecutor queryExecutor, IMovieRepository movieRepository,
-	IPhotoService photoService) : BaseApiController(queryExecutor)
+	IPhotoService photoService, IUserClaimsProvider claimsProvider,
+	IResponseHandler responseHandler) : BaseApiController(queryExecutor)
 {
 	private IMovieRepository MovieRepository { get; } = movieRepository;
 	private IPhotoService PhotoService { get; } = photoService;
-	
+	private IUserClaimsProvider ClaimsProvider { get; } = claimsProvider;
+	private IResponseHandler ResponseHandler { get; } = responseHandler;
+
 
 	[HttpGet]
 	[AllowAnonymous]
@@ -28,17 +28,17 @@ public class MovieController(IAsyncQueryExecutor queryExecutor, IMovieRepository
 	{
 		return await QueryExecutor.ExecuteReadAsync<IActionResult>(async tx =>
 		{
-			var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+			var userId = ClaimsProvider.GetUserIdOrDefault(User);
 			var pagedList = userId switch
 			{
 				null => await MovieRepository.GetMoviesWhenNotLoggedIn(tx, queryParams),
-				_ => await MovieRepository.GetMoviesExcludingIgnored(tx, Guid.Parse(userId), queryParams)
+				_ => await MovieRepository.GetMoviesExcludingIgnored(tx, userId.Value, queryParams)
 			};
 
 			PaginationHeader paginationHeader = new(pagedList.CurrentPage, pagedList.PageSize, pagedList.TotalCount,
 				pagedList.TotalPages);
 
-			Response.AddPaginationHeader(paginationHeader);
+			ResponseHandler.AddPaginationHeader(Response, paginationHeader);
 			return Ok(pagedList);
 		});
 	}
@@ -49,13 +49,8 @@ public class MovieController(IAsyncQueryExecutor queryExecutor, IMovieRepository
 	{
 		return await QueryExecutor.ExecuteWriteAsync<IActionResult>(async tx =>
 		{
-			var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-			var movie = userId switch
-			{
-				null => await MovieRepository.GetMovieDetails(tx, id),
-				_ => await MovieRepository.GetMovieDetails(tx, id, Guid.Parse(userId))
-			};
-		
+			var userId = ClaimsProvider.GetUserIdOrDefault(User);
+			var movie = await MovieRepository.GetMovieDetails(tx, id, userId);
 			return movie is null ? NotFound() : Ok(movie);
 		});
 	}
@@ -98,7 +93,7 @@ public class MovieController(IAsyncQueryExecutor queryExecutor, IMovieRepository
 			if (!await MovieRepository.MovieExists(tx, id))
 				return NotFound("Movie does not exist");
 			
-			var movie = await MovieRepository.EditMovie(tx, id, User.GetUserId(), movieDto);
+			var movie = await MovieRepository.EditMovie(tx, id, ClaimsProvider.GetUserId(User), movieDto);
 			return Ok(movie);
 		});
 	}
