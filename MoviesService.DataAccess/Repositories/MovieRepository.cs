@@ -107,8 +107,13 @@ public class MovieRepository : IMovieRepository
 	{
 		// language=Cypher
 		const string query = """
-		                     MATCH (m:Movie { id: $movieId })
-		                     RETURN m.picturePublicId AS picturePublicId
+		                     CALL apoc.when(
+		                       EXISTS { MATCH (:Movie {id: $movieId }) },
+		                       'MATCH (m:Movie {id: $movieId }) RETURN m.picturePublicId AS picturePublicId',
+		                       'RETURN null AS picturePublicId',
+		                       { movieId: $movieId }
+		                     ) YIELD value
+		                     RETURN value.picturePublicId AS picturePublicId
 		                     """;
 
 		var cursor = await tx.RunAsync(query, new { movieId = movieId.ToString() });
