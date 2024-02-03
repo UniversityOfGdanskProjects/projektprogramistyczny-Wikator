@@ -23,7 +23,6 @@ env:
   AZURE_WEBAPP_NAME: MoviesApiWebTest
   AZURE_WEBAPP_PACKAGE_PATH: '.'
   DOTNET_VERSION: '8.0.x'
-  WORKING_DIRECTORY: MoviesService.Api
   NEO4J_USER: neo4j
   NEO4J_PASSWORD: neo4jSocial
   JAVA_VERSION: 21
@@ -80,16 +79,16 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Restore with dotnet
-        run: dotnet restore "${{env.WORKING_DIRECTORY}}"
+        run: dotnet restore
 
       - name: Build with dotnet
-        run: dotnet build "${{env.WORKING_DIRECTORY}}" --configuration Release --no-restore
+        run: dotnet build --configuration Release --no-restore
 
       - name: Test with dotnet
-        run: dotnet test "MoviesService.Tests"
+        run: dotnet test "MoviesService.Tests" --no-restore --configuration Release --verbosity normal
 
       - name: Publish with dotnet
-        run: dotnet publish "${{ env.WORKING_DIRECTORY }}" -c Release -o ${{env.DOTNET_ROOT}}/myapp
+        run: dotnet publish "MoviesService.Api" -c Release -o ${{env.DOTNET_ROOT}}/myapp
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v3
