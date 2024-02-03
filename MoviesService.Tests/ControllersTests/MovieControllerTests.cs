@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Mvc;
 using MoviesService.Api.Controllers;
 using MoviesService.Core.Exceptions;
 using MoviesService.Core.Helpers;
-using MoviesService.DataAccess.Repositories.Contracts;
 using MoviesService.Services.Contracts;
 using MoviesService.Tests.ControllersTests.Base;
 

@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MoviesService.Api.Controllers.Base;
-using MoviesService.Api.Extensions;
 using MoviesService.DataAccess.Contracts;
 using MoviesService.DataAccess.Repositories.Contracts;
+using MoviesService.Services.Contracts;
 
 namespace MoviesService.Api.Controllers;
 
@@ -12,10 +12,12 @@ namespace MoviesService.Api.Controllers;
 public class WatchlistController(
     IAsyncQueryExecutor queryExecutor,
     IWatchlistRepository watchlistRepository,
-    IMovieRepository movieRepository) : BaseApiController(queryExecutor)
+    IMovieRepository movieRepository,
+    IUserClaimsProvider claimsProvider) : BaseApiController(queryExecutor)
 {
     private IWatchlistRepository WatchlistRepository { get; } = watchlistRepository;
     private IMovieRepository MovieRepository { get; } = movieRepository;
+    private IUserClaimsProvider ClaimsProvider { get; } = claimsProvider;
 
 
     [HttpGet("watchlist")]
@@ -24,7 +26,7 @@ public class WatchlistController(
         return await QueryExecutor.ExecuteReadAsync<IActionResult>(async tx =>
         {
             var movies = await WatchlistRepository
-                .GetAllMoviesOnWatchlist(tx, User.GetUserId());
+                .GetAllMoviesOnWatchlist(tx, ClaimsProvider.GetUserId(User));
 
             return Ok(movies);
         });
@@ -38,7 +40,7 @@ public class WatchlistController(
             if (!await MovieRepository.MovieExists(tx, movieId))
                 return NotFound("Movie does not exist found");
 
-            var userId = User.GetUserId();
+            var userId = ClaimsProvider.GetUserId(User);
 
             if (await WatchlistRepository.WatchlistExists(tx, movieId, userId))
                 return BadRequest("Movie already in watchlist");
@@ -56,7 +58,7 @@ public class WatchlistController(
             if (!await MovieRepository.MovieExists(tx, movieId))
                 return NotFound("Movie does not exist");
 
-            var userId = User.GetUserId();
+            var userId = ClaimsProvider.GetUserId(User);
 
             if (!await WatchlistRepository.WatchlistExists(tx, movieId, userId))
                 return BadRequest("This movie is not on your watchlist");
