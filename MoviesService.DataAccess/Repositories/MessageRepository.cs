@@ -6,27 +6,20 @@ namespace MoviesService.DataAccess.Repositories;
 
 public class MessageRepository : IMessageRepository
 {
-    public async Task<MessageDto?> CreateMessageAsync(IAsyncQueryRunner tx, Guid userId, string messageContent)
+    public async Task<MessageDto> CreateMessageAsync(IAsyncQueryRunner tx, Guid userId, string messageContent)
     {
-        try
-        {
-            // language=Cypher
-            const string query = """
-                                 MATCH (u:User {id: $userId})
-                                 CREATE (m:Message {content: $messageContent, createdAt: $messageDate})<-[:SENT]-(u)
-                                 RETURN m.content AS content, u.name AS userName, m.createdAt AS date
-                                 """;
+        // language=Cypher
+        const string query = """
+                             MATCH (u:User {id: $userId})
+                             CREATE (m:Message {content: $messageContent, createdAt: $messageDate})<-[:SENT]-(u)
+                             RETURN m.content AS content, u.name AS userName, m.createdAt AS date
+                             """;
+        
+        var cursor = await tx.RunAsync(query,
+            new { userId = userId.ToString(), messageContent, messageDate = DateTime.Now });
             
-            var cursor = await tx.RunAsync(query,
-                new { userId = userId.ToString(), messageContent, messageDate = DateTime.Now });
-                
-            return await cursor.SingleAsync(r =>
-                new MessageDto(r["content"].As<string>(), r["userName"].As<string>(), r["date"].As<DateTime>()));
-        }
-        catch (InvalidOperationException)
-        {
-            return null;
-        }
+        return await cursor.SingleAsync(r =>
+            new MessageDto(r["content"].As<string>(), r["userName"].As<string>(), r["date"].As<DateTime>()));
     }
 
     public async Task<IEnumerable<MessageDto>> GetMostRecentMessagesAsync(IAsyncQueryRunner tx)

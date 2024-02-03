@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MoviesService.Api.Controllers.Base;
-using MoviesService.Api.Extensions;
 using MoviesService.DataAccess.Contracts;
 using MoviesService.DataAccess.Repositories.Contracts;
 using MoviesService.Models.DTOs.Requests;
@@ -13,10 +12,11 @@ namespace MoviesService.Api.Controllers;
 
 [Route("api/[controller]")]
 public class MessageController(IAsyncQueryExecutor queryExecutor, IMessageRepository messageRepository,
-    IMqttService mqttService) : BaseApiController(queryExecutor)
+    IMqttService mqttService, IUserClaimsProvider claimsProvider) : BaseApiController(queryExecutor)
 {
     private IMessageRepository MessageRepository { get; } = messageRepository;
     private IMqttService MqttService { get; } = mqttService;
+    private IUserClaimsProvider ClaimsProvider { get; } = claimsProvider;
     
     [HttpGet]
     public Task<IActionResult> GetMostRecentMessagesAsync()
@@ -34,10 +34,10 @@ public class MessageController(IAsyncQueryExecutor queryExecutor, IMessageReposi
     {
         return QueryExecutor.ExecuteWriteAsync<IActionResult>(async tx =>
         {
-            var userId = User.GetUserId();
+            var userId = ClaimsProvider.GetUserId(User);
             var message = await MessageRepository.CreateMessageAsync(tx, userId, messageDto.Content);
-            _ = PublishMqttMessageAsync(message!);
-            return Ok(message!);
+            _ = PublishMqttMessageAsync(message);
+            return Ok(message);
         });
     }
     
