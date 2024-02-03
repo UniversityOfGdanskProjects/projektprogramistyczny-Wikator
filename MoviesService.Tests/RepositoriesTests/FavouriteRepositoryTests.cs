@@ -5,14 +5,11 @@ namespace MoviesService.Tests.RepositoriesTests;
 [Collection("DatabaseCollection")]
 public class FavouriteRepositoryTests
 {
-    private TestDatabaseSetup Database { get; }
-    private FavouriteRepository Repository { get; } = new();
-
     public FavouriteRepositoryTests(TestDatabaseSetup testDatabase)
     {
         Database = testDatabase;
         Database.SetupDatabase().Wait();
-        
+
         // language=Cypher
         const string query = """
                              MATCH (u:User { id: $userId })-[r:FAVOURITE]->(m:Movie { id: $movieId })
@@ -24,54 +21,57 @@ public class FavouriteRepositoryTests
             userId = Database.UserId.ToString(),
             movieId = Database.MovieId.ToString()
         };
-        
+
         using var session = Database.Driver.AsyncSession();
         session.ExecuteWriteAsync(async tx => await tx.RunAsync(query, parameters)).Wait();
     }
-    
+
+    private TestDatabaseSetup Database { get; }
+    private FavouriteRepository Repository { get; } = new();
+
     [Fact]
     public async Task GetAllFavouriteMovies_ShouldReturnEmptyList_WhenUserHasNoFavouriteMovies()
     {
         // Arrange
         await using var session = Database.Driver.AsyncSession();
-        
+
         // Act
         var result = await session.ExecuteReadAsync(async tx =>
             await Repository.GetAllFavouriteMovies(tx, Database.UserId));
-        
+
         // Assert
         result.Should().BeEmpty();
     }
-    
+
     [Fact]
     public async Task GetAllFavouriteMovies_ShouldReturnFavouriteMovies_WhenUserHasFavouriteMovies()
     {
         // Arrange
         await using var session = Database.Driver.AsyncSession();
-        
+
         // language=Cypher
         const string query = """
                              MATCH (u:User { id: $userId }), (m:Movie { id: $movieId })
                              CREATE (u)-[r:FAVOURITE]->(m)
                              """;
-        
+
         var parameters = new
         {
             userId = Database.UserId.ToString(),
             movieId = Database.MovieId.ToString()
         };
-        
+
         await session.ExecuteWriteAsync(async tx => await tx.RunAsync(query, parameters));
-        
+
         // Act
         var result = (await session.ExecuteReadAsync(async tx =>
-                await Repository.GetAllFavouriteMovies(tx, Database.UserId))).ToList();
-        
+            await Repository.GetAllFavouriteMovies(tx, Database.UserId))).ToList();
+
         // Assert
         result.Should().HaveCount(1);
         result.Should().ContainEquivalentOf(new MovieDto(
-            Id: Database.MovieId,
-            Title: "The Matrix",
+            Database.MovieId,
+            "The Matrix",
             PictureUri: null,
             MinimumAge: 13,
             OnWatchlist: false,
@@ -88,7 +88,7 @@ public class FavouriteRepositoryTests
     {
         // Arrange
         await using var session = Database.Driver.AsyncSession();
-        
+
         // Act and Assert
         var result = await session.ExecuteWriteAsync(async tx =>
         {
@@ -109,7 +109,7 @@ public class FavouriteRepositoryTests
             var cursor = await tx.RunAsync(query, parameters);
             return await cursor.SingleAsync(record => ValExtensions.ToInt(record["count"]));
         });
-        
+
         result.Should().Be(1);
     }
 
@@ -118,7 +118,7 @@ public class FavouriteRepositoryTests
     {
         // Arrange
         await using var session = Database.Driver.AsyncSession();
-        
+
         // language=Cypher
         const string query = """
                              MATCH (u:User { id: $userId }), (m:Movie { id: $movieId })
@@ -130,9 +130,9 @@ public class FavouriteRepositoryTests
             userId = Database.UserId.ToString(),
             movieId = Database.MovieId.ToString()
         };
-        
+
         await session.ExecuteWriteAsync(async tx => await tx.RunAsync(query, parameters));
-        
+
         // Act and Assert
         var result = await session.ExecuteWriteAsync(async tx =>
         {
@@ -153,48 +153,48 @@ public class FavouriteRepositoryTests
             var cursor = await tx.RunAsync(relationshipCountQuery, relationshipCountParameters);
             return await cursor.SingleAsync(record => ValExtensions.ToInt(record["count"]));
         });
-        
+
         result.Should().Be(0);
     }
-    
+
     [Fact]
     public async Task MovieIsFavourite_ShouldReturnFalse_WhenMovieIsNotFavourite()
     {
         // Arrange
         await using var session = Database.Driver.AsyncSession();
-        
+
         // Act
         var result = await session.ExecuteReadAsync(async tx =>
             await Repository.MovieIsFavourite(tx, Database.MovieId, Database.UserId));
-        
+
         // Assert
         result.Should().BeFalse();
     }
-    
+
     [Fact]
     public async Task MovieIsFavourite_ShouldReturnTrue_WhenMovieIsFavourite()
     {
         // Arrange
         await using var session = Database.Driver.AsyncSession();
-        
+
         // language=Cypher
         const string query = """
                              MATCH (u:User { id: $userId }), (m:Movie { id: $movieId })
                              CREATE (u)-[r:FAVOURITE]->(m)
                              """;
-        
+
         var parameters = new
         {
             userId = Database.UserId.ToString(),
             movieId = Database.MovieId.ToString()
         };
-        
+
         await session.ExecuteWriteAsync(async tx => await tx.RunAsync(query, parameters));
-        
+
         // Act
         var result = await session.ExecuteReadAsync(async tx =>
             await Repository.MovieIsFavourite(tx, Database.MovieId, Database.UserId));
-        
+
         // Assert
         result.Should().BeTrue();
     }

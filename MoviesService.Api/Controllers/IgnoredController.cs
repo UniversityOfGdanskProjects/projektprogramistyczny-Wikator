@@ -4,19 +4,20 @@ using MoviesService.Api.Controllers.Base;
 using MoviesService.Api.Extensions;
 using MoviesService.DataAccess.Contracts;
 using MoviesService.DataAccess.Repositories.Contracts;
-using Neo4j.Driver;
 
 namespace MoviesService.Api.Controllers;
 
 [Authorize]
 [Route("api/movie")]
-public class IgnoredController(IAsyncQueryExecutor queryExecutor, IIgnoresRepository ignoresRepository,
+public class IgnoredController(
+    IAsyncQueryExecutor queryExecutor,
+    IIgnoresRepository ignoresRepository,
     IMovieRepository movieRepository) : BaseApiController(queryExecutor)
 {
     private IIgnoresRepository IgnoresRepository { get; } = ignoresRepository;
     private IMovieRepository MovieRepository { get; } = movieRepository;
 
-    
+
     [HttpGet("ignored")]
     public async Task<IActionResult> GetAllIgnoredMovies()
     {
@@ -26,7 +27,7 @@ public class IgnoredController(IAsyncQueryExecutor queryExecutor, IIgnoresReposi
             return Ok(movies);
         });
     }
-    
+
     [HttpPost("{movieId:guid}/ignored")]
     public async Task<IActionResult> IgnoreMovie(Guid movieId)
     {
@@ -44,7 +45,7 @@ public class IgnoredController(IAsyncQueryExecutor queryExecutor, IIgnoresReposi
             return NoContent();
         });
     }
-    
+
     [HttpDelete("{movieId:guid}/ignored")]
     public async Task<IActionResult> RemoveMovieFromIgnored(Guid movieId)
     {

@@ -11,13 +11,16 @@ using MoviesService.Services.Contracts;
 namespace MoviesService.Api.Controllers;
 
 [Route("api/[controller]")]
-public class MessageController(IAsyncQueryExecutor queryExecutor, IMessageRepository messageRepository,
-    IMqttService mqttService, IUserClaimsProvider claimsProvider) : BaseApiController(queryExecutor)
+public class MessageController(
+    IAsyncQueryExecutor queryExecutor,
+    IMessageRepository messageRepository,
+    IMqttService mqttService,
+    IUserClaimsProvider claimsProvider) : BaseApiController(queryExecutor)
 {
     private IMessageRepository MessageRepository { get; } = messageRepository;
     private IMqttService MqttService { get; } = mqttService;
     private IUserClaimsProvider ClaimsProvider { get; } = claimsProvider;
-    
+
     [HttpGet]
     public Task<IActionResult> GetMostRecentMessagesAsync()
     {
@@ -27,7 +30,7 @@ public class MessageController(IAsyncQueryExecutor queryExecutor, IMessageReposi
             return Ok(messages.Reverse());
         });
     }
-    
+
     [HttpPost]
     [Authorize]
     public Task<IActionResult> CreateMessageAsync(CreateMessageDto messageDto)
@@ -40,14 +43,14 @@ public class MessageController(IAsyncQueryExecutor queryExecutor, IMessageReposi
             return Ok(message);
         });
     }
-    
+
     private async Task PublishMqttMessageAsync(MessageDto messageDto)
     {
         JsonSerializerOptions options = new()
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         };
-        
+
         var payload = JsonSerializer.Serialize(messageDto, options);
         await MqttService.SendNotificationAsync("chat/message/validated", payload);
     }

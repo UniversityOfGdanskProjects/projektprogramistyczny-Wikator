@@ -8,4 +8,4 @@ public record CommentDto(
     string Text,
     DateTime CreatedAt,
     bool IsEdited
-    );
+);

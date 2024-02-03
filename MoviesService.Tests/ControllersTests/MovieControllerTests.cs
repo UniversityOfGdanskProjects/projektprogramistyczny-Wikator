@@ -14,24 +14,24 @@ namespace MoviesService.Tests.ControllersTests;
 public class MovieControllerTests : ControllerTestsBase
 {
     private Mock<IResponseHandler> ResponseHandlerMock { get; } = new();
-    
+
     [Fact]
     public async Task GetMovies_WhenNotLoggedIn_ShouldReturnOkObjectResult()
     {
         // Arrange
         var queryParams = new MovieQueryParams();
         var pagedList = new PagedList<MovieDto>(new List<MovieDto>(), 1, 1, 10);
-        
+
         var movieRepositoryMock = new Mock<IMovieRepository>();
         movieRepositoryMock.Setup(x => x.GetMoviesWhenNotLoggedIn(It.IsAny<IAsyncQueryRunner>(), queryParams))
             .ReturnsAsync(pagedList);
-        
+
         var photoServiceMock = new Mock<IPhotoService>();
-        
+
         var claimsProviderMock = new Mock<IUserClaimsProvider>();
         claimsProviderMock.Setup(x => x.GetUserIdOrDefault(It.IsAny<ClaimsPrincipal>()))
             .Returns((Guid?)null);
-        
+
         var controller = new MovieController(QueryExecutorMock.Object, movieRepositoryMock.Object,
             photoServiceMock.Object, claimsProviderMock.Object, ResponseHandlerMock.Object);
 
@@ -43,24 +43,25 @@ public class MovieControllerTests : ControllerTestsBase
         var model = Assert.IsAssignableFrom<PagedList<MovieDto>>(okObjectResult.Value);
         Assert.Equal(pagedList, model);
     }
-    
+
     [Fact]
     public async Task GetMovies_WhenLoggedIn_ShouldReturnOkObjectResult()
     {
         // Arrange
         var queryParams = new MovieQueryParams();
         var pagedList = new PagedList<MovieDto>(new List<MovieDto>(), 1, 1, 10);
-        
+
         var movieRepositoryMock = new Mock<IMovieRepository>();
-        movieRepositoryMock.Setup(x => x.GetMoviesExcludingIgnored(It.IsAny<IAsyncQueryRunner>(), It.IsAny<Guid>(), queryParams))
+        movieRepositoryMock.Setup(x =>
+                x.GetMoviesExcludingIgnored(It.IsAny<IAsyncQueryRunner>(), It.IsAny<Guid>(), queryParams))
             .ReturnsAsync(pagedList);
-        
+
         var photoServiceMock = new Mock<IPhotoService>();
-        
+
         var claimsProviderMock = new Mock<IUserClaimsProvider>();
         claimsProviderMock.Setup(x => x.GetUserIdOrDefault(It.IsAny<ClaimsPrincipal>()))
             .Returns(Guid.NewGuid());
-        
+
         var controller = new MovieController(QueryExecutorMock.Object, movieRepositoryMock.Object,
             photoServiceMock.Object, claimsProviderMock.Object, ResponseHandlerMock.Object);
 
@@ -72,7 +73,7 @@ public class MovieControllerTests : ControllerTestsBase
         var model = Assert.IsAssignableFrom<PagedList<MovieDto>>(okObjectResult.Value);
         Assert.Equal(pagedList, model);
     }
-    
+
     [Fact]
     public async Task GetMovie_WhenMovieExistsAndLoggedIn_ShouldReturnOkObjectResult()
     {
@@ -80,17 +81,18 @@ public class MovieControllerTests : ControllerTestsBase
         var movie = new MovieDetailsDto(Guid.NewGuid(), "The Matrix", "Description", false, 5.0,
             null, DateOnly.MaxValue, 13, null, false, false,
             null, 1, [], [], []);
-        
+
         var movieRepositoryMock = new Mock<IMovieRepository>();
-        movieRepositoryMock.Setup(x => x.GetMovieDetails(It.IsAny<IAsyncQueryRunner>(), It.IsAny<Guid>(), It.IsAny<Guid?>()))
+        movieRepositoryMock.Setup(x =>
+                x.GetMovieDetails(It.IsAny<IAsyncQueryRunner>(), It.IsAny<Guid>(), It.IsAny<Guid?>()))
             .ReturnsAsync(movie);
-        
+
         var photoServiceMock = new Mock<IPhotoService>();
-        
+
         var claimsProviderMock = new Mock<IUserClaimsProvider>();
         claimsProviderMock.Setup(x => x.GetUserIdOrDefault(It.IsAny<ClaimsPrincipal>()))
             .Returns(Guid.NewGuid());
-        
+
         var controller = new MovieController(QueryExecutorMock.Object, movieRepositoryMock.Object,
             photoServiceMock.Object, claimsProviderMock.Object, ResponseHandlerMock.Object);
 
@@ -102,7 +104,7 @@ public class MovieControllerTests : ControllerTestsBase
         var model = Assert.IsAssignableFrom<MovieDetailsDto>(okObjectResult.Value);
         Assert.Equal(movie, model);
     }
-    
+
     [Fact]
     public async Task GetMovie_WhenMovieExistsAndNotLoggedIn_ShouldReturnOkObjectResult()
     {
@@ -110,17 +112,18 @@ public class MovieControllerTests : ControllerTestsBase
         var movie = new MovieDetailsDto(Guid.NewGuid(), "The Matrix", "Description", false, 5.0,
             null, DateOnly.MaxValue, 13, null, false, false,
             null, 1, [], [], []);
-        
+
         var movieRepositoryMock = new Mock<IMovieRepository>();
-        movieRepositoryMock.Setup(x => x.GetMovieDetails(It.IsAny<IAsyncQueryRunner>(), It.IsAny<Guid>(), It.IsAny<Guid?>()))
+        movieRepositoryMock.Setup(x =>
+                x.GetMovieDetails(It.IsAny<IAsyncQueryRunner>(), It.IsAny<Guid>(), It.IsAny<Guid?>()))
             .ReturnsAsync(movie);
-        
+
         var photoServiceMock = new Mock<IPhotoService>();
-        
+
         var claimsProviderMock = new Mock<IUserClaimsProvider>();
         claimsProviderMock.Setup(x => x.GetUserIdOrDefault(It.IsAny<ClaimsPrincipal>()))
             .Returns((Guid?)null);
-        
+
         var controller = new MovieController(QueryExecutorMock.Object, movieRepositoryMock.Object,
             photoServiceMock.Object, claimsProviderMock.Object, ResponseHandlerMock.Object);
 
@@ -132,21 +135,22 @@ public class MovieControllerTests : ControllerTestsBase
         var model = Assert.IsAssignableFrom<MovieDetailsDto>(okObjectResult.Value);
         Assert.Equal(movie, model);
     }
-    
+
     [Fact]
     public async Task GetMovie_WhenMovieDoesNotExist_ShouldReturnNotFoundResult()
     {
         // Arrange
         var movieRepositoryMock = new Mock<IMovieRepository>();
-        movieRepositoryMock.Setup(x => x.GetMovieDetails(It.IsAny<IAsyncQueryRunner>(), It.IsAny<Guid>(), It.IsAny<Guid?>()))
+        movieRepositoryMock.Setup(x =>
+                x.GetMovieDetails(It.IsAny<IAsyncQueryRunner>(), It.IsAny<Guid>(), It.IsAny<Guid?>()))
             .ReturnsAsync((MovieDetailsDto?)null);
-        
+
         var photoServiceMock = new Mock<IPhotoService>();
-        
+
         var claimsProviderMock = new Mock<IUserClaimsProvider>();
         claimsProviderMock.Setup(x => x.GetUserIdOrDefault(It.IsAny<ClaimsPrincipal>()))
             .Returns(Guid.NewGuid());
-        
+
         var controller = new MovieController(QueryExecutorMock.Object, movieRepositoryMock.Object,
             photoServiceMock.Object, claimsProviderMock.Object, ResponseHandlerMock.Object);
 
@@ -156,7 +160,7 @@ public class MovieControllerTests : ControllerTestsBase
         // Assert
         Assert.IsType<NotFoundResult>(result);
     }
-    
+
     [Fact]
     public async Task CreateMovie_ShouldThrow_WhenUploadPhotoResultContainsErrors()
     {
@@ -168,18 +172,18 @@ public class MovieControllerTests : ControllerTestsBase
             ReleaseDate = DateOnly.MaxValue,
             FileContent = [0]
         };
-        
+
         var movieRepositoryMock = new Mock<IMovieRepository>();
-        
+
         var photoServiceMock = new Mock<IPhotoService>();
         photoServiceMock.Setup(x => x.AddPhotoAsync(It.IsAny<IFormFile>(), "auto"))
             .ReturnsAsync(new ImageUploadResult
             {
                 Error = new Error()
             });
-        
+
         var claimsProviderMock = new Mock<IUserClaimsProvider>();
-        
+
         var controller = new MovieController(QueryExecutorMock.Object, movieRepositoryMock.Object,
             photoServiceMock.Object, claimsProviderMock.Object, ResponseHandlerMock.Object);
 
@@ -188,9 +192,12 @@ public class MovieControllerTests : ControllerTestsBase
         return;
 
         // Act
-        async Task<IActionResult> Act() => await controller.CreateMovie(movieDto);
+        async Task<IActionResult> Act()
+        {
+            return await controller.CreateMovie(movieDto);
+        }
     }
-    
+
     [Fact]
     public async Task CreateMovie_ShouldReturnCreatedAtActionObjectResult_WhenUploadPhotoResultDoesNotContainErrors()
     {
@@ -202,14 +209,14 @@ public class MovieControllerTests : ControllerTestsBase
             ReleaseDate = DateOnly.MaxValue,
             FileContent = [0]
         };
-        
+
         var movieRepositoryMock = new Mock<IMovieRepository>();
         movieRepositoryMock.Setup(x => x.AddMovie(It.IsAny<IAsyncQueryRunner>(), movieDto,
-            new Uri("https://url.com").AbsoluteUri, "public-id"))
+                new Uri("https://url.com").AbsoluteUri, "public-id"))
             .ReturnsAsync(new MovieDetailsDto(Guid.NewGuid(), "The Matrix", "Description", false, 5.0,
                 new Uri("https://url.com").AbsoluteUri, DateOnly.MaxValue, 13, "public-id", false, false,
                 null, 1, [], [], []));
-        
+
         var photoServiceMock = new Mock<IPhotoService>();
         photoServiceMock.Setup(x => x.AddPhotoAsync(It.IsAny<IFormFile>(), "auto"))
             .ReturnsAsync(new ImageUploadResult
@@ -217,9 +224,9 @@ public class MovieControllerTests : ControllerTestsBase
                 SecureUrl = new Uri("https://url.com"),
                 PublicId = "public-id"
             });
-        
+
         var claimsProviderMock = new Mock<IUserClaimsProvider>();
-        
+
         var controller = new MovieController(QueryExecutorMock.Object, movieRepositoryMock.Object,
             photoServiceMock.Object, claimsProviderMock.Object, ResponseHandlerMock.Object);
 
@@ -231,7 +238,7 @@ public class MovieControllerTests : ControllerTestsBase
         var model = Assert.IsAssignableFrom<MovieDetailsDto>(okObjectResult.Value);
         Assert.NotNull(model);
     }
-    
+
     [Fact]
     public async Task EditMovie_ShouldReturnNotFoundResult_WhenMovieDoesNotExist()
     {
@@ -239,11 +246,11 @@ public class MovieControllerTests : ControllerTestsBase
         var movieRepositoryMock = new Mock<IMovieRepository>();
         movieRepositoryMock.Setup(x => x.MovieExists(It.IsAny<IAsyncQueryRunner>(), It.IsAny<Guid>()))
             .ReturnsAsync(false);
-        
+
         var photoServiceMock = new Mock<IPhotoService>();
-        
+
         var claimsProviderMock = new Mock<IUserClaimsProvider>();
-        
+
         var controller = new MovieController(QueryExecutorMock.Object, movieRepositoryMock.Object,
             photoServiceMock.Object, claimsProviderMock.Object, ResponseHandlerMock.Object);
 
@@ -253,7 +260,7 @@ public class MovieControllerTests : ControllerTestsBase
         // Assert
         Assert.IsType<NotFoundObjectResult>(result);
     }
-    
+
     [Fact]
     public async Task EditMovie_ShouldReturnOkObjectResult_WhenMovieExists()
     {
@@ -264,19 +271,20 @@ public class MovieControllerTests : ControllerTestsBase
             Description = "Description",
             ReleaseDate = DateOnly.MaxValue
         };
-        
+
         var movieRepositoryMock = new Mock<IMovieRepository>();
         movieRepositoryMock.Setup(x => x.MovieExists(It.IsAny<IAsyncQueryRunner>(), It.IsAny<Guid>()))
             .ReturnsAsync(true);
-        movieRepositoryMock.Setup(x => x.EditMovie(It.IsAny<IAsyncQueryRunner>(), It.IsAny<Guid>(), It.IsAny<Guid>(), movieDto))
+        movieRepositoryMock.Setup(x =>
+                x.EditMovie(It.IsAny<IAsyncQueryRunner>(), It.IsAny<Guid>(), It.IsAny<Guid>(), movieDto))
             .ReturnsAsync(new MovieDetailsDto(Guid.NewGuid(), "The Matrix", "Description", false, 5.0,
                 null, DateOnly.MaxValue, 13, null, false, false,
                 null, 1, [], [], []));
-        
+
         var photoServiceMock = new Mock<IPhotoService>();
-        
+
         var claimsProviderMock = new Mock<IUserClaimsProvider>();
-        
+
         var controller = new MovieController(QueryExecutorMock.Object, movieRepositoryMock.Object,
             photoServiceMock.Object, claimsProviderMock.Object, ResponseHandlerMock.Object);
 
@@ -288,7 +296,7 @@ public class MovieControllerTests : ControllerTestsBase
         var model = Assert.IsAssignableFrom<MovieDetailsDto>(okObjectResult.Value);
         Assert.NotNull(model);
     }
-    
+
     [Fact]
     public async Task DeleteMovie_ShouldReturnNotFoundResult_WhenMovieDoesNotExist()
     {
@@ -296,11 +304,11 @@ public class MovieControllerTests : ControllerTestsBase
         var movieRepositoryMock = new Mock<IMovieRepository>();
         movieRepositoryMock.Setup(x => x.MovieExists(It.IsAny<IAsyncQueryRunner>(), It.IsAny<Guid>()))
             .ReturnsAsync(false);
-        
+
         var photoServiceMock = new Mock<IPhotoService>();
-        
+
         var claimsProviderMock = new Mock<IUserClaimsProvider>();
-        
+
         var controller = new MovieController(QueryExecutorMock.Object, movieRepositoryMock.Object,
             photoServiceMock.Object, claimsProviderMock.Object, ResponseHandlerMock.Object);
 
@@ -310,7 +318,7 @@ public class MovieControllerTests : ControllerTestsBase
         // Assert
         Assert.IsType<NotFoundObjectResult>(result);
     }
-    
+
     [Fact]
     public async Task DeleteMovie_ShouldReturnNoContentResult_WhenMovieExists()
     {
@@ -320,11 +328,11 @@ public class MovieControllerTests : ControllerTestsBase
             .ReturnsAsync(true);
         movieRepositoryMock.Setup(x => x.DeleteMovie(It.IsAny<IAsyncQueryRunner>(), It.IsAny<Guid>()))
             .Returns(Task.CompletedTask);
-        
+
         var photoServiceMock = new Mock<IPhotoService>();
-        
+
         var claimsProviderMock = new Mock<IUserClaimsProvider>();
-        
+
         var controller = new MovieController(QueryExecutorMock.Object, movieRepositoryMock.Object,
             photoServiceMock.Object, claimsProviderMock.Object, ResponseHandlerMock.Object);
 

@@ -47,7 +47,7 @@ public class IgnoresRepository : IIgnoresRepository
                              MATCH (u:User { id: $userId }), (m:Movie { id: $movieId })
                              CREATE (u)-[r:IGNORES]->(m)
                              """;
-        
+
         await tx.RunAsync(query, new { userId = userId.ToString(), movieId = movieId.ToString() });
     }
 

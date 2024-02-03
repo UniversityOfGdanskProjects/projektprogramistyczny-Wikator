@@ -21,7 +21,7 @@ public class ReviewRepository : IReviewRepository
                                m.id AS movieId,
                                r.score AS score
                              """;
-        
+
         var parameters = new
         {
             userId = userId.ToString(),
@@ -29,7 +29,7 @@ public class ReviewRepository : IReviewRepository
             score = reviewDto.Score
         };
 
-        var cursor = await tx.RunAsync(query,parameters);
+        var cursor = await tx.RunAsync(query, parameters);
         return await cursor.SingleAsync(record => record.ConvertToReviewDto());
     }
 
@@ -46,7 +46,7 @@ public class ReviewRepository : IReviewRepository
                                m.id AS movieId,
                                r.score AS score
                              """;
-        
+
         var parameters = new
         {
             id = reviewId.ToString(),
@@ -76,7 +76,7 @@ public class ReviewRepository : IReviewRepository
                              MATCH(:User { id: $userId })-[r:REVIEWED { id: $id }]->(:Movie)
                              RETURN COUNT(r) > 0 AS reviewExists
                              """;
-        
+
         var cursor = await tx.RunAsync(query, new { id = id.ToString(), userId = userId.ToString() });
         return await cursor.SingleAsync(record => record["reviewExists"].As<bool>());
     }
@@ -90,7 +90,7 @@ public class ReviewRepository : IReviewRepository
                                  MATCH(:User { id: $userId })-[:REVIEWED { id: $reviewId }]->(m:Movie)
                                  RETURN m.id AS movieId
                                  """;
-            
+
             var cursor = await tx.RunAsync(query, new { reviewId = reviewId.ToString(), userId = userId.ToString() });
             return await cursor.SingleAsync(record => Guid.Parse(record["movieId"].As<string>()));
         }
@@ -107,7 +107,7 @@ public class ReviewRepository : IReviewRepository
                              MATCH(:User { id: $userId })-[r:REVIEWED]->(:Movie { id: $movieId })
                              RETURN COUNT(r) > 0 AS reviewExists
                              """;
-        
+
         var cursor = await tx.RunAsync(query, new { userId = userId.ToString(), movieId = movieId.ToString() });
         return await cursor.SingleAsync(record => record["reviewExists"].As<bool>());
     }
@@ -123,7 +123,7 @@ public class ReviewRepository : IReviewRepository
                                AVG(r.score) AS average,
                                COUNT(r) AS count
                              """;
-        
+
         var cursor = await tx.RunAsync(query, new { reviewId = reviewId.ToString() });
         return await cursor.SingleAsync(record =>
             new ReviewAverageAndCount(
@@ -131,7 +131,7 @@ public class ReviewRepository : IReviewRepository
                 record["average"].As<double>(),
                 record["count"].As<int>()));
     }
-    
+
     public async Task<ReviewAverageAndCount> GetAverageAndCountFromMovieId(IAsyncQueryRunner tx, Guid movieId)
     {
         // language=Cypher
@@ -145,7 +145,7 @@ public class ReviewRepository : IReviewRepository
                                COALESCE(rAvg, 0) AS average,
                                rCount AS count
                              """;
-        
+
         var cursor = await tx.RunAsync(query, new { movieId = movieId.ToString() });
         return await cursor.SingleAsync(record =>
             new ReviewAverageAndCount(

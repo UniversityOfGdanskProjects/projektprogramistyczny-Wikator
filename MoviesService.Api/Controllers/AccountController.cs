@@ -11,52 +11,55 @@ using MoviesService.Services.Contracts;
 namespace MoviesService.Api.Controllers;
 
 [Route("api/[controller]")]
-public class AccountController(IAsyncQueryExecutor queryExecutor,ITokenService tokenService,
-	IAccountRepository accountRepository, IMqttService mqttService) : BaseApiController(queryExecutor)
+public class AccountController(
+    IAsyncQueryExecutor queryExecutor,
+    ITokenService tokenService,
+    IAccountRepository accountRepository,
+    IMqttService mqttService) : BaseApiController(queryExecutor)
 {
-	private ITokenService TokenService { get; } = tokenService;
-	private IAccountRepository AccountRepository { get; } = accountRepository;
-	private IMqttService MqttService { get; } = mqttService;
-		
-	
-	[HttpPost("login")]
-	public async Task<IActionResult> Login(LoginDto loginDto)
-	{
-		return await QueryExecutor.ExecuteReadAsync<IActionResult>(async tx =>
-		{
-			var user = await AccountRepository.LoginAsync(tx, loginDto);
+    private ITokenService TokenService { get; } = tokenService;
+    private IAccountRepository AccountRepository { get; } = accountRepository;
+    private IMqttService MqttService { get; } = mqttService;
 
-			return user switch
-			{
-				null => Unauthorized("Invalid username or password"),
-				_ => Ok(new UserDto(user.Id, user.Name, user.Role, TokenService.CreateToken(user)))
-			};
-		});
-	}
 
-	[HttpPost("register")]
-	public async Task<IActionResult> Register(RegisterDto registerDto)
-	{
-		return await QueryExecutor.ExecuteWriteAsync<IActionResult>(async tx =>
-		{
-			if (await AccountRepository.EmailExistsAsync(tx, registerDto.Email))
-				return BadRequest("Email is taken");
-		
-			var user = await AccountRepository.RegisterAsync(tx, registerDto);
-			_ = MqttService.SendNotificationAsync("users/new-today", "New user today!");
-			return Ok(new UserDto(user.Id, user.Name, user.Role, TokenService.CreateToken(user)));
-		});
-	}
-	
-	[Authorize]
-	[HttpDelete]
-	public async Task<IActionResult> DeleteAccount()
-	{
-		return await QueryExecutor.ExecuteWriteAsync<IActionResult>(async tx =>
-		{
-			var userId = User.GetUserId();
-			await AccountRepository.DeleteUserAsync(tx, userId);
-			return NoContent();
-		});
-	}
+    [HttpPost("login")]
+    public async Task<IActionResult> Login(LoginDto loginDto)
+    {
+        return await QueryExecutor.ExecuteReadAsync<IActionResult>(async tx =>
+        {
+            var user = await AccountRepository.LoginAsync(tx, loginDto);
+
+            return user switch
+            {
+                null => Unauthorized("Invalid username or password"),
+                _ => Ok(new UserDto(user.Id, user.Name, user.Role, TokenService.CreateToken(user)))
+            };
+        });
+    }
+
+    [HttpPost("register")]
+    public async Task<IActionResult> Register(RegisterDto registerDto)
+    {
+        return await QueryExecutor.ExecuteWriteAsync<IActionResult>(async tx =>
+        {
+            if (await AccountRepository.EmailExistsAsync(tx, registerDto.Email))
+                return BadRequest("Email is taken");
+
+            var user = await AccountRepository.RegisterAsync(tx, registerDto);
+            _ = MqttService.SendNotificationAsync("users/new-today", "New user today!");
+            return Ok(new UserDto(user.Id, user.Name, user.Role, TokenService.CreateToken(user)));
+        });
+    }
+
+    [Authorize]
+    [HttpDelete]
+    public async Task<IActionResult> DeleteAccount()
+    {
+        return await QueryExecutor.ExecuteWriteAsync<IActionResult>(async tx =>
+        {
+            var userId = User.GetUserId();
+            await AccountRepository.DeleteUserAsync(tx, userId);
+            return NoContent();
+        });
+    }
 }

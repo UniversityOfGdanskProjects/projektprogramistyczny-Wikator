@@ -7,5 +7,5 @@ Authorization: Bearer {{user_token}}
 Content-Type: application/json
 
 {
-    "newUsername": "new_username"
+  "newUsername": "new_username"
 }

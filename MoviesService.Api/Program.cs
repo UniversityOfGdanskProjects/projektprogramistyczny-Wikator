@@ -1,6 +1,6 @@
+using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
 using MoviesService.Api.Extensions;
 using MoviesService.Api.Middleware;
 using MoviesService.DataAccess;
@@ -18,25 +18,25 @@ builder.Services.AddApplicationServices(builder.Configuration);
 builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
 
 var tokenKey = builder.Configuration["TokenKey"]
-    ?? throw new Exception("Token key not found");
+               ?? throw new Exception("Token key not found");
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-	.AddJwtBearer(options =>
-	{
-		options.TokenValidationParameters = new TokenValidationParameters
-		{
-			ValidateIssuerSigningKey = true,
-			IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenKey)),
-			ValidIssuer = "https://moviesapiwebtest.azurewebsites.net",
-			ValidateAudience = false
-		};
-	});
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenKey)),
+            ValidIssuer = "https://moviesapiwebtest.azurewebsites.net",
+            ValidateAudience = false
+        };
+    });
 
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy("RequireAdminRole", policy => policy.RequireRole("Admin"));
 
-builder.Host.UseSerilog((ctx, lc) => 
-	lc.WriteTo.Console().ReadFrom.Configuration(ctx.Configuration));
+builder.Host.UseSerilog((ctx, lc) =>
+    lc.WriteTo.Console().ReadFrom.Configuration(ctx.Configuration));
 
 var app = builder.Build();
 
@@ -45,10 +45,10 @@ var app = builder.Build();
 app.UseMiddleware<ExceptionMiddleware>();
 
 app.UseCors(b => b
-	.AllowAnyHeader()
-	.AllowAnyMethod()
-	.AllowCredentials()
-	.WithOrigins("http://localhost:3000", "https://moviesservice.onrender.com"));
+    .AllowAnyHeader()
+    .AllowAnyMethod()
+    .AllowCredentials()
+    .WithOrigins("http://localhost:3000", "https://moviesservice.onrender.com"));
 
 app.UseHttpsRedirection();
 

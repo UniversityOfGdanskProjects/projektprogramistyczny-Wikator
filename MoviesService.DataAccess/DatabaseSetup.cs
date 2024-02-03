@@ -11,7 +11,7 @@ public class DatabaseSetup(IDriver driver)
     public async Task SetupJobs()
     {
         await using var session = Driver.AsyncSession();
-        
+
         // language=Cypher
         const string jobExists = "CALL apoc.periodic.list() YIELD name AS job";
 
@@ -20,7 +20,7 @@ public class DatabaseSetup(IDriver driver)
             var cursor = await tx.RunAsync(jobExists);
             return await cursor.ToListAsync(record => record["job"].As<string>());
         });
-        
+
         if (result.All(job => job != "decrease popularity"))
         {
             // language=Cypher
@@ -31,10 +31,10 @@ public class DatabaseSetup(IDriver driver)
                                                         60 * 60 * 12
                                                     )
                                                     """;
-            
+
             await session.ExecuteWriteAsync(async tx => await tx.RunAsync(createPopularityJobQuery));
         }
-        
+
         if (result.All(job => job != "decrease activity score"))
         {
             // language=Cypher
@@ -45,35 +45,34 @@ public class DatabaseSetup(IDriver driver)
                                                            60 * 60 * 24 * 3
                                                        )
                                                        """;
-            
+
             await session.ExecuteWriteAsync(async tx => await tx.RunAsync(createActivityScoreJobQuery));
         }
-        
+
         if (result.All(job => job != "delete old messages"))
         {
             // language=Cypher
             const string createDeleteOldMessagesJobQuery = """
                                                            CALL apoc.periodic.repeat(
                                                                'delete old messages',
-                                                               'MATCH (m:Message) 
-                                                                WHERE datetime(m.createdAt) < datetime() - duration("P7D") 
+                                                               'MATCH (m:Message)
+                                                                WHERE datetime(m.createdAt) < datetime() - duration("P7D")
                                                                 DETACH DELETE m',
                                                                60 * 60 * 24
                                                            )
                                                            """;
-            
+
             await session.ExecuteWriteAsync(async tx => await tx.RunAsync(createDeleteOldMessagesJobQuery));
         }
-        
     }
 
     public async Task CreateAdmin(string initialPassword)
     {
         await using var sessions = Driver.AsyncSession();
-        
+
         // language=Cypher
         const string adminExistQuery = "Match (u:User { role : 'Admin' }) RETURN COUNT(u) > 0 AS adminExists";
-        
+
         var result = await sessions.ExecuteReadAsync(async tx =>
         {
             var cursor = await tx.RunAsync(adminExistQuery);
@@ -108,17 +107,14 @@ public class DatabaseSetup(IDriver driver)
                 passwordSalt = Convert.ToBase64String(passwordSalt)
             };
 
-            await sessions.ExecuteWriteAsync(async tx =>
-            {
-                await tx.RunAsync(query, parameters);
-            });
+            await sessions.ExecuteWriteAsync(async tx => { await tx.RunAsync(query, parameters); });
         }
     }
 
     public async Task SeedGenres()
     {
         await using var session = Driver.AsyncSession();
-        
+
         //language=Cypher
         const string query = """
                              UNWIND $genres AS genre
@@ -132,7 +128,7 @@ public class DatabaseSetup(IDriver driver)
             "History", "Horror", "Music", "Mystery", "Romance", "Science Fiction", "TV Movie", "Thriller", "War",
             "Western"
         ];
-        
-        await session.ExecuteWriteAsync(tx => tx.RunAsync(query, new {genres}));
+
+        await session.ExecuteWriteAsync(tx => tx.RunAsync(query, new { genres }));
     }
 }

@@ -6,12 +6,12 @@ public static class ValExtensions
     {
         return num.As<int>();
     }
-    
+
     public static bool ToBool(object boolean)
     {
         return boolean.As<bool>();
     }
-    
+
     public static string ToString(object boolean)
     {
         return boolean.As<string>();

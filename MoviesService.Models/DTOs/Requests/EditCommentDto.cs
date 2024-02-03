@@ -4,5 +4,5 @@ namespace MoviesService.Models.DTOs.Requests;
 
 public class EditCommentDto
 {
-     [Required]  public required string Text { get; init; }
+    [Required] public required string Text { get; init; }
 }

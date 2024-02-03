@@ -7,17 +7,11 @@ namespace MoviesService.Tests.RepositoriesTests;
 [Collection("DatabaseCollection")]
 public class MovieRepositoryTests
 {
-    private TestDatabaseSetup Database { get; }
-    private MovieRepository Repository { get; } = new();
-    private Guid Actor1Id { get; } = Guid.NewGuid();
-    private Guid Actor2Id { get; } = Guid.NewGuid();
-    
-    
     public MovieRepositoryTests(TestDatabaseSetup testDatabase)
     {
         Database = testDatabase;
         Database.SetupDatabase().Wait();
-        
+
         // language=Cypher
         const string query = """
                              MATCH (m:Movie { id: $movieId })
@@ -26,7 +20,7 @@ public class MovieRepositoryTests
                              CREATE (:Actor { id: actor1Id, firstName: 'actor1', lastName: 'actor1', dateOfBirth: $date, biography: null, pictureAbsoluteUri: null, picturePublicId: null }),
                                (:Actor { id: actor2Id, firstName: 'actor2', lastName: 'actor2', dateOfBirth: $date, biography: null, pictureAbsoluteUri: null, picturePublicId: null })
                              """;
-        
+
         var parameters = new
         {
             movieId = Database.MovieId.ToString(),
@@ -37,25 +31,30 @@ public class MovieRepositoryTests
         var session = Database.Driver.AsyncSession();
         session.ExecuteWriteAsync(tx => tx.RunAsync(query, parameters)).Wait();
     }
-    
+
+    private TestDatabaseSetup Database { get; }
+    private MovieRepository Repository { get; } = new();
+    private Guid Actor1Id { get; } = Guid.NewGuid();
+    private Guid Actor2Id { get; } = Guid.NewGuid();
+
     [Fact]
     public async Task GetMoviesExcludingIgnored_ReturnsMovies_WhenNoReviews()
     {
         // Arrange
         var expectedResult = new MovieDto(
-            Id: Database.MovieId,
-            Title: "movie",
-            AverageScore: 0,
-            MinimumAge: 13,
-            PictureUri: null,
-            OnWatchlist: false,
+            Database.MovieId,
+            "movie",
+            0,
+            13,
+            null,
+            false,
             UserReview: null,
             IsFavourite: false,
             ReviewsCount: 0,
             Genres: ["Action"]);
-        
+
         await using var session = Database.Driver.AsyncSession();
-        
+
         // language=Cypher
         const string query = """
                              CREATE (m:Movie { id: $movieId, title: 'movie',  description: 'description', releaseDate: date('2022-01-01'), pictureAbsoluteUri: null, picturePublicId: null, minimumAge: 13 })
@@ -63,14 +62,15 @@ public class MovieRepositoryTests
                              MATCH (a1:Actor { id: actor1Id }), (a2:Actor { id: actor2Id }), (m:Movie { id: $movieId }), (g:Genre { name: 'Action' })
                              CREATE (a1)-[:PLAYED_IN]->(m), (a2)-[:PLAYED_IN]->(m), (m)-[:IS]->(g)
                              """;
-        
-        var parameters = new { movieId = Database.MovieId.ToString(), actor1Id = Actor1Id.ToString(), actor2Id = Actor2Id.ToString() };
+
+        var parameters = new
+            { movieId = Database.MovieId.ToString(), actor1Id = Actor1Id.ToString(), actor2Id = Actor2Id.ToString() };
         await session.ExecuteWriteAsync(tx => tx.RunAsync(query, parameters));
-        
+
         // Act
         var movies = await session.ExecuteReadAsync(async tx =>
             await Repository.GetMoviesExcludingIgnored(tx, Database.UserId, new MovieQueryParams()));
-        
+
         // Assert
         movies.Should().HaveCount(1);
         movies.Should().ContainEquivalentOf(expectedResult);
@@ -83,12 +83,12 @@ public class MovieRepositoryTests
         var reviewId = Guid.NewGuid();
 
         var expectedResult = new MovieDto(
-            Id: Database.MovieId,
-            Title: "movie",
-            AverageScore: 5,
-            MinimumAge: 13,
-            PictureUri: null,
-            OnWatchlist: false,
+            Database.MovieId,
+            "movie",
+            5,
+            13,
+            null,
+            false,
             UserReview: new ReviewIdAndScoreDto(
                 Score: 5,
                 Id: reviewId),
@@ -124,7 +124,7 @@ public class MovieRepositoryTests
         movies.Should().HaveCount(1);
         movies.Should().ContainEquivalentOf(expectedResult);
     }
-    
+
     [Fact]
     public async Task GetMoviesExcludingIgnored_ReturnsMovies_WhenUserHasIgnored()
     {
@@ -156,23 +156,23 @@ public class MovieRepositoryTests
         // Assert
         movies.Should().BeEmpty();
     }
-    
+
     [Fact]
     public async Task GetMoviesExcludingIgnored_ReturnsMovies_WhenUserHasWatchlist()
     {
         // Arrange
         var expectedResult = new MovieDto(
-            Id: Database.MovieId,
-            Title: "movie",
-            AverageScore: 0,
-            MinimumAge: 13,
-            PictureUri: null,
-            OnWatchlist: true,
+            Database.MovieId,
+            "movie",
+            0,
+            13,
+            null,
+            true,
             UserReview: null,
             IsFavourite: false,
             ReviewsCount: 0,
             Genres: ["Action"]);
-        
+
         await using var session = Database.Driver.AsyncSession();
 
         // language=Cypher
@@ -201,23 +201,23 @@ public class MovieRepositoryTests
         movies.Should().HaveCount(1);
         movies.Should().ContainEquivalentOf(expectedResult);
     }
-    
+
     [Fact]
     public async Task GetMoviesExcludingIgnored_ReturnsMovies_WhenUserHasFavourites()
     {
         // Arrange
         var expectedResult = new MovieDto(
-            Id: Database.MovieId,
-            Title: "movie",
-            AverageScore: 0,
-            MinimumAge: 13,
-            PictureUri: null,
-            OnWatchlist: false,
+            Database.MovieId,
+            "movie",
+            0,
+            13,
+            null,
+            false,
             UserReview: null,
             IsFavourite: true,
             ReviewsCount: 0,
             Genres: ["Action"]);
-        
+
         await using var session = Database.Driver.AsyncSession();
 
         // language=Cypher
@@ -252,23 +252,23 @@ public class MovieRepositoryTests
     {
         // Arrange
         var reviewId = Guid.NewGuid();
-        
+
         var expectedResult = new MovieDto(
-            Id: Database.MovieId,
-            Title: "movie",
-            AverageScore: 5,
-            MinimumAge: 13,
-            PictureUri: null,
-            OnWatchlist: true,
+            Database.MovieId,
+            "movie",
+            5,
+            13,
+            null,
+            true,
             UserReview: new ReviewIdAndScoreDto(
                 Score: 5,
                 Id: reviewId),
             IsFavourite: true,
             ReviewsCount: 1,
             Genres: ["Action"]);
-        
+
         await using var session = Database.Driver.AsyncSession();
-        
+
         // language=Cypher
         const string query = """
                              CREATE (m:Movie { id: $movieId, title: 'movie',  description: 'description', releaseDate: date('2022-01-01'), pictureAbsoluteUri: null, picturePublicId: null, minimumAge: 13 })
@@ -285,13 +285,13 @@ public class MovieRepositoryTests
             movieId = Database.MovieId.ToString(), actor1Id = Actor1Id.ToString(), actor2Id = Actor2Id.ToString(),
             userId = Database.UserId.ToString(), reviewId = reviewId.ToString()
         };
-        
+
         await session.ExecuteWriteAsync(tx => tx.RunAsync(query, parameters));
-        
+
         // Act
         var movies = await session.ExecuteReadAsync(async tx =>
             await Repository.GetMoviesExcludingIgnored(tx, Database.UserId, new MovieQueryParams()));
-        
+
         // Assert
         movies.Should().HaveCount(1);
         movies.Should().ContainEquivalentOf(expectedResult);
@@ -302,43 +302,43 @@ public class MovieRepositoryTests
     {
         // Arrange
         var expectedResult = new MovieDto(
-            Id: Database.MovieId,
-            Title: "movie",
-            AverageScore: 0,
-            MinimumAge: 13,
-            PictureUri: null,
-            OnWatchlist: false,
+            Database.MovieId,
+            "movie",
+            0,
+            13,
+            null,
+            false,
             UserReview: null,
             IsFavourite: false,
             ReviewsCount: 0,
             Genres: []);
-        
+
         await using var session = Database.Driver.AsyncSession();
-        
+
         // language=Cypher
         const string query = """
                              CREATE (:Movie { id: $movieId, title: 'movie',  description: 'description', releaseDate: date('2022-01-01'), pictureAbsoluteUri: null, picturePublicId: null, minimumAge: 13 }),
                                (:Movie { id: apoc.create.uuid(), title: 'aaaa',  description: 'description', releaseDate: date('2022-01-01'), pictureAbsoluteUri: null, picturePublicId: null, minimumAge: 13 })
                              """;
-        
+
         var parameters = new { movieId = Database.MovieId.ToString() };
         await session.ExecuteWriteAsync(tx => tx.RunAsync(query, parameters));
-        
+
         // Act
         var movies = await session.ExecuteReadAsync(async tx =>
             await Repository.GetMoviesExcludingIgnored(tx, Database.UserId, new MovieQueryParams { Title = "Mo" }));
-        
+
         // Assert
         movies.Should().HaveCount(1);
         movies.Should().ContainEquivalentOf(expectedResult);
     }
-    
+
     [Fact]
     public async Task GetMoviesExcludingIgnored_ShouldReturnMovies_AndFilterOutGenres()
     {
         // Arrange
         await using var session = Database.Driver.AsyncSession();
-        
+
         // language=Cypher
         const string query = """
                              CREATE (:Movie { id: $movieId, title: 'movie',  description: 'description', releaseDate: date('2022-01-01'), pictureAbsoluteUri: null, picturePublicId: null, minimumAge: 13 })
@@ -346,36 +346,37 @@ public class MovieRepositoryTests
                              MATCH (a1:Actor { id: actor1Id }), (a2:Actor { id: actor2Id }), (m:Movie { id: $movieId }), (g:Genre { name: 'Action' })
                              CREATE (a1)-[:PLAYED_IN]->(m), (a2)-[:PLAYED_IN]->(m), (m)-[:IS]->(g)
                              """;
-        
-        var parameters = new { movieId = Database.MovieId.ToString(), actor1Id = Actor1Id.ToString(), actor2Id = Actor2Id.ToString() };
+
+        var parameters = new
+            { movieId = Database.MovieId.ToString(), actor1Id = Actor1Id.ToString(), actor2Id = Actor2Id.ToString() };
         await session.ExecuteWriteAsync(tx => tx.RunAsync(query, parameters));
-        
+
         // Act
         var movies = await session.ExecuteReadAsync(async tx =>
-            await Repository.GetMoviesExcludingIgnored(tx, Database.UserId, new MovieQueryParams { Genre = "Comedy"  }));
-        
+            await Repository.GetMoviesExcludingIgnored(tx, Database.UserId, new MovieQueryParams { Genre = "Comedy" }));
+
         // Assert
         movies.Should().BeEmpty();
     }
-    
+
     [Fact]
     public async Task GetMoviesExcludingIgnored_ShouldReturnMovies_AndFilterOutActor()
     {
         // Arrange
         var expectedResult = new MovieDto(
-            Id: Database.MovieId,
-            Title: "movie1",
-            AverageScore: 0,
-            MinimumAge: 13,
-            PictureUri: null,
-            OnWatchlist: false,
+            Database.MovieId,
+            "movie1",
+            0,
+            13,
+            null,
+            false,
             UserReview: null,
             IsFavourite: false,
             ReviewsCount: 0,
             Genres: []);
-        
+
         await using var session = Database.Driver.AsyncSession();
-        
+
         // language=Cypher
         const string query = """
                              CREATE (m1:Movie { id: $movieId, title: 'movie1',  description: 'description', releaseDate: date('2022-01-01'), pictureAbsoluteUri: null, picturePublicId: null, minimumAge: 13 }),
@@ -385,14 +386,15 @@ public class MovieRepositoryTests
                              MATCH (a1:Actor { id: actor1Id }), (a2:Actor { id: actor2Id })
                              CREATE (a1)-[:PLAYED_IN]->(m1), (a2)-[:PLAYED_IN]->(m1), (a1)-[:PLAYED_IN]->(m2)
                              """;
-        
-        var parameters = new { movieId = Database.MovieId.ToString(), actor1Id = Actor1Id.ToString(), actor2Id = Actor2Id.ToString() };
+
+        var parameters = new
+            { movieId = Database.MovieId.ToString(), actor1Id = Actor1Id.ToString(), actor2Id = Actor2Id.ToString() };
         await session.ExecuteWriteAsync(tx => tx.RunAsync(query, parameters));
-        
+
         // Act
         var movies = await session.ExecuteReadAsync(async tx =>
             await Repository.GetMoviesExcludingIgnored(tx, Database.UserId, new MovieQueryParams { Actor = Actor1Id }));
-        
+
         // Assert
         movies.Should().HaveCount(2);
         movies.Should().ContainEquivalentOf(expectedResult);
@@ -403,33 +405,35 @@ public class MovieRepositoryTests
     {
         // Arrange
         var expectedResult = new MovieDto(
-            Id: Database.MovieId,
-            Title: "movie1",
-            AverageScore: 0,
-            MinimumAge: 13,
-            PictureUri: null,
-            OnWatchlist: false,
+            Database.MovieId,
+            "movie1",
+            0,
+            13,
+            null,
+            false,
             UserReview: null,
             IsFavourite: false,
             ReviewsCount: 0,
             Genres: []);
-        
+
         await using var session = Database.Driver.AsyncSession();
-        
+
         // language=Cypher
         const string query = """
                              CREATE (m1:Movie { id: $movieId, title: 'movie1',  description: 'description', releaseDate: date('2022-01-01'), pictureAbsoluteUri: null, picturePublicId: null, minimumAge: 13 }),
                                (m2:Movie { id: apoc.create.uuid(), title: 'movie2',  description: 'description', releaseDate: date('2022-01-01'), pictureAbsoluteUri: null, picturePublicId: null, minimumAge: 13 }),
                                (m3:Movie { id: apoc.create.uuid(), title: 'movie3',  description: 'description', releaseDate: date('2022-01-01'), pictureAbsoluteUri: null, picturePublicId: null, minimumAge: 13 })
                              """;
-        
+
         var parameters = new { movieId = Database.MovieId.ToString() };
         await session.ExecuteWriteAsync(tx => tx.RunAsync(query, parameters));
-        
+
         // Act
         var movies = await session.ExecuteReadAsync(async tx =>
-            await Repository.GetMoviesExcludingIgnored(tx, Database.UserId, new MovieQueryParams { SortBy = SortBy.Title, SortOrder = SortOrder.Descending, PageNumber = 2, PageSize = 2 }));
-        
+            await Repository.GetMoviesExcludingIgnored(tx, Database.UserId,
+                new MovieQueryParams
+                    { SortBy = SortBy.Title, SortOrder = SortOrder.Descending, PageNumber = 2, PageSize = 2 }));
+
         // Assert
         movies.Should().HaveCount(1);
         movies.Should().ContainEquivalentOf(expectedResult);
@@ -440,31 +444,32 @@ public class MovieRepositoryTests
     {
         // Arrange
         await using var session = Database.Driver.AsyncSession();
-        
+
         // language=Cypher
-        const string query = "CREATE (m:Movie { id: $movieId, title: 'movie',  description: 'description', releaseDate: date('2022-01-01'), pictureAbsoluteUri: 'https://www.example.com', picturePublicId: 'publicId', minimumAge: 13 })";
-        
+        const string query =
+            "CREATE (m:Movie { id: $movieId, title: 'movie',  description: 'description', releaseDate: date('2022-01-01'), pictureAbsoluteUri: 'https://www.example.com', picturePublicId: 'publicId', minimumAge: 13 })";
+
         var parameters = new { movieId = Database.MovieId.ToString() };
         await session.ExecuteWriteAsync(tx => tx.RunAsync(query, parameters));
-        
+
         // Act
         var publicId = await session.ExecuteReadAsync(async tx =>
             await Repository.GetPublicId(tx, Database.MovieId));
-        
+
         // Assert
         publicId.Should().Be("publicId");
     }
-    
+
     [Fact]
     public async Task GetPublicId_ShouldReturnNull_IfMovieDoesNotExist()
     {
         // Arrange
         await using var session = Database.Driver.AsyncSession();
-        
+
         // Act
         var publicId = await session.ExecuteReadAsync(async tx =>
             await Repository.GetPublicId(tx, Database.MovieId));
-        
+
         // Assert
         publicId.Should().BeNull();
     }
@@ -474,24 +479,24 @@ public class MovieRepositoryTests
     {
         // Arrange
         await using var session = Database.Driver.AsyncSession();
-        
+
         // language=Cypher
         const string query = """
                              CREATE (:Movie { id: apoc.create.uuid(), title: 'movie1',  description: 'description', releaseDate: date('2022-01-01'), pictureAbsoluteUri: 'https://www.example.com', picturePublicId: 'publicId', minimumAge: 13, popularity: 5 }),
                                (:Movie { id: apoc.create.uuid(), title: 'movie2',  description: 'description', releaseDate: date('2022-01-01'), pictureAbsoluteUri: 'https://www.example.com', picturePublicId: 'publicId', minimumAge: 13, popularity: 10 })
                              """;
-        
+
         await session.ExecuteWriteAsync(tx => tx.RunAsync(query));
-        
+
         // Act
         var title = await session.ExecuteReadAsync(async tx =>
             await Repository.GetMostPopularMovieTitle(tx));
-        
+
         // Assert
         title.Should().Be("movie2");
     }
-    
-    
+
+
     [Theory]
     [InlineData(0, 0)]
     [InlineData(1, 0)]
@@ -506,7 +511,7 @@ public class MovieRepositoryTests
     {
         var actorIds = new List<Guid> { Actor1Id, Actor2Id };
         var genreNames = new List<string> { "Action", "Comedy" };
-        
+
         // Arrange
         var addMovieDto = new AddMovieDto
         {
@@ -518,15 +523,15 @@ public class MovieRepositoryTests
             Genres = genreNames.Take(genreCount).ToList(),
             InTheaters = false
         };
-        
+
         await using var session = Database.Driver.AsyncSession();
-        
+
         // Act
         await session.ExecuteWriteAsync(async tx =>
             await Repository.AddMovie(tx, addMovieDto, null, null));
-        
+
         // Assert
-        
+
         // language=Cypher
         const string query = """
                              MATCH (m:Movie { title: 'testMovie' })
@@ -536,15 +541,15 @@ public class MovieRepositoryTests
                              OPTIONAL MATCH (m)-[:IS]->(g:Genre)
                              RETURN moviesCount, actorsCount, COUNT(g) AS genresCount
                              """;
-        
+
         var cursor = await session.RunAsync(query);
         var record = await cursor.SingleAsync();
-        
+
         record["moviesCount"].Should().Be(1);
         record["actorsCount"].Should().Be(actorCount);
         record["genresCount"].Should().Be(genreCount);
     }
-    
+
     [Theory]
     [InlineData(0, 0)]
     [InlineData(1, 0)]
@@ -559,7 +564,7 @@ public class MovieRepositoryTests
     {
         var actorIds = new List<Guid> { Actor1Id, Actor2Id };
         var genreNames = new List<string> { "Action", "Comedy" };
-        
+
         // Arrange
         var addMovieDto = new AddMovieDto
         {
@@ -571,13 +576,13 @@ public class MovieRepositoryTests
             Genres = genreNames.Take(genreCount).ToList(),
             InTheaters = false
         };
-        
+
         await using var session = Database.Driver.AsyncSession();
-        
+
         // Act
         var result = await session.ExecuteWriteAsync(async tx =>
             await Repository.AddMovie(tx, addMovieDto, null, null));
-        
+
         // Assert
         result.Title.Should().Be(addMovieDto.Title);
         result.Actors.Should().HaveCount(actorCount);
@@ -599,7 +604,7 @@ public class MovieRepositoryTests
         // Arrange
         var actorIds = new List<Guid> { Actor1Id, Actor2Id };
         var genreNames = new List<string> { "Action", "Comedy" };
-        
+
         var editMovieDto = new EditMovieDto
         {
             Title = "testMovie",
@@ -610,39 +615,40 @@ public class MovieRepositoryTests
             Genres = genreNames.Take(genreCount).ToList(),
             InTheaters = false
         };
-        
+
         await using var session = Database.Driver.AsyncSession();
-        
+
         // language=Cypher
-        const string query = "CREATE (m:Movie { id: $movieId, title: 'testMovie',  description: 'description', releaseDate: date('2022-01-01'), pictureAbsoluteUri: null, picturePublicId: null, minimumAge: 13 })";
-        
+        const string query =
+            "CREATE (m:Movie { id: $movieId, title: 'testMovie',  description: 'description', releaseDate: date('2022-01-01'), pictureAbsoluteUri: null, picturePublicId: null, minimumAge: 13 })";
+
         var parameters = new { movieId = Database.MovieId.ToString() };
         await session.ExecuteWriteAsync(tx => tx.RunAsync(query, parameters));
-        
+
         // Act
         await session.ExecuteWriteAsync(async tx =>
             await Repository.EditMovie(tx, Database.MovieId, Database.UserId, editMovieDto));
-        
+
         // Assert
-        
+
         // language=Cypher
         const string newQuery = """
-                             MATCH (m:Movie { title: 'testMovie' })
-                             WITH m, COUNT(m) AS moviesCount
-                             OPTIONAL MATCH (m)<-[:PLAYED_IN]-(a:Actor)
-                             WITH m, moviesCount, COUNT(a) AS actorsCount
-                             OPTIONAL MATCH (m)-[:IS]->(g:Genre)
-                             RETURN moviesCount, actorsCount, COUNT(g) AS genresCount
-                             """;
-        
+                                MATCH (m:Movie { title: 'testMovie' })
+                                WITH m, COUNT(m) AS moviesCount
+                                OPTIONAL MATCH (m)<-[:PLAYED_IN]-(a:Actor)
+                                WITH m, moviesCount, COUNT(a) AS actorsCount
+                                OPTIONAL MATCH (m)-[:IS]->(g:Genre)
+                                RETURN moviesCount, actorsCount, COUNT(g) AS genresCount
+                                """;
+
         var cursor = await session.RunAsync(newQuery);
         var record = await cursor.SingleAsync();
-        
+
         record["moviesCount"].Should().Be(1);
         record["actorsCount"].Should().Be(actorCount);
         record["genresCount"].Should().Be(genreCount);
     }
-    
+
     [Theory]
     [InlineData(0, 0)]
     [InlineData(1, 0)]
@@ -658,7 +664,7 @@ public class MovieRepositoryTests
         // Arrange
         var actorIds = new List<Guid> { Actor1Id, Actor2Id };
         var genreNames = new List<string> { "Action", "Comedy" };
-        
+
         var editMovieDto = new EditMovieDto
         {
             Title = "testMovie",
@@ -669,9 +675,9 @@ public class MovieRepositoryTests
             Genres = genreNames.Take(genreCount).ToList(),
             InTheaters = false
         };
-        
+
         await using var session = Database.Driver.AsyncSession();
-        
+
         // language=Cypher
         const string query = """
                              CREATE (m:Movie { id: $movieId, title: 'testMovie',  description: 'description', releaseDate: date('2022-01-01'), pictureAbsoluteUri: null, picturePublicId: null, minimumAge: 13 })
@@ -680,33 +686,33 @@ public class MovieRepositoryTests
                              CREATE (a1)-[:PLAYED_IN]->(m), (a2)-[:PLAYED_IN]->(m), (m)-[:IS]->(g)
                              """;
         var parameters = new
-            { 
-                movieId = Database.MovieId.ToString(),
-                actor1Id = Actor1Id.ToString(),
-                actor2Id = Actor2Id.ToString()
-            };
-        
+        {
+            movieId = Database.MovieId.ToString(),
+            actor1Id = Actor1Id.ToString(),
+            actor2Id = Actor2Id.ToString()
+        };
+
         await session.ExecuteWriteAsync(tx => tx.RunAsync(query, parameters));
-        
+
         // Act
         await session.ExecuteWriteAsync(async tx =>
             await Repository.EditMovie(tx, Database.MovieId, Database.UserId, editMovieDto));
-        
+
         // Assert
-        
+
         // language=Cypher
         const string newQuery = """
-                             MATCH (m:Movie { title: 'testMovie' })
-                             WITH m, COUNT(m) AS moviesCount
-                             OPTIONAL MATCH (m)<-[:PLAYED_IN]-(a:Actor)
-                             WITH m, moviesCount, COUNT(a) AS actorsCount
-                             OPTIONAL MATCH (m)-[:IS]->(g:Genre)
-                             RETURN moviesCount, actorsCount, COUNT(g) AS genresCount
-                             """;
-        
+                                MATCH (m:Movie { title: 'testMovie' })
+                                WITH m, COUNT(m) AS moviesCount
+                                OPTIONAL MATCH (m)<-[:PLAYED_IN]-(a:Actor)
+                                WITH m, moviesCount, COUNT(a) AS actorsCount
+                                OPTIONAL MATCH (m)-[:IS]->(g:Genre)
+                                RETURN moviesCount, actorsCount, COUNT(g) AS genresCount
+                                """;
+
         var cursor = await session.RunAsync(newQuery);
         var record = await cursor.SingleAsync();
-        
+
         record["moviesCount"].Should().Be(1);
         record["actorsCount"].Should().Be(actorCount);
         record["genresCount"].Should().Be(genreCount);
@@ -717,37 +723,39 @@ public class MovieRepositoryTests
     {
         // Arrange
         await using var session = Database.Driver.AsyncSession();
-        
+
         // language=Cypher
-        const string query = "CREATE (m:Movie { id: $movieId, title: 'movie',  description: 'description', releaseDate: date('2022-01-01'), pictureAbsoluteUri: 'https://www.example.com', picturePublicId: 'publicId', minimumAge: 13 })";
-        
+        const string query =
+            "CREATE (m:Movie { id: $movieId, title: 'movie',  description: 'description', releaseDate: date('2022-01-01'), pictureAbsoluteUri: 'https://www.example.com', picturePublicId: 'publicId', minimumAge: 13 })";
+
         var parameters = new { movieId = Database.MovieId.ToString() };
         await session.ExecuteWriteAsync(tx => tx.RunAsync(query, parameters));
-        
+
         // Act
         var exists = await session.ExecuteReadAsync(async tx =>
             await Repository.MoviePictureExists(tx, Database.MovieId));
-        
+
         // Assert
         exists.Should().BeTrue();
     }
-    
+
     [Fact]
     public async Task MoviePictureExists_ReturnsFalse_WhenPictureDoesNotExist()
     {
         // Arrange
         await using var session = Database.Driver.AsyncSession();
-        
+
         // language=Cypher
-        const string query = "CREATE (m:Movie { id: $movieId, title: 'movie',  description: 'description', releaseDate: date('2022-01-01'), pictureAbsoluteUri: null, picturePublicId: null, minimumAge: 13 })";
-        
+        const string query =
+            "CREATE (m:Movie { id: $movieId, title: 'movie',  description: 'description', releaseDate: date('2022-01-01'), pictureAbsoluteUri: null, picturePublicId: null, minimumAge: 13 })";
+
         var parameters = new { movieId = Database.MovieId.ToString() };
         await session.ExecuteWriteAsync(tx => tx.RunAsync(query, parameters));
-        
+
         // Act
         var exists = await session.ExecuteReadAsync(async tx =>
             await Repository.MoviePictureExists(tx, Database.MovieId));
-        
+
         // Assert
         exists.Should().BeFalse();
     }
@@ -757,25 +765,26 @@ public class MovieRepositoryTests
     {
         // Arrange
         await using var session = Database.Driver.AsyncSession();
-        
+
         // language=Cypher
-        const string query = "CREATE (m:Movie { id: $movieId, title: 'movie',  description: 'description', releaseDate: date('2022-01-01'), pictureAbsoluteUri: 'https://www.example.com', picturePublicId: 'publicId', minimumAge: 13 })";
-        
+        const string query =
+            "CREATE (m:Movie { id: $movieId, title: 'movie',  description: 'description', releaseDate: date('2022-01-01'), pictureAbsoluteUri: 'https://www.example.com', picturePublicId: 'publicId', minimumAge: 13 })";
+
         var parameters = new { movieId = Database.MovieId.ToString() };
         await session.ExecuteWriteAsync(tx => tx.RunAsync(query, parameters));
-        
+
         // Act
         await session.ExecuteWriteAsync(async tx =>
             await Repository.DeleteMoviePicture(tx, Database.MovieId));
-        
+
         // Assert
-        
+
         // language=Cypher
         const string newQuery = "MATCH (m:Movie { id: $movieId }) RETURN m.pictureAbsoluteUri, m.picturePublicId";
-        
+
         var cursor = await session.RunAsync(newQuery, parameters);
         var record = await cursor.SingleAsync();
-        
+
         record["m.pictureAbsoluteUri"].Should().BeNull();
         record["m.picturePublicId"].Should().BeNull();
     }
@@ -785,35 +794,36 @@ public class MovieRepositoryTests
     {
         // Arrange
         await using var session = Database.Driver.AsyncSession();
-        
+
         // language=Cypher
-        const string query = "CREATE (m:Movie { id: $movieId, title: 'movie',  description: 'description', releaseDate: date('2022-01-01'), pictureAbsoluteUri: null, picturePublicId: null, minimumAge: 13 })";
-        
+        const string query =
+            "CREATE (m:Movie { id: $movieId, title: 'movie',  description: 'description', releaseDate: date('2022-01-01'), pictureAbsoluteUri: null, picturePublicId: null, minimumAge: 13 })";
+
         var parameters = new { movieId = Database.MovieId.ToString() };
         await session.ExecuteWriteAsync(tx => tx.RunAsync(query, parameters));
-        
+
         // Act
         await session.ExecuteWriteAsync(async tx =>
             await Repository.AddMoviePicture(tx, Database.MovieId, "https://www.example.com", "publicId"));
-        
+
         // Assert
-        
+
         // language=Cypher
         const string newQuery = "MATCH (m:Movie { id: $movieId }) RETURN m.pictureAbsoluteUri, m.picturePublicId";
-        
+
         var cursor = await session.RunAsync(newQuery, parameters);
         var record = await cursor.SingleAsync();
-        
+
         record["m.pictureAbsoluteUri"].Should().Be("https://www.example.com");
         record["m.picturePublicId"].Should().Be("publicId");
     }
-    
+
     [Fact]
     public async Task DeleteMovie_ShouldDeleteNodeAndRelationships()
     {
         // Arrange
         await using var session = Database.Driver.AsyncSession();
-        
+
         // language=Cypher
         const string query = """
                              CREATE (m:Movie { id: $movieId, title: 'movie',  description: 'description', releaseDate: date('2022-01-01'), pictureAbsoluteUri: 'https://www.example.com', picturePublicId: 'publicId', minimumAge: 13 })
@@ -821,25 +831,25 @@ public class MovieRepositoryTests
                              MATCH (a1:Actor { id: actor1Id }), (a2:Actor { id: actor2Id }), (m:Movie { id: $movieId }), (g:Genre { name: 'Action' })
                              CREATE (a1)-[:PLAYED_IN]->(m), (a2)-[:PLAYED_IN]->(m), (m)-[:IS]->(g)
                              """;
-        
+
         var parameters = new
         {
             movieId = Database.MovieId.ToString(), actor1Id = Actor1Id.ToString(), actor2Id = Actor2Id.ToString()
         };
         await session.ExecuteWriteAsync(tx => tx.RunAsync(query, parameters));
-        
+
         // Act
         await session.ExecuteWriteAsync(async tx =>
             await Repository.DeleteMovie(tx, Database.MovieId));
-        
+
         // Assert
-        
+
         // language=Cypher
         const string newQuery = "MATCH (m:Movie { id: $movieId }) RETURN COUNT(m) > 0 AS movieExists";
-        
+
         var cursor = await session.RunAsync(newQuery, parameters);
         var result = await cursor.SingleAsync(record => ValExtensions.ToBool(record["movieExists"]));
-        
+
         result.Should().BeFalse();
     }
 
@@ -848,31 +858,32 @@ public class MovieRepositoryTests
     {
         // Arrange
         await using var session = Database.Driver.AsyncSession();
-        
+
         // Act
         var exists = await session.ExecuteReadAsync(async tx =>
             await Repository.MovieExists(tx, Database.MovieId));
-        
+
         // Assert
         exists.Should().BeFalse();
     }
-    
+
     [Fact]
     public async Task MovieExists_ShouldDeleteTrue_WhenMovieExists()
     {
         // Arrange
         await using var session = Database.Driver.AsyncSession();
-        
+
         // language=Cypher
-        const string query = "CREATE (m:Movie { id: $movieId, title: 'movie',  description: 'description', releaseDate: date('2022-01-01'), pictureAbsoluteUri: 'https://www.example.com', picturePublicId: 'publicId', minimumAge: 13 })";
-        
+        const string query =
+            "CREATE (m:Movie { id: $movieId, title: 'movie',  description: 'description', releaseDate: date('2022-01-01'), pictureAbsoluteUri: 'https://www.example.com', picturePublicId: 'publicId', minimumAge: 13 })";
+
         var parameters = new { movieId = Database.MovieId.ToString() };
         await session.ExecuteWriteAsync(tx => tx.RunAsync(query, parameters));
-        
+
         // Act
         var exists = await session.ExecuteReadAsync(async tx =>
             await Repository.MovieExists(tx, Database.MovieId));
-        
+
         // Assert
         exists.Should().BeTrue();
     }
@@ -882,11 +893,11 @@ public class MovieRepositoryTests
     {
         // Arrange
         var reviewId = Guid.NewGuid();
-        
+
         var expectedResult = new MovieDetailsDto(
-            Id: Database.MovieId,
-            Title: "movie",
-            Description: "description",
+            Database.MovieId,
+            "movie",
+            "description",
             OnWatchlist: false,
             IsFavourite: true,
             AverageScore: 5,
@@ -900,9 +911,9 @@ public class MovieRepositoryTests
             InTheaters: false,
             Comments: [],
             TrailerUrl: null);
-        
+
         await using var session = Database.Driver.AsyncSession();
-        
+
         // language=Cypher
         const string query = """
                              CREATE (m:Movie { id: $movieId, title: 'movie',  description: 'description', releaseDate: date('2022-01-01'), pictureAbsoluteUri: 'https://www.example.com', inTheaters: false, picturePublicId: 'publicId', minimumAge: 13, popularity: 0 })
@@ -916,27 +927,27 @@ public class MovieRepositoryTests
             movieId = Database.MovieId.ToString(), actor1Id = Actor1Id.ToString(), actor2Id = Actor2Id.ToString(),
             userId = Database.UserId.ToString(), reviewId = reviewId.ToString()
         };
-        
+
         await session.ExecuteWriteAsync(tx => tx.RunAsync(query, parameters));
-        
+
         // Act
         var movie = await session.ExecuteWriteAsync(async tx =>
             await Repository.GetMovieDetails(tx, Database.MovieId, Database.UserId));
-        
+
         // Assert
         movie.Should().BeEquivalentTo(expectedResult);
     }
-    
+
     [Fact]
     public async Task GetMovieDetails_ShouldReturnNull_WhenDoesNotExist()
     {
         // Arrange
         await using var session = Database.Driver.AsyncSession();
-        
+
         // Act
         var movie = await session.ExecuteWriteAsync(async tx =>
             await Repository.GetMovieDetails(tx, Database.MovieId, Database.UserId));
-        
+
         // Assert
         movie.Should().BeNull();
     }
@@ -948,34 +959,36 @@ public class MovieRepositoryTests
         var expectedResult = new List<MovieDto>
         {
             new(
-                Id: Database.MovieId,
-                Title: "movie1",
-                AverageScore: 0,
-                MinimumAge: 13,
-                PictureUri: null,
-                OnWatchlist: false,
+                Database.MovieId,
+                "movie1",
+                0,
+                13,
+                null,
+                false,
                 UserReview: null,
                 IsFavourite: false,
                 ReviewsCount: 0,
                 Genres: [])
         };
-        
+
         await using var session = Database.Driver.AsyncSession();
-        
+
         // language=Cypher
         const string query = """
                              CREATE (:Movie { id: $movieId, title: 'movie1',  description: 'description', releaseDate: date('2022-01-01'), pictureAbsoluteUri: null, picturePublicId: null, minimumAge: 13 }),
                                (:Movie { id: apoc.create.uuid(), title: 'movie2',  description: 'description', releaseDate: date('2022-01-01'), pictureAbsoluteUri: null, picturePublicId: null, minimumAge: 13 }),
                                (:Movie { id: apoc.create.uuid(), title: 'movie3',  description: 'description', releaseDate: date('2022-01-01'), pictureAbsoluteUri: null, picturePublicId: null, minimumAge: 13 })
                              """;
-        
+
         var parameters = new { movieId = Database.MovieId.ToString() };
         await session.ExecuteWriteAsync(tx => tx.RunAsync(query, parameters));
-        
+
         // Act
         var movies = await session.ExecuteReadAsync(async tx =>
-            await Repository.GetMoviesWhenNotLoggedIn(tx, new MovieQueryParams { SortBy = SortBy.Title, SortOrder = SortOrder.Descending, PageNumber = 2, PageSize = 2 }));
-        
+            await Repository.GetMoviesWhenNotLoggedIn(tx,
+                new MovieQueryParams
+                    { SortBy = SortBy.Title, SortOrder = SortOrder.Descending, PageNumber = 2, PageSize = 2 }));
+
         // Assert
         movies.Should().HaveCount(1);
         movies.Should().BeEquivalentTo(expectedResult);

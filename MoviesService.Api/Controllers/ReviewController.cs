@@ -13,15 +13,18 @@ namespace MoviesService.Api.Controllers;
 
 [Authorize]
 [Route("api/[controller]")]
-public class ReviewController(IAsyncQueryExecutor queryExecutor, IMovieRepository movieRepository,
-    IReviewRepository reviewRepository, IMqttService mqttService,
+public class ReviewController(
+    IAsyncQueryExecutor queryExecutor,
+    IMovieRepository movieRepository,
+    IReviewRepository reviewRepository,
+    IMqttService mqttService,
     IUserClaimsProvider claimsProvider) : BaseApiController(queryExecutor)
 {
     private IReviewRepository ReviewRepository { get; } = reviewRepository;
     private IMovieRepository MovieRepository { get; } = movieRepository;
     private IMqttService MqttService { get; } = mqttService;
     private IUserClaimsProvider ClaimsProvider { get; } = claimsProvider;
-    
+
 
     [HttpPost]
     public async Task<IActionResult> CreateReview(AddReviewDto reviewDto)
@@ -41,7 +44,7 @@ public class ReviewController(IAsyncQueryExecutor queryExecutor, IMovieRepositor
             id = review.Id;
             return Ok(review);
         });
-        
+
         if (id is not null)
             _ = SendMqttNewReview(id.Value, ReviewRepository.GetAverageAndCountFromReviewId);
 
@@ -61,10 +64,10 @@ public class ReviewController(IAsyncQueryExecutor queryExecutor, IMovieRepositor
             var review = await ReviewRepository.UpdateReview(tx, userId, id, reviewDto);
             return Ok(review);
         });
-        
+
         if (result is OkObjectResult)
             _ = SendMqttNewReview(id, ReviewRepository.GetAverageAndCountFromReviewId);
-        
+
         return result;
     }
 
@@ -76,30 +79,31 @@ public class ReviewController(IAsyncQueryExecutor queryExecutor, IMovieRepositor
         {
             var userId = ClaimsProvider.GetUserId(User);
             movieId = await ReviewRepository.GetMovieIdFromReviewId(tx, id, userId);
-            
+
             if (movieId is null)
                 return NotFound("Review does not exist, or you don't have permission to delete it");
 
             await ReviewRepository.DeleteReview(tx, userId, id);
             return NoContent();
         });
-        
+
         if (result is NoContentResult && movieId is not null)
             _ = SendMqttNewReview(movieId.Value, ReviewRepository.GetAverageAndCountFromMovieId);
-        
+
         return result;
     }
-    
-    
-    private async Task SendMqttNewReview(Guid id, Func<IAsyncQueryRunner, Guid, Task<ReviewAverageAndCount>> getAverageAndCount)
+
+
+    private async Task SendMqttNewReview(Guid id,
+        Func<IAsyncQueryRunner, Guid, Task<ReviewAverageAndCount>> getAverageAndCount)
     {
         var reviewAverageAndCount = await QueryExecutor.ExecuteReadAsync(async tx => await getAverageAndCount(tx, id));
-        
+
         JsonSerializerOptions options = new()
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         };
-        
+
         var payload = JsonSerializer.Serialize(reviewAverageAndCount, options);
         await MqttService.SendNotificationAsync($"movie/{reviewAverageAndCount.MovieId}/updated-reviews", payload);
     }

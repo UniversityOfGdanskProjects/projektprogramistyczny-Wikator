@@ -24,7 +24,7 @@ public class CommentRepository : ICommentRepository
                                r.createdAt AS createdAt,
                                r.isEdited AS isEdited
                              """;
-        
+
         var result = await tx.RunAsync(query, new { commentId = commentId.ToString() });
 
         try
@@ -37,7 +37,8 @@ public class CommentRepository : ICommentRepository
         }
     }
 
-    public async Task<CommentWithNotification> AddCommentAsync(IAsyncQueryRunner tx, Guid userId, AddCommentDto addCommentDto)
+    public async Task<CommentWithNotification> AddCommentAsync(IAsyncQueryRunner tx, Guid userId,
+        AddCommentDto addCommentDto)
     {
         // language=Cypher
         const string query = """
@@ -77,7 +78,7 @@ public class CommentRepository : ICommentRepository
                                 movieId: m.id
                                } AS notification
                              """;
-        
+
         var parameters = new
         {
             movieId = addCommentDto.MovieId.ToString(),
@@ -85,7 +86,7 @@ public class CommentRepository : ICommentRepository
             text = addCommentDto.Text,
             dateTime = DateTime.Now
         };
-        
+
         var cursor = await tx.RunAsync(query, parameters);
         return await cursor.SingleAsync(record => record.ConvertToCommentWithNotification());
     }
@@ -107,7 +108,7 @@ public class CommentRepository : ICommentRepository
                                r.createdAt AS createdAt,
                                r.isEdited AS isEdited
                              """;
-        
+
         var parameters = new
         {
             userId = userId.ToString(),
@@ -119,7 +120,7 @@ public class CommentRepository : ICommentRepository
         return await cursor.SingleAsync(record => record.ConvertToCommentDto());
     }
 
-    public async Task DeleteCommentAsync(IAsyncQueryRunner tx,Guid commentId, Guid userId)
+    public async Task DeleteCommentAsync(IAsyncQueryRunner tx, Guid commentId, Guid userId)
     {
         // language=Cypher
         const string query = """
@@ -155,7 +156,7 @@ public class CommentRepository : ICommentRepository
                                  WHERE u.id = $userId OR EXISTS { MATCH (:User { id: $userId, role: 'Admin' }) }
                                  RETURN m.id AS movieId
                                  """;
-            
+
             var cursor = await tx.RunAsync(query, new { commentId = commentId.ToString(), userId = userId.ToString() });
             return await cursor.SingleAsync(record => Guid.Parse(record["movieId"].As<string>()));
         }

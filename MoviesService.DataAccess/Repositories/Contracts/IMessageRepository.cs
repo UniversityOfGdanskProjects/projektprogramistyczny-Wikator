@@ -6,5 +6,5 @@ namespace MoviesService.DataAccess.Repositories.Contracts;
 public interface IMessageRepository
 {
     Task<MessageDto> CreateMessageAsync(IAsyncQueryRunner tx, Guid userId, string messageContent);
-    Task<IEnumerable<MessageDto>> GetMostRecentMessagesAsync(IAsyncQueryRunner tx); 
+    Task<IEnumerable<MessageDto>> GetMostRecentMessagesAsync(IAsyncQueryRunner tx);
 }

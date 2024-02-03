@@ -9,14 +9,17 @@ namespace MoviesService.Api.Controllers;
 
 [Authorize]
 [Route("api/movie")]
-public class FavouriteController(IAsyncQueryExecutor queryExecutor, IFavouriteRepository favouriteRepository,
-    IMovieRepository movieRepository, IUserClaimsProvider claimsProvider) : BaseApiController(queryExecutor)
+public class FavouriteController(
+    IAsyncQueryExecutor queryExecutor,
+    IFavouriteRepository favouriteRepository,
+    IMovieRepository movieRepository,
+    IUserClaimsProvider claimsProvider) : BaseApiController(queryExecutor)
 {
     private IFavouriteRepository FavouriteRepository { get; } = favouriteRepository;
     private IMovieRepository MovieRepository { get; } = movieRepository;
     private IUserClaimsProvider ClaimsProvider { get; } = claimsProvider;
-    
-    
+
+
     [HttpGet("favourite")]
     public async Task<IActionResult> GetAllMoviesOnFavouriteList()
     {
@@ -28,7 +31,7 @@ public class FavouriteController(IAsyncQueryExecutor queryExecutor, IFavouriteRe
             return Ok(movies);
         });
     }
-    
+
     [HttpPost("{movieId:guid}/favourite")]
     public async Task<IActionResult> AddToFavouriteList(Guid movieId)
     {
@@ -46,7 +49,7 @@ public class FavouriteController(IAsyncQueryExecutor queryExecutor, IFavouriteRe
             return NoContent();
         });
     }
-    
+
     [HttpDelete("{movieId:guid}/favourite")]
     public async Task<IActionResult> RemoveFromFavourites(Guid movieId)
     {

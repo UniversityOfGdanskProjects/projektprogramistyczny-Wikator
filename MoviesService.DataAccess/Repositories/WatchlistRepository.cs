@@ -47,7 +47,7 @@ public class WatchlistRepository : IWatchlistRepository
                              MATCH (u:User { id: $userId }), (m:Movie { id: $movieId })
                              CREATE (u)-[:WATCHLIST]->(m)
                              """;
-        
+
         await tx.RunAsync(query, new { userId = userId.ToString(), movieId = movieId.ToString() });
     }
 
@@ -61,7 +61,7 @@ public class WatchlistRepository : IWatchlistRepository
 
         await tx.RunAsync(query, new { userId = userId.ToString(), movieId = movieId.ToString() });
     }
-    
+
     public async Task<bool> WatchlistExists(IAsyncQueryRunner tx, Guid movieId, Guid userId)
     {
         // language=Cypher
@@ -69,13 +69,13 @@ public class WatchlistRepository : IWatchlistRepository
                              MATCH (:User { id: $userId })-[r:WATCHLIST]->(:Movie { id: $movieId })
                              RETURN COUNT(r) > 0 AS watchlistExists
                              """;
-        
+
         var parameters = new
         {
             userId = userId.ToString(),
             movieId = movieId.ToString()
         };
-        
+
         var watchlistExistsCursor = await tx.RunAsync(query, parameters);
         return await watchlistExistsCursor.SingleAsync(record => record["watchlistExists"].As<bool>());
     }

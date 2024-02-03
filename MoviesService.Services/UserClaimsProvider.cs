@@ -6,7 +6,7 @@ namespace MoviesService.Services;
 public class UserClaimsProvider : IUserClaimsProvider
 {
     /// <summary>
-    /// Gets the user id from the claims principal
+    ///     Gets the user id from the claims principal
     /// </summary>
     /// <param name="user">User's claims principal</param>
     /// <exception cref="NullReferenceException">User not logged in, or id not present in claims</exception>
@@ -18,7 +18,7 @@ public class UserClaimsProvider : IUserClaimsProvider
     }
 
     /// <summary>
-    /// Gets the user id from the claims principal, or null if not present
+    ///     Gets the user id from the claims principal, or null if not present
     /// </summary>
     /// <param name="user">User's claims principal</param>
     /// <returns></returns>
@@ -26,7 +26,7 @@ public class UserClaimsProvider : IUserClaimsProvider
     {
         var userId = user.Claims
             .FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value;
-        
+
         return userId is null ? null : Guid.Parse(userId);
     }
 }

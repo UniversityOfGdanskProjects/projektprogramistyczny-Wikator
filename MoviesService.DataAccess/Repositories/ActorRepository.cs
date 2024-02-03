@@ -13,7 +13,7 @@ public class ActorRepository : IActorRepository
         // language=Cypher
         const string query = """
                              MATCH (a:Actor)
-                             RETURN 
+                             RETURN
                                  a.id AS id,
                                  a.firstName AS firstName,
                                  a.lastName AS lastName,
@@ -39,9 +39,9 @@ public class ActorRepository : IActorRepository
                                  a.biography AS biography,
                                  a.pictureAbsoluteUri AS pictureAbsoluteUri
                              """;
-    
+
         var cursor = await tx.RunAsync(query, new { id = id.ToString() });
-        
+
         try
         {
             return await cursor.SingleAsync(record => record.ConvertToActorDto());
@@ -57,7 +57,7 @@ public class ActorRepository : IActorRepository
     {
         // language=Cypher
         const string query = """
-                             CREATE (a:Actor { 
+                             CREATE (a:Actor {
                                id: apoc.create.uuid(),
                                firstName: $firstName,
                                lastName: $lastName,
@@ -92,25 +92,25 @@ public class ActorRepository : IActorRepository
     {
         // language=Cypher
         const string query = """
-                                  MATCH (a:Actor {id: $id})
-                                  SET
-                                    a.firstName = $firstName,
-                                    a.lastName = $lastName,
-                                    a.dateOfBirth = $dateOfBirth,
-                                    a.biography = $biography
-                                  RETURN
-                                    a.id AS id,
-                                    a.firstName AS firstName,
-                                    a.lastName AS lastName,
-                                    a.dateOfBirth as dateOfBirth,
-                                    a.biography AS biography,
-                                    a.pictureAbsoluteUri AS pictureAbsoluteUri
-                                  """;
-        
+                             MATCH (a:Actor {id: $id})
+                             SET
+                               a.firstName = $firstName,
+                               a.lastName = $lastName,
+                               a.dateOfBirth = $dateOfBirth,
+                               a.biography = $biography
+                             RETURN
+                               a.id AS id,
+                               a.firstName AS firstName,
+                               a.lastName AS lastName,
+                               a.dateOfBirth as dateOfBirth,
+                               a.biography AS biography,
+                               a.pictureAbsoluteUri AS pictureAbsoluteUri
+                             """;
+
         var cursor = await tx.RunAsync(query, new
         {
             id = id.ToString(),
-            firstName = actorDto.FirstName, 
+            firstName = actorDto.FirstName,
             lastName = actorDto.LastName,
             dateOfBirth = actorDto.DateOfBirth,
             biography = actorDto.Biography
@@ -126,7 +126,8 @@ public class ActorRepository : IActorRepository
         await tx.RunAsync(deleteQuery, new { id = id.ToString() });
     }
 
-    public async Task AddActorPicture(IAsyncQueryRunner tx, Guid actorId, string pictureAbsoluteUri, string picturePublicId)
+    public async Task AddActorPicture(IAsyncQueryRunner tx, Guid actorId, string pictureAbsoluteUri,
+        string picturePublicId)
     {
         // language=Cypher
         const string query = """
@@ -135,14 +136,14 @@ public class ActorRepository : IActorRepository
                                a.pictureAbsoluteUri = $pictureAbsoluteUri,
                                a.picturePublicId = $picturePublicId
                              """;
-        
+
         var parameters = new
         {
             id = actorId.ToString(),
             pictureAbsoluteUri,
             picturePublicId
         };
-        
+
         await tx.RunAsync(query, parameters);
     }
 
@@ -155,7 +156,7 @@ public class ActorRepository : IActorRepository
                                a.pictureAbsoluteUri = NULL,
                                a.picturePublicId = NULL
                              """;
-        
+
         await tx.RunAsync(query, new { id = actorId.ToString() });
     }
 
@@ -186,7 +187,7 @@ public class ActorRepository : IActorRepository
                              MATCH (a:Actor {id: $id})
                              RETURN a.picturePublicId IS NOT NULL AS actorPictureExists
                              """;
-        
+
         var cursor = await tx.RunAsync(query, new { id = actorId.ToString() });
         return await cursor.SingleAsync(record => record["actorPictureExists"].As<bool>());
     }

@@ -85,7 +85,7 @@ jobs:
         run: dotnet build --configuration Release --no-restore
 
       - name: Test with dotnet
-        run: dotnet test "MoviesService.Tests" --no-restore --configuration Release --verbosity normal
+        run: dotnet test "MoviesService.Tests" --no-restore --no-build --configuration Release --verbosity normal
 
       - name: Publish with dotnet
         run: dotnet publish "MoviesService.Api" -c Release -o ${{env.DOTNET_ROOT}}/myapp

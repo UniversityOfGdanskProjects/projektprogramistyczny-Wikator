@@ -10,13 +10,16 @@ using MoviesService.Services.Contracts;
 namespace MoviesService.Api.Controllers;
 
 [Route("api/[controller]")]
-public class UserController(IAsyncQueryExecutor queryExecutor, IUserRepository userRepository,
-    IAccountRepository accountRepository, ITokenService tokenService) : BaseApiController(queryExecutor)
+public class UserController(
+    IAsyncQueryExecutor queryExecutor,
+    IUserRepository userRepository,
+    IAccountRepository accountRepository,
+    ITokenService tokenService) : BaseApiController(queryExecutor)
 {
     private IUserRepository UserRepository { get; } = userRepository;
     private IAccountRepository AccountRepository { get; } = accountRepository;
     private ITokenService TokenService { get; } = tokenService;
-    
+
 
     [HttpGet]
     public async Task<IActionResult> GetByMostActive()
@@ -24,14 +27,14 @@ public class UserController(IAsyncQueryExecutor queryExecutor, IUserRepository u
         return await QueryExecutor.ExecuteReadAsync<IActionResult>(async tx =>
             Ok(await UserRepository.GetUsersByMostActiveAsync(tx)));
     }
-    
+
     [HttpGet("active-today-count")]
     public async Task<IActionResult> GetActiveTodayCount()
     {
         return await QueryExecutor.ExecuteReadAsync<IActionResult>(async tx =>
             Ok(await UserRepository.GetUserActiveTodayCount(tx)));
     }
-    
+
     [HttpPut("username")]
     [Authorize]
     public async Task<IActionResult> UpdateUsername(UpdateUsernameDto updateUsernameDto)
@@ -40,12 +43,12 @@ public class UserController(IAsyncQueryExecutor queryExecutor, IUserRepository u
         {
             var userId = User.GetUserId();
             var user = await UserRepository.UpdateUserNameAsync(tx, userId, updateUsernameDto.NewUsername);
-            
+
             var userDto = new UserDto(user.Id, user.Name, user.Role, TokenService.CreateToken(user));
             return Ok(userDto);
         });
     }
-    
+
     [HttpPut("{id:guid}/username")]
     [Authorize(Policy = "RequireAdminRole")]
     public async Task<IActionResult> UpdateUsername(Guid id, UpdateUsernameDto updateUsernameDto)
@@ -59,7 +62,7 @@ public class UserController(IAsyncQueryExecutor queryExecutor, IUserRepository u
             return NoContent();
         });
     }
-    
+
     [HttpPut("{id:guid}/role")]
     [Authorize(Policy = "RequireAdminRole")]
     public async Task<IActionResult> ChangeUserRoleToAdmin(Guid id)
@@ -73,7 +76,7 @@ public class UserController(IAsyncQueryExecutor queryExecutor, IUserRepository u
             return NoContent();
         });
     }
-    
+
     [HttpDelete("{id:guid}")]
     [Authorize(Policy = "RequireAdminRole")]
     public async Task<IActionResult> DeleteUserAsAdmin(Guid id)
@@ -87,7 +90,7 @@ public class UserController(IAsyncQueryExecutor queryExecutor, IUserRepository u
             return NoContent();
         });
     }
-    
+
     [HttpDelete]
     [Authorize]
     public async Task<IActionResult> DeleteUser()

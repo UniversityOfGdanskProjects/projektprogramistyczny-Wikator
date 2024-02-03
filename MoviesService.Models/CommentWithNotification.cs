@@ -3,4 +3,5 @@
 namespace MoviesService.Models;
 
 public record CommentWithNotification(
-    CommentDto Comment, RealTimeNotification Notification);
+    CommentDto Comment,
+    RealTimeNotification Notification);

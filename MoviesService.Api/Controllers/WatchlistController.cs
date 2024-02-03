@@ -9,12 +9,14 @@ namespace MoviesService.Api.Controllers;
 
 [Authorize]
 [Route("api/movie")]
-public class WatchlistController(IAsyncQueryExecutor queryExecutor, IWatchlistRepository watchlistRepository,
+public class WatchlistController(
+    IAsyncQueryExecutor queryExecutor,
+    IWatchlistRepository watchlistRepository,
     IMovieRepository movieRepository) : BaseApiController(queryExecutor)
 {
     private IWatchlistRepository WatchlistRepository { get; } = watchlistRepository;
     private IMovieRepository MovieRepository { get; } = movieRepository;
-    
+
 
     [HttpGet("watchlist")]
     public async Task<IActionResult> GetAllMoviesOnWatchlist()
@@ -27,7 +29,7 @@ public class WatchlistController(IAsyncQueryExecutor queryExecutor, IWatchlistRe
             return Ok(movies);
         });
     }
-    
+
     [HttpPost("{movieId:guid}/watchlist")]
     public async Task<IActionResult> AddToWatchList(Guid movieId)
     {
@@ -45,7 +47,7 @@ public class WatchlistController(IAsyncQueryExecutor queryExecutor, IWatchlistRe
             return NoContent();
         });
     }
-    
+
     [HttpDelete("{movieId:guid}/watchlist")]
     public async Task<IActionResult> RemoveFromWatchList(Guid movieId)
     {

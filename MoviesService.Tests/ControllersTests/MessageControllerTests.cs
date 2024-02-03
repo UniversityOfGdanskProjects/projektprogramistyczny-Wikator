@@ -18,7 +18,7 @@ public class MessageControllerTests : ControllerTestsBase
             new("Content", "Admin", DateTime.Now),
             new("Content", "Admin", DateTime.Now)
         };
-        
+
         var messageRepository = new Mock<IMessageRepository>();
         messageRepository.Setup(x => x.GetMostRecentMessagesAsync(It.IsAny<IAsyncQueryRunner>()))
             .ReturnsAsync(messages);
@@ -26,35 +26,36 @@ public class MessageControllerTests : ControllerTestsBase
         var mqttService = new Mock<IMqttService>();
         var controller = new MessageController(QueryExecutorMock.Object, messageRepository.Object, mqttService.Object,
             ClaimsProviderMock.Object);
-        
+
         // Act
         var result = await controller.GetMostRecentMessagesAsync();
-        
+
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
         var model = Assert.IsAssignableFrom<IEnumerable<MessageDto>>(okResult.Value);
         model.Should().HaveCount(2);
     }
-    
+
     [Fact]
     public async Task CreateMessage_ShouldReturnOkObjectResult()
     {
         // Arrange
         var message = new MessageDto("Content", "Admin", DateTime.Now);
         var messageRepository = new Mock<IMessageRepository>();
-        messageRepository.Setup(x => x.CreateMessageAsync(It.IsAny<IAsyncQueryRunner>(), It.IsAny<Guid>(), It.IsAny<string>()))
+        messageRepository.Setup(x =>
+                x.CreateMessageAsync(It.IsAny<IAsyncQueryRunner>(), It.IsAny<Guid>(), It.IsAny<string>()))
             .ReturnsAsync(message);
 
         var mqttService = new Mock<IMqttService>();
         var controller = new MessageController(QueryExecutorMock.Object, messageRepository.Object, mqttService.Object,
             ClaimsProviderMock.Object);
-        
+
         // Act
         var result = await controller.CreateMessageAsync(new CreateMessageDto
         {
             Content = "Content"
         });
-        
+
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
         var model = Assert.IsAssignableFrom<MessageDto>(okResult.Value);
@@ -67,19 +68,20 @@ public class MessageControllerTests : ControllerTestsBase
         // Arrange
         var message = new MessageDto("Content", "Admin", DateTime.Now);
         var messageRepository = new Mock<IMessageRepository>();
-        messageRepository.Setup(x => x.CreateMessageAsync(It.IsAny<IAsyncQueryRunner>(), It.IsAny<Guid>(), It.IsAny<string>()))
+        messageRepository.Setup(x =>
+                x.CreateMessageAsync(It.IsAny<IAsyncQueryRunner>(), It.IsAny<Guid>(), It.IsAny<string>()))
             .ReturnsAsync(message);
-        
+
         var mqttService = new Mock<IMqttService>();
         var controller = new MessageController(QueryExecutorMock.Object, messageRepository.Object, mqttService.Object,
             ClaimsProviderMock.Object);
-        
+
         // Act
         await controller.CreateMessageAsync(new CreateMessageDto
         {
             Content = "Content"
         });
-        
+
         // Assert
         mqttService.Verify(x => x.SendNotificationAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
     }

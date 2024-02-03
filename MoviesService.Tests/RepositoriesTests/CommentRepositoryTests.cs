@@ -5,41 +5,41 @@ namespace MoviesService.Tests.RepositoriesTests;
 [Collection("DatabaseCollection")]
 public class CommentRepositoryTests
 {
-    private TestDatabaseSetup Database { get; }
-    private CommentRepository RepositoryTests { get; } = new();
-    
     public CommentRepositoryTests(TestDatabaseSetup testDatabase)
     {
         Database = testDatabase;
         Database.SetupDatabase().Wait();
-        
+
         // language=Cypher
         const string query = """
                              MATCH (m:Movie { id: $movieId })<-[r:COMMENTED]-(u:User { id: $userId })
                              OPTIONAL MATCH (m)-[n:NOTIFICATION]->(u)
                              DELETE r, n
                              """;
-        
+
         var parameters = new
         {
             userId = Database.UserId.ToString(),
             movieId = Database.MovieId.ToString()
         };
-        
+
         using var session = Database.Driver.AsyncSession();
         session.ExecuteWriteAsync(async tx => await tx.RunAsync(query, parameters)).Wait();
     }
-    
+
+    private TestDatabaseSetup Database { get; }
+    private CommentRepository RepositoryTests { get; } = new();
+
     [Fact]
     public async Task GetCommentAsync_ShouldReturnNull_WhenCommentDoesNotExist()
     {
         // Arrange
         await using var session = Database.Driver.AsyncSession();
-        
+
         // Act
         var result = await session.ExecuteReadAsync(async tx =>
             await RepositoryTests.GetCommentAsync(tx, Guid.NewGuid()));
-        
+
         // Assert
         result.Should().BeNull();
     }
@@ -50,7 +50,7 @@ public class CommentRepositoryTests
         // Arrange
         await using var session = Database.Driver.AsyncSession();
         var commentId = Guid.NewGuid();
-        
+
         // language=Cypher
         const string query = """
                              MATCH (m:Movie { id: $movieId }), (u:User { id: $userId })
@@ -61,7 +61,7 @@ public class CommentRepositoryTests
                                isEdited: false
                              }]->(m)
                              """;
-        
+
         var currentDateTime = DateTime.Now;
         var parameters = new
         {
@@ -70,23 +70,23 @@ public class CommentRepositoryTests
             commentId = commentId.ToString(),
             dateTime = currentDateTime
         };
-        
+
         await session.ExecuteWriteAsync(async tx => await tx.RunAsync(query, parameters));
-        
+
         // Act
         var result = await session.ExecuteReadAsync(async tx =>
             await RepositoryTests.GetCommentAsync(tx, commentId));
-        
+
         // Assert
         result.Should().NotBeNull();
         result!.Should().BeEquivalentTo(new CommentDto(
-            Id: commentId,
-            MovieId: Database.MovieId,
-            UserId: Database.UserId,
-            Username: Database.AdminUserName,
-            Text: "comment",
-            CreatedAt: currentDateTime,
-            IsEdited: false
+            commentId,
+            Database.MovieId,
+            Database.UserId,
+            Database.AdminUserName,
+            "comment",
+            currentDateTime,
+            false
         ));
     }
 
@@ -100,13 +100,13 @@ public class CommentRepositoryTests
             Text = "comment",
             MovieId = Database.MovieId
         };
-        
+
         // Act
         await session.ExecuteWriteAsync(async tx =>
             await RepositoryTests.AddCommentAsync(tx, Database.UserId, addCommentDto));
-        
+
         // Assert
-        
+
         // language=Cypher
         const string query = """
                              MATCH (:Movie { id: $movieId })<-[r:COMMENTED]-(:User { id: $userId })
@@ -118,12 +118,12 @@ public class CommentRepositoryTests
             movieId = Database.MovieId.ToString(),
             userId = Database.UserId.ToString()
         };
-        
+
         var cursor = await session.RunAsync(query, parameters);
         var count = await cursor.SingleAsync(record => ValExtensions.ToInt(record["count"]));
         count.Should().Be(1);
     }
-    
+
     [Fact]
     public async Task AddCommentAsync_ShouldCreateNotificationsToAllButCreator_IfMovieIsFavourite()
     {
@@ -131,15 +131,15 @@ public class CommentRepositoryTests
         await using var session = Database.Driver.AsyncSession();
         var user1Id = Guid.NewGuid();
         var user2Id = Guid.NewGuid();
-        
+
         // language=Cypher
         const string seedUsersQuery = """
-                             CREATE (u1:User { id: $user1Id, name: 'name 1' }), (u2:User { id: $user2Id, name: 'name 2' })
-                             WITH u1, u2
-                             MATCH (m:Movie { id: $movieId }), (a:User { id: $adminId })
-                             CREATE (u1)-[:FAVOURITE]->(m), (u2)-[:FAVOURITE]->(m), (a)-[:FAVOURITE]->(m)
-                             """;
-        
+                                      CREATE (u1:User { id: $user1Id, name: 'name 1' }), (u2:User { id: $user2Id, name: 'name 2' })
+                                      WITH u1, u2
+                                      MATCH (m:Movie { id: $movieId }), (a:User { id: $adminId })
+                                      CREATE (u1)-[:FAVOURITE]->(m), (u2)-[:FAVOURITE]->(m), (a)-[:FAVOURITE]->(m)
+                                      """;
+
         var seedUsersParameters = new
         {
             user1Id = user1Id.ToString(),
@@ -147,21 +147,21 @@ public class CommentRepositoryTests
             adminId = Database.UserId.ToString(),
             movieId = Database.MovieId.ToString()
         };
-        
+
         await session.ExecuteWriteAsync(async tx => await tx.RunAsync(seedUsersQuery, seedUsersParameters));
-        
+
         var addCommentDto = new AddCommentDto
         {
             Text = "comment",
             MovieId = Database.MovieId
         };
-        
+
         // Act
         await session.ExecuteWriteAsync(async tx =>
             await RepositoryTests.AddCommentAsync(tx, Database.UserId, addCommentDto));
-        
+
         // Assert
-        
+
         // language=Cypher
         const string query = """
                              MATCH (:Movie { id: $movieId })-[r:NOTIFICATION]->(:User)
@@ -173,7 +173,7 @@ public class CommentRepositoryTests
             movieId = Database.MovieId.ToString(),
             userId = Database.UserId.ToString()
         };
-        
+
         var cursor = await session.RunAsync(query, parameters);
         var count = await cursor.SingleAsync(record => ValExtensions.ToInt(record["count"]));
         count.Should().Be(2);
@@ -184,31 +184,31 @@ public class CommentRepositoryTests
     {
         // Arrange
         await using var session = Database.Driver.AsyncSession();
-        
+
         var addCommentDto = new AddCommentDto
         {
             Text = "comment",
             MovieId = Database.MovieId
         };
-        
+
         // Act
         await session.ExecuteWriteAsync(async tx =>
             await RepositoryTests.AddCommentAsync(tx, Database.UserId, addCommentDto));
-        
+
         // Assert
-        
+
         // language=Cypher
         const string query = """
                              MATCH (:Movie { id: $movieId })-[r:NOTIFICATION]->(:User)
                              RETURN COUNT(r) AS count
                              """;
-        
+
         var parameters = new
         {
             movieId = Database.MovieId.ToString(),
             userId = Database.UserId.ToString()
         };
-        
+
         var cursor = await session.RunAsync(query, parameters);
         var count = await cursor.SingleAsync(record => ValExtensions.ToInt(record["count"]));
         count.Should().Be(0);
@@ -219,44 +219,44 @@ public class CommentRepositoryTests
     {
         // Arrange
         await using var session = Database.Driver.AsyncSession();
-        
+
         // language=Cypher
         const string seedRelationQuery = """
-                             MATCH (m:Movie { id: $movieId }), (u:User { id: $userId })
-                             CREATE (u)-[:FAVOURITE]->(m)
-                             """;
-        
+                                         MATCH (m:Movie { id: $movieId }), (u:User { id: $userId })
+                                         CREATE (u)-[:FAVOURITE]->(m)
+                                         """;
+
         var seedRelationParameters = new
         {
             movieId = Database.MovieId.ToString(),
             userId = Database.UserId.ToString()
         };
-        
+
         await session.ExecuteWriteAsync(async tx => await tx.RunAsync(seedRelationQuery, seedRelationParameters));
-        
+
         var addCommentDto = new AddCommentDto
         {
             Text = "comment",
             MovieId = Database.MovieId
         };
-        
+
         // Act
         await session.ExecuteWriteAsync(async tx =>
             await RepositoryTests.AddCommentAsync(tx, Database.UserId, addCommentDto));
-        
+
         // Assert
-        
+
         // language=Cypher
         const string query = """
                              MATCH (:Movie { id: $movieId })-[r:NOTIFICATION]->(:User)
                              RETURN COUNT(r) AS count
                              """;
-        
+
         var parameters = new
         {
             movieId = Database.MovieId.ToString()
         };
-        
+
         var cursor = await session.RunAsync(query, parameters);
         var count = await cursor.SingleAsync(record => ValExtensions.ToInt(record["count"]));
         count.Should().Be(0);
@@ -272,13 +272,13 @@ public class CommentRepositoryTests
             Text = "comment",
             MovieId = Database.MovieId
         };
-        
+
         // Act
         var result = await session.ExecuteWriteAsync(async tx =>
             await RepositoryTests.AddCommentAsync(tx, Database.UserId, addCommentDto));
-        
+
         // Assert
-        
+
         result.Comment.MovieId.Should().Be(Database.MovieId);
         result.Comment.UserId.Should().Be(Database.UserId);
         result.Comment.Username.Should().Be(Database.AdminUserName);
@@ -297,17 +297,17 @@ public class CommentRepositoryTests
         // Arrange
         await using var session = Database.Driver.AsyncSession();
         var commentId = Guid.NewGuid();
-        
+
         // language=Cypher
         const string seedQuery = """
-                             MATCH (m:Movie { id: $movieId }), (u:User { id: $userId })
-                             CREATE (u)-[:COMMENTED {
-                               id: $commentId,
-                               text: "comment",
-                               createdAt: $dateTime,
-                               isEdited: false
-                             }]->(m)
-                             """;
+                                 MATCH (m:Movie { id: $movieId }), (u:User { id: $userId })
+                                 CREATE (u)-[:COMMENTED {
+                                   id: $commentId,
+                                   text: "comment",
+                                   createdAt: $dateTime,
+                                   isEdited: false
+                                 }]->(m)
+                                 """;
 
         var seedParameters = new
         {
@@ -316,20 +316,20 @@ public class CommentRepositoryTests
             userId = Database.UserId.ToString(),
             dateTime = DateTime.Now
         };
-        
+
         await session.ExecuteWriteAsync(async tx => await tx.RunAsync(seedQuery, seedParameters));
-        
+
         var editCommentDto = new EditCommentDto
         {
             Text = "edited comment"
         };
-        
+
         // Act
         await session.ExecuteWriteAsync(async tx =>
             await RepositoryTests.EditCommentAsync(tx, commentId, Database.UserId, editCommentDto));
-        
+
         // Assert
-        
+
         // language=Cypher
         const string query = """
                              MATCH (:Movie)<-[r:COMMENTED { id: $commentId }]-(:User)
@@ -340,30 +340,30 @@ public class CommentRepositoryTests
         {
             commentId = commentId.ToString()
         };
-        
+
         var cursor = await session.RunAsync(query, parameters);
         var record = await cursor.SingleAsync();
         record["text"].Should().Be("edited comment");
         record["isEdited"].Should().Be(true);
     }
-    
+
     [Fact]
     public async Task EditCommentAsync_ShouldReturnCommentDto()
     {
         // Arrange
         await using var session = Database.Driver.AsyncSession();
         var commentId = Guid.NewGuid();
-        
+
         // language=Cypher
         const string seedQuery = """
-                             MATCH (m:Movie { id: $movieId }), (u:User { id: $userId })
-                             CREATE (u)-[:COMMENTED {
-                               id: $commentId,
-                               text: "comment",
-                               createdAt: $dateTime,
-                               isEdited: false
-                             }]->(m)
-                             """;
+                                 MATCH (m:Movie { id: $movieId }), (u:User { id: $userId })
+                                 CREATE (u)-[:COMMENTED {
+                                   id: $commentId,
+                                   text: "comment",
+                                   createdAt: $dateTime,
+                                   isEdited: false
+                                 }]->(m)
+                                 """;
 
         var seedParameters = new
         {
@@ -372,37 +372,37 @@ public class CommentRepositoryTests
             userId = Database.UserId.ToString(),
             dateTime = DateTime.Now
         };
-        
+
         await session.ExecuteWriteAsync(async tx => await tx.RunAsync(seedQuery, seedParameters));
-        
+
         var editCommentDto = new EditCommentDto
         {
             Text = "edited comment"
         };
-        
+
         // Act
         var result = await session.ExecuteWriteAsync(async tx =>
             await RepositoryTests.EditCommentAsync(tx, commentId, Database.UserId, editCommentDto));
-        
+
         // Assert
-        
+
         result.MovieId.Should().Be(Database.MovieId);
         result.UserId.Should().Be(Database.UserId);
         result.Username.Should().Be(Database.AdminUserName);
         result.Text.Should().Be("edited comment");
         result.IsEdited.Should().BeTrue();
     }
-    
+
     [Fact]
     public async Task CommentExistsAsOwnerOrAdmin_ShouldReturnFalse_WhenCommentDoesNotExist()
     {
         // Arrange
         await using var session = Database.Driver.AsyncSession();
-        
+
         // Act
         var result = await session.ExecuteReadAsync(async tx =>
             await RepositoryTests.CommentExistsAsOwnerOrAdmin(tx, Guid.NewGuid(), Database.UserId));
-        
+
         // Assert
         result.Should().BeFalse();
     }
@@ -414,44 +414,7 @@ public class CommentRepositoryTests
         await using var session = Database.Driver.AsyncSession();
         var userId = Guid.NewGuid();
         var commentId = Guid.NewGuid();
-        
-        // language=Cypher
-        const string seedQuery = """
-                             MATCH (m:Movie { id: $movieId })
-                             CREATE (:User { id: $userId })-[:COMMENTED {
-                               id: $commentId,
-                               text: "comment",
-                               createdAt: $dateTime,
-                               isEdited: false
-                             }]->(m)
-                             """;
 
-        var seedParameters = new
-        {
-            movieId = Database.MovieId.ToString(),
-            userId = userId.ToString(),
-            commentId = commentId.ToString(),
-            dateTime = DateTime.Now
-        };
-        
-        await session.ExecuteWriteAsync(async tx => await tx.RunAsync(seedQuery, seedParameters));
-        
-        // Act
-        var result = await session.ExecuteReadAsync(async tx =>
-            await RepositoryTests.CommentExistsAsOwnerOrAdmin(tx, commentId, userId));
-        
-        // Assert
-        result.Should().BeTrue();
-    }
-    
-    [Fact]
-    public async Task CommentExistsAsOwnerOrAdmin_ShouldReturnTrue_IfUserCommentExistsAsAdmin()
-    {
-        // Arrange
-        await using var session = Database.Driver.AsyncSession();
-        var userId = Guid.NewGuid();
-        var commentId = Guid.NewGuid();
-        
         // language=Cypher
         const string seedQuery = """
                                  MATCH (m:Movie { id: $movieId })
@@ -470,17 +433,54 @@ public class CommentRepositoryTests
             commentId = commentId.ToString(),
             dateTime = DateTime.Now
         };
-        
+
         await session.ExecuteWriteAsync(async tx => await tx.RunAsync(seedQuery, seedParameters));
-        
+
         // Act
         var result = await session.ExecuteReadAsync(async tx =>
-            await RepositoryTests.CommentExistsAsOwnerOrAdmin(tx, commentId, Database.UserId));
-        
+            await RepositoryTests.CommentExistsAsOwnerOrAdmin(tx, commentId, userId));
+
         // Assert
         result.Should().BeTrue();
     }
-    
+
+    [Fact]
+    public async Task CommentExistsAsOwnerOrAdmin_ShouldReturnTrue_IfUserCommentExistsAsAdmin()
+    {
+        // Arrange
+        await using var session = Database.Driver.AsyncSession();
+        var userId = Guid.NewGuid();
+        var commentId = Guid.NewGuid();
+
+        // language=Cypher
+        const string seedQuery = """
+                                 MATCH (m:Movie { id: $movieId })
+                                 CREATE (:User { id: $userId })-[:COMMENTED {
+                                   id: $commentId,
+                                   text: "comment",
+                                   createdAt: $dateTime,
+                                   isEdited: false
+                                 }]->(m)
+                                 """;
+
+        var seedParameters = new
+        {
+            movieId = Database.MovieId.ToString(),
+            userId = userId.ToString(),
+            commentId = commentId.ToString(),
+            dateTime = DateTime.Now
+        };
+
+        await session.ExecuteWriteAsync(async tx => await tx.RunAsync(seedQuery, seedParameters));
+
+        // Act
+        var result = await session.ExecuteReadAsync(async tx =>
+            await RepositoryTests.CommentExistsAsOwnerOrAdmin(tx, commentId, Database.UserId));
+
+        // Assert
+        result.Should().BeTrue();
+    }
+
     [Fact]
     public async Task CommentExistsAsOwnerOrAdmin_ShouldReturnFalse_IfAdminCommentExistsAsUser()
     {
@@ -488,7 +488,7 @@ public class CommentRepositoryTests
         await using var session = Database.Driver.AsyncSession();
         var commentId = Guid.NewGuid();
         var userId = Guid.NewGuid();
-        
+
         // language=Cypher
         const string seedQuery = """
                                  MATCH (m:Movie { id: $movieId })
@@ -508,13 +508,13 @@ public class CommentRepositoryTests
             commentId = commentId.ToString(),
             dateTime = DateTime.Now
         };
-        
+
         await session.ExecuteWriteAsync(async tx => await tx.RunAsync(seedQuery, seedParameters));
-        
+
         // Act
         var result = await session.ExecuteReadAsync(async tx =>
             await RepositoryTests.CommentExistsAsOwnerOrAdmin(tx, commentId, userId));
-        
+
         // Assert
         result.Should().BeFalse();
     }
@@ -525,7 +525,7 @@ public class CommentRepositoryTests
         // Arrange
         await using var session = Database.Driver.AsyncSession();
         var commentId = Guid.NewGuid();
-        
+
         // language=Cypher
         const string seedQuery = """
                                  MATCH (m:Movie { id: $movieId }), (u:User { id: $userId })
@@ -536,7 +536,7 @@ public class CommentRepositoryTests
                                    isEdited: false
                                  }]->(m)
                                  """;
-        
+
         var parameters = new
         {
             movieId = Database.MovieId.ToString(),
@@ -544,21 +544,21 @@ public class CommentRepositoryTests
             commentId = commentId.ToString(),
             dateTime = DateTime.Now
         };
-        
+
         await session.ExecuteWriteAsync(async tx => await tx.RunAsync(seedQuery, parameters));
-        
+
         // Act
         await session.ExecuteWriteAsync(async tx =>
             await RepositoryTests.DeleteCommentAsync(tx, commentId, Database.UserId));
-        
+
         // Assert
-        
+
         // language=Cypher
         const string query = """
                              MATCH (:Movie { id: $movieId })<-[r:COMMENTED { id: $commentId }]-(:User)
                              RETURN COUNT(r) AS count
                              """;
-        
+
         var cursor = await session.RunAsync(query, parameters);
         var count = await cursor.SingleAsync(record => ValExtensions.ToInt(record["count"]));
         count.Should().Be(0);
@@ -570,7 +570,7 @@ public class CommentRepositoryTests
         // Arrange
         await using var session = Database.Driver.AsyncSession();
         var commentId = Guid.NewGuid();
-        
+
         // language=Cypher
         const string seedQuery = """
                                  MATCH (m:Movie { id: $movieId }), (u:User { id: $userId })
@@ -585,7 +585,7 @@ public class CommentRepositoryTests
                                    (m)-[:NOTIFICATION { relatedEntityId: $commentId }]->(:User),
                                    (m)-[:NOTIFICATION { relatedEntityId: $commentId }]->(:User)
                                  """;
-        
+
         var parameters = new
         {
             movieId = Database.MovieId.ToString(),
@@ -593,21 +593,21 @@ public class CommentRepositoryTests
             commentId = commentId.ToString(),
             dateTime = DateTime.Now
         };
-        
+
         await session.ExecuteWriteAsync(async tx => await tx.RunAsync(seedQuery, parameters));
-        
+
         // Act
         await session.ExecuteWriteAsync(async tx =>
             await RepositoryTests.DeleteCommentAsync(tx, commentId, Database.UserId));
-        
+
         // Assert
-        
+
         // language=Cypher
         const string query = """
                              MATCH (:Movie { id: $movieId })-[r:NOTIFICATION { relatedEntityId: $commentId }]->(:User)
                              RETURN COUNT(r) AS count
                              """;
-        
+
         var cursor = await session.RunAsync(query, parameters);
         var count = await cursor.SingleAsync(record => ValExtensions.ToInt(record["count"]));
         count.Should().Be(0);
@@ -619,7 +619,7 @@ public class CommentRepositoryTests
         // Arrange
         await using var session = Database.Driver.AsyncSession();
         var commentId = Guid.NewGuid();
-        
+
         // language=Cypher
         const string seedQuery = """
                                  MATCH (m:Movie { id: $movieId }), (u:User { id: $userId })
@@ -636,7 +636,7 @@ public class CommentRepositoryTests
                                    (:Movie)-[:NOTIFICATION { relatedEntityId: apoc.create.uuid() }]->(:User),
                                    (m)-[:NOTIFICATION { relatedEntityId: apoc.create.uuid() }]->(:User)
                                  """;
-        
+
         var parameters = new
         {
             movieId = Database.MovieId.ToString(),
@@ -644,36 +644,36 @@ public class CommentRepositoryTests
             commentId = commentId.ToString(),
             dateTime = DateTime.Now
         };
-        
+
         await session.ExecuteWriteAsync(async tx => await tx.RunAsync(seedQuery, parameters));
-        
+
         // Act
         await session.ExecuteWriteAsync(async tx =>
             await RepositoryTests.DeleteCommentAsync(tx, commentId, Database.UserId));
-        
+
         // Assert
-        
+
         // language=Cypher
         const string query = """
                              MATCH (:Movie)-[r:NOTIFICATION]->(:User)
                              RETURN COUNT(r) AS count
                              """;
-        
+
         var cursor = await session.RunAsync(query);
         var count = await cursor.SingleAsync(record => ValExtensions.ToInt(record["count"]));
         count.Should().Be(2);
     }
-    
+
     [Fact]
     public async Task GetMovieIdFromCommentAsOwnerOrAdminAsync_ShouldNotReturnId_WhenCommentDoesNotExist()
     {
         // Arrange
         await using var session = Database.Driver.AsyncSession();
-        
+
         // Act
         var result = await session.ExecuteReadAsync(async tx =>
             await RepositoryTests.GetMovieIdFromCommentAsOwnerOrAdminAsync(tx, Guid.NewGuid(), Database.UserId));
-        
+
         // Assert
         result.Should().BeNull();
     }
@@ -685,44 +685,7 @@ public class CommentRepositoryTests
         await using var session = Database.Driver.AsyncSession();
         var userId = Guid.NewGuid();
         var commentId = Guid.NewGuid();
-        
-        // language=Cypher
-        const string seedQuery = """
-                             MATCH (m:Movie { id: $movieId })
-                             CREATE (:User { id: $userId })-[:COMMENTED {
-                               id: $commentId,
-                               text: "comment",
-                               createdAt: $dateTime,
-                               isEdited: false
-                             }]->(m)
-                             """;
 
-        var seedParameters = new
-        {
-            movieId = Database.MovieId.ToString(),
-            userId = userId.ToString(),
-            commentId = commentId.ToString(),
-            dateTime = DateTime.Now
-        };
-        
-        await session.ExecuteWriteAsync(async tx => await tx.RunAsync(seedQuery, seedParameters));
-        
-        // Act
-        var result = await session.ExecuteReadAsync(async tx =>
-            await RepositoryTests.GetMovieIdFromCommentAsOwnerOrAdminAsync(tx, commentId, userId));
-        
-        // Assert
-        result.Should().Be(Database.MovieId);
-    }
-    
-    [Fact]
-    public async Task GetMovieIdFromCommentAsOwnerOrAdminAsync_ShouldReturnId_IfUserCommentExistsAsAdmin()
-    {
-        // Arrange
-        await using var session = Database.Driver.AsyncSession();
-        var userId = Guid.NewGuid();
-        var commentId = Guid.NewGuid();
-        
         // language=Cypher
         const string seedQuery = """
                                  MATCH (m:Movie { id: $movieId })
@@ -741,17 +704,54 @@ public class CommentRepositoryTests
             commentId = commentId.ToString(),
             dateTime = DateTime.Now
         };
-        
+
         await session.ExecuteWriteAsync(async tx => await tx.RunAsync(seedQuery, seedParameters));
-        
+
         // Act
         var result = await session.ExecuteReadAsync(async tx =>
-            await RepositoryTests.GetMovieIdFromCommentAsOwnerOrAdminAsync(tx, commentId, Database.UserId));
-        
+            await RepositoryTests.GetMovieIdFromCommentAsOwnerOrAdminAsync(tx, commentId, userId));
+
         // Assert
         result.Should().Be(Database.MovieId);
     }
-    
+
+    [Fact]
+    public async Task GetMovieIdFromCommentAsOwnerOrAdminAsync_ShouldReturnId_IfUserCommentExistsAsAdmin()
+    {
+        // Arrange
+        await using var session = Database.Driver.AsyncSession();
+        var userId = Guid.NewGuid();
+        var commentId = Guid.NewGuid();
+
+        // language=Cypher
+        const string seedQuery = """
+                                 MATCH (m:Movie { id: $movieId })
+                                 CREATE (:User { id: $userId })-[:COMMENTED {
+                                   id: $commentId,
+                                   text: "comment",
+                                   createdAt: $dateTime,
+                                   isEdited: false
+                                 }]->(m)
+                                 """;
+
+        var seedParameters = new
+        {
+            movieId = Database.MovieId.ToString(),
+            userId = userId.ToString(),
+            commentId = commentId.ToString(),
+            dateTime = DateTime.Now
+        };
+
+        await session.ExecuteWriteAsync(async tx => await tx.RunAsync(seedQuery, seedParameters));
+
+        // Act
+        var result = await session.ExecuteReadAsync(async tx =>
+            await RepositoryTests.GetMovieIdFromCommentAsOwnerOrAdminAsync(tx, commentId, Database.UserId));
+
+        // Assert
+        result.Should().Be(Database.MovieId);
+    }
+
     [Fact]
     public async Task GetMovieIdFromCommentAsOwnerOrAdminAsync_ShouldNotReturnId_IfAdminCommentExistsAsUser()
     {
@@ -759,7 +759,7 @@ public class CommentRepositoryTests
         await using var session = Database.Driver.AsyncSession();
         var commentId = Guid.NewGuid();
         var userId = Guid.NewGuid();
-        
+
         // language=Cypher
         const string seedQuery = """
                                  MATCH (m:Movie { id: $movieId })
@@ -779,13 +779,13 @@ public class CommentRepositoryTests
             commentId = commentId.ToString(),
             dateTime = DateTime.Now
         };
-        
+
         await session.ExecuteWriteAsync(async tx => await tx.RunAsync(seedQuery, seedParameters));
-        
+
         // Act
         var result = await session.ExecuteReadAsync(async tx =>
             await RepositoryTests.GetMovieIdFromCommentAsOwnerOrAdminAsync(tx, commentId, userId));
-        
+
         // Assert
         result.Should().BeNull();
     }

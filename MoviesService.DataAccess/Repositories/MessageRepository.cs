@@ -14,10 +14,10 @@ public class MessageRepository : IMessageRepository
                              CREATE (m:Message {content: $messageContent, createdAt: $messageDate})<-[:SENT]-(u)
                              RETURN m.content AS content, u.name AS userName, m.createdAt AS date
                              """;
-        
+
         var cursor = await tx.RunAsync(query,
             new { userId = userId.ToString(), messageContent, messageDate = DateTime.Now });
-            
+
         return await cursor.SingleAsync(r =>
             new MessageDto(r["content"].As<string>(), r["userName"].As<string>(), r["date"].As<DateTime>()));
     }

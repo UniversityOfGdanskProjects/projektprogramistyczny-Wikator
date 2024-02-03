@@ -7,12 +7,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Neo4j.Driver" Version="5.17.0" />
+        <PackageReference Include="Neo4j.Driver" Version="5.17.0"/>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\MoviesService.Models\MoviesService.Models.csproj" />
-      <ProjectReference Include="..\MoviesService.Core\MoviesService.Core.csproj" />
+        <ProjectReference Include="..\MoviesService.Models\MoviesService.Models.csproj"/>
+        <ProjectReference Include="..\MoviesService.Core\MoviesService.Core.csproj"/>
     </ItemGroup>
 
 </Project>

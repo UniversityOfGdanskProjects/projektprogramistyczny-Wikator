@@ -26,17 +26,19 @@ public class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddlewa
                     context.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
                     await context.Response.WriteAsync(photoServiceException.Message);
                     break;
-                
+
                 case ServiceUnavailableException:
                     context.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
-                    await context.Response.WriteAsync("Access to database is currently unavailable, try again in few minutes.");
+                    await context.Response.WriteAsync(
+                        "Access to database is currently unavailable, try again in few minutes.");
                     break;
-                
+
                 case InvalidOperationException or Neo4jException:
                     context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-                    await context.Response.WriteAsync("There was an error when accessing database, please contact the administrator.");
+                    await context.Response.WriteAsync(
+                        "There was an error when accessing database, please contact the administrator.");
                     break;
-                
+
                 default:
                     context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
                     await context.Response.WriteAsync("An unexpected error occurred, please try again later.");

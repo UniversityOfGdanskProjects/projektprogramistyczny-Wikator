@@ -24,14 +24,18 @@ Authorization: Bearer {{admin_token}}
 Content-Type: application/json
 
 {
-    "title": "The Matrix",
-    "inTheaters": false,
-    "minimumAge": 13,
-    "releaseDate": "1999-03-31",
-    "TrailerUrl": "https://www.youtube.com/watch?v=vKQi3bBA1y8",
-    "description": "A computer hacker learns from mysterious rebels about the true nature of his reality and his role in the war against its controllers.",
-    "actorIds": [],
-    "genres": ["Action", "Adventure", "fsfsd"]
+  "title": "The Matrix",
+  "inTheaters": false,
+  "minimumAge": 13,
+  "releaseDate": "1999-03-31",
+  "TrailerUrl": "https://www.youtube.com/watch?v=vKQi3bBA1y8",
+  "description": "A computer hacker learns from mysterious rebels about the true nature of his reality and his role in the war against its controllers.",
+  "actorIds": [],
+  "genres": [
+    "Action",
+    "Adventure",
+    "fsfsd"
+  ]
 }
 
 ###
@@ -48,7 +52,11 @@ Content-Type: application/json
   "TrailerUrl": "https://www.youtube.com/watch?v=LbfMDwc4azU&t=1s",
   "description": "Hobbits",
   "actorIds": [],
-  "genres": ["Action", "Adventure", "fsfsd"]
+  "genres": [
+    "Action",
+    "Adventure",
+    "fsfsd"
+  ]
 }
 
 ###

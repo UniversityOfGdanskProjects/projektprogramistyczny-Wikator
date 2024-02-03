@@ -34,7 +34,7 @@ public class AccountRepository : IAccountRepository
                                a.email AS email,
                                a.role AS role
                              """;
-        
+
         var parameters = new
         {
             name = registerDto.Name,
@@ -62,7 +62,7 @@ public class AccountRepository : IAccountRepository
                                    a.passwordHash AS passwordHash,
                                    a.passwordSalt AS passwordSalt
                                  """;
-            
+
             var cursor = await tx.RunAsync(query, new { email = loginDto.Email });
             var record = await cursor.SingleAsync();
 
@@ -91,7 +91,7 @@ public class AccountRepository : IAccountRepository
                              MATCH (u:User { id: $Id })
                              DETACH DELETE u
                              """;
-        
+
         await tx.RunAsync(query, new { Id = userId.ToString() });
     }
 

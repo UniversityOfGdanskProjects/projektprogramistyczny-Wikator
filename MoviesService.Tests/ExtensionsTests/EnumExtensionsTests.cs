@@ -20,7 +20,7 @@ public class EnumExtensionsTests
         // Assert
         result.Should().Be(expected);
     }
-    
+
     [Theory]
     [InlineData("Popularity", "popularity")]
     [InlineData("ReleaseDate", "releaseDate")]

@@ -5,26 +5,26 @@ namespace MoviesService.Tests.RepositoriesTests;
 [Collection("DatabaseCollection")]
 public class AccountRepositoryTests
 {
-    private TestDatabaseSetup Database { get; }
-    private AccountRepository Repository { get; } = new();
-    
     public AccountRepositoryTests(TestDatabaseSetup database)
     {
         Database = database;
         Database.SetupDatabase().Wait();
         using var session = Database.Driver.AsyncSession();
-        
+
         // language=Cypher
         const string query = """
                              MATCH (u:User)
                              WHERE u.id <> $userId
                              DELETE u
                              """;
-        
+
         var parameters = new { userId = Database.UserId.ToString() };
         session.ExecuteWriteAsync(async tx => await tx.RunAsync(query, parameters)).Wait();
         session.CloseAsync().Wait();
     }
+
+    private TestDatabaseSetup Database { get; }
+    private AccountRepository Repository { get; } = new();
 
     [Fact]
     public async Task RegisterAsync_ShouldCreateNode()
@@ -37,12 +37,12 @@ public class AccountRepositoryTests
             Email = "test@gmail.com",
             Password = "password"
         };
-        
+
         // Act and Assert
         var user = await session.ExecuteWriteAsync(async tx =>
         {
             await Repository.RegisterAsync(tx, registerDto);
-            
+
             // language=Cypher
             const string query = """
                                  MATCH (u:User { email: $email })
@@ -52,12 +52,12 @@ public class AccountRepositoryTests
                                    u.email AS email,
                                    u.role AS role
                                  """;
-        
+
             var parameters = new { email = registerDto.Email };
             var cursor = await tx.RunAsync(query, parameters);
             return await cursor.SingleAsync();
         });
-        
+
         ValExtensions.ToString(user["id"]).Should().NotBeNullOrEmpty();
         ValExtensions.ToString(user["name"]).Should().Be(registerDto.Name);
         ValExtensions.ToString(user["email"]).Should().Be(registerDto.Email);
@@ -75,10 +75,10 @@ public class AccountRepositoryTests
             Email = "test@gmail.com",
             Password = "password"
         };
-        
+
         // Act
         var user = await session.ExecuteWriteAsync(async tx => await Repository.RegisterAsync(tx, registerDto));
-        
+
         // Assert
         user.Email.Should().Be(registerDto.Email);
         user.Name.Should().Be(registerDto.Name);
@@ -147,18 +147,18 @@ public class AccountRepositoryTests
     {
         // Arrange
         await using var session = Database.Driver.AsyncSession();
-        
+
         // Act
         await session.ExecuteWriteAsync(async tx => await Repository.DeleteUserAsync(tx, Database.UserId));
-        
+
         // Assert
-        
+
         // language=Cypher
         const string query = """
                              MATCH (u:User { id: $userId })
                              RETURN COUNT(u) > 0 AS exists
                              """;
-        
+
         var parameters = new { userId = Database.UserId.ToString() };
         var cursor = await session.RunAsync(query, parameters);
         var result = await cursor.SingleAsync(record => ValExtensions.ToBool(record["exists"]));

@@ -23,10 +23,10 @@ public class UserRepository : IUserRepository
             var user = record["u"].As<INode>();
 
             return new MemberDto(
-                Id: Guid.Parse(user["id"].As<string>()),
-                Username: user["name"].As<string>(),
-                Role: user["role"].As<string>(),
-                LastActive: DateTime.Parse(user["lastActive"].As<string>())
+                Guid.Parse(user["id"].As<string>()),
+                user["name"].As<string>(),
+                user["role"].As<string>(),
+                DateTime.Parse(user["lastActive"].As<string>())
             );
         });
     }
@@ -39,7 +39,7 @@ public class UserRepository : IUserRepository
                              WHERE date(u.lastActive) = date()
                              RETURN COUNT(u) AS activeTodayCount
                              """;
-        
+
         var cursor = await tx.RunAsync(query);
         return await cursor.SingleAsync(record => record["activeTodayCount"].As<int>());
     }
@@ -50,13 +50,13 @@ public class UserRepository : IUserRepository
         const string query = """
                              MATCH (u:User { id: $userId })
                              SET u.name = $newUsername
-                             RETURN 
+                             RETURN
                                u.id AS id,
                                u.name AS name,
                                u.email as email,
                                u.role AS role
                              """;
-        
+
         var cursor = await tx.RunAsync(query, new { userId = userId.ToString(), newUsername });
         return await cursor.SingleAsync(record => record.ConvertToUser());
     }
@@ -68,7 +68,7 @@ public class UserRepository : IUserRepository
                              MATCH (u:User { id: $userId })
                              SET u.role = 'Admin'
                              """;
-        
+
         await tx.RunAsync(query, new { userId = userId.ToString() });
     }
 

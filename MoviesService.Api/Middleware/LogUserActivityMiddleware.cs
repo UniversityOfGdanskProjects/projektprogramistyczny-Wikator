@@ -7,7 +7,7 @@ namespace MoviesService.Api.Middleware;
 public class LogUserActivityMiddleware(RequestDelegate next)
 {
     private RequestDelegate Next { get; } = next;
-    
+
     public async Task InvokeAsync(HttpContext context, IDriver driver,
         ILogger<LogUserActivityMiddleware> logger, IMqttService mqttService)
     {
@@ -15,7 +15,7 @@ public class LogUserActivityMiddleware(RequestDelegate next)
 
         var userId = context.User.Claims
             .FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value;
-        
+
         if (userId is null)
             return;
 
@@ -26,25 +26,22 @@ public class LogUserActivityMiddleware(RequestDelegate next)
         ILogger<LogUserActivityMiddleware> logger, IMqttService mqttService)
     {
         // language=Cypher
-        const string query =  """
-                              MATCH (u:User { id: $userId })
-                              WITH date(u.lastActive) AS previousDate, u
-                              SET u.lastActive = datetime(), u.activityScore = u.activityScore + 1
-                              RETURN previousDate <> date() AS isNewDay
-                              """;
-        
+        const string query = """
+                             MATCH (u:User { id: $userId })
+                             WITH date(u.lastActive) AS previousDate, u
+                             SET u.lastActive = datetime(), u.activityScore = u.activityScore + 1
+                             RETURN previousDate <> date() AS isNewDay
+                             """;
+
         await using var session = driver.AsyncSession();
         var isNewDay = await session.ExecuteWriteAsync(async tx =>
         {
             var cursor = await tx.RunAsync(query, new { userId = userId.ToString() });
             return await cursor.SingleAsync(record => record["isNewDay"].As<bool>());
         });
-        
-        if (isNewDay)
-        {
-            await mqttService.SendNotificationAsync("users/new-today", "New user today!");
-        }
-        
+
+        if (isNewDay) await mqttService.SendNotificationAsync("users/new-today", "New user today!");
+
         logger.LogInformation($"User with id {userId} has been updated.");
     }
 }

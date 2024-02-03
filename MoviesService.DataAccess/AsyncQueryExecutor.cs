@@ -6,8 +6,8 @@ namespace MoviesService.DataAccess;
 public class AsyncQueryExecutor(IDriver driver) : IAsyncQueryExecutor
 {
     private IDriver Driver { get; } = driver;
-    
-    
+
+
     public async Task<T> ExecuteReadAsync<T>(Func<IAsyncQueryRunner, Task<T>> query)
     {
         await using var session = Driver.AsyncSession();

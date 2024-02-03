@@ -10,7 +10,7 @@ public class GenreController(IAsyncQueryExecutor queryExecutor, IGenreRepository
     : BaseApiController(queryExecutor)
 {
     private IGenreRepository GenreRepository { get; } = genreRepository;
-    
+
     [HttpGet]
     public async Task<IActionResult> GetAllGenres()
     {

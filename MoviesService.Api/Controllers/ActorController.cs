@@ -7,13 +7,15 @@ using MoviesService.DataAccess.Contracts;
 using MoviesService.DataAccess.Repositories.Contracts;
 using MoviesService.Models.DTOs.Requests;
 using MoviesService.Services.Contracts;
-using Neo4j.Driver;
 
 namespace MoviesService.Api.Controllers;
 
 [Route("api/[controller]")]
 [Authorize(Policy = "RequireAdminRole")]
-public class ActorController(IAsyncQueryExecutor queryExecutor, IPhotoService photoService, IActorRepository actorRepository)
+public class ActorController(
+    IAsyncQueryExecutor queryExecutor,
+    IPhotoService photoService,
+    IActorRepository actorRepository)
     : BaseApiController(queryExecutor)
 {
     private IPhotoService PhotoService { get; } = photoService;
@@ -30,7 +32,7 @@ public class ActorController(IAsyncQueryExecutor queryExecutor, IPhotoService ph
             return Ok(actors);
         });
     }
-    
+
     [HttpGet("{id:guid}")]
     [AllowAnonymous]
     public async Task<IActionResult> GetActor(Guid id)
@@ -54,7 +56,7 @@ public class ActorController(IAsyncQueryExecutor queryExecutor, IPhotoService ph
         {
             string? pictureAbsoluteUri = null;
             string? picturePublicId = null;
-		
+
             if (actorDto.FileContent is not null)
             {
                 var file = new FormFile(
@@ -62,7 +64,7 @@ public class ActorController(IAsyncQueryExecutor queryExecutor, IPhotoService ph
                     0,
                     actorDto.FileContent.Length,
                     "file", $"movie-{new Guid()}"
-                    );
+                );
 
                 var uploadResult = await PhotoService.AddPhotoAsync(file, Gravity.Face);
                 if (uploadResult.Error is not null)
@@ -71,12 +73,12 @@ public class ActorController(IAsyncQueryExecutor queryExecutor, IPhotoService ph
                 pictureAbsoluteUri = uploadResult.SecureUrl.AbsoluteUri;
                 picturePublicId = uploadResult.PublicId;
             }
-            
+
             var actor = await ActorRepository.CreateActor(tx, actorDto, pictureAbsoluteUri, picturePublicId);
             return CreatedAtAction(nameof(GetActor), new { id = actor.Id }, actor);
         });
     }
-    
+
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> UpdateActor(Guid id, EditActorDto actorDto)
     {
@@ -84,12 +86,12 @@ public class ActorController(IAsyncQueryExecutor queryExecutor, IPhotoService ph
         {
             if (!await ActorRepository.ActorExists(tx, id))
                 return NotFound($"Actor with id {id} was not found");
-            
+
             var actor = await ActorRepository.UpdateActor(tx, id, actorDto);
             return Ok(actor);
         });
     }
-    
+
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> DeleteActor(Guid id)
     {
@@ -97,7 +99,7 @@ public class ActorController(IAsyncQueryExecutor queryExecutor, IPhotoService ph
         {
             if (!await ActorRepository.ActorExists(tx, id))
                 return NotFound($"Actor with id {id} was not found");
-            
+
             var publicId = await ActorRepository.GetPublicId(tx, id);
             if (publicId is not null)
             {
@@ -105,12 +107,12 @@ public class ActorController(IAsyncQueryExecutor queryExecutor, IPhotoService ph
                 if (deletionResult.Error is not null)
                     throw new PhotoServiceException("Failed to delete photo, please try again in few minutes");
             }
-            
+
             await ActorRepository.DeleteActor(tx, id);
             return NoContent();
         });
     }
-    
+
     [HttpPost("{id:guid}/picture")]
     public async Task<IActionResult> AddActorPicture(Guid id, UpsertPictureDto pictureDto)
     {
@@ -121,7 +123,7 @@ public class ActorController(IAsyncQueryExecutor queryExecutor, IPhotoService ph
 
             if (await ActorRepository.ActorPictureExists(tx, id))
                 return BadRequest("Actor already has a picture");
-            
+
             var file = new FormFile(
                 new MemoryStream(pictureDto.FileContent),
                 0,
@@ -134,7 +136,7 @@ public class ActorController(IAsyncQueryExecutor queryExecutor, IPhotoService ph
                 throw new PhotoServiceException("Photo failed to save, please try again in few minutes");
 
             await ActorRepository.AddActorPicture(tx, id, uploadResult.SecureUrl.AbsoluteUri, uploadResult.PublicId);
-            return Ok(new {pictureUri = uploadResult.SecureUrl.AbsoluteUri});
+            return Ok(new { pictureUri = uploadResult.SecureUrl.AbsoluteUri });
         });
     }
 
@@ -167,10 +169,10 @@ public class ActorController(IAsyncQueryExecutor queryExecutor, IPhotoService ph
                 throw new PhotoServiceException("Photo failed to save, please try again in few minutes");
 
             await ActorRepository.AddActorPicture(tx, id, uploadResult.SecureUrl.AbsoluteUri, uploadResult.PublicId);
-            return Ok(new {pictureUri = uploadResult.SecureUrl.AbsoluteUri});
+            return Ok(new { pictureUri = uploadResult.SecureUrl.AbsoluteUri });
         });
     }
-    
+
     [HttpDelete("{id:guid}/picture")]
     public async Task<IActionResult> DeleteActorPicture(Guid id)
     {
@@ -182,7 +184,7 @@ public class ActorController(IAsyncQueryExecutor queryExecutor, IPhotoService ph
             var publicId = await ActorRepository.GetPublicId(tx, id);
             if (publicId is null)
                 return BadRequest("Actor does not have a picture");
-            
+
             var deletionResult = await PhotoService.DeleteAsync(publicId);
             if (deletionResult.Error is not null)
                 throw new PhotoServiceException("Failed to delete photo, please try again in few minutes");

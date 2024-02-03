@@ -46,7 +46,7 @@ public class FavouriteRepository : IFavouriteRepository
                              MATCH (u:User { id: $userId }), (m:Movie { id: $movieId })
                              CREATE (u)-[r:FAVOURITE]->(m)
                              """;
-        
+
         await tx.RunAsync(query, new { userId = userId.ToString(), movieId = movieId.ToString() });
     }
 
@@ -60,7 +60,7 @@ public class FavouriteRepository : IFavouriteRepository
 
         await tx.RunAsync(query, new { userId = userId.ToString(), movieId = movieId.ToString() });
     }
-    
+
     public async Task<bool> MovieIsFavourite(IAsyncQueryRunner tx, Guid movieId, Guid userId)
     {
         // language=Cypher
@@ -68,7 +68,7 @@ public class FavouriteRepository : IFavouriteRepository
                              MATCH (:User { id: $userId })-[r:FAVOURITE]->(:Movie { id: $movieId })
                              RETURN COUNT(r) > 0 AS favouriteExists
                              """;
-        
+
         var cursor = await tx.RunAsync(query, new { userId = userId.ToString(), movieId = movieId.ToString() });
         return await cursor.SingleAsync(record => record["favouriteExists"].As<bool>());
     }

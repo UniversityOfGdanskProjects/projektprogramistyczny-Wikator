@@ -28,23 +28,23 @@ public class NotificationRepository : INotificationRepository
                              SKIP $skip
                              LIMIT $limit
                              """;
-        
+
         var parameters = new
         {
             userId = userId.ToString(),
             skip = (queryParams.PageNumber - 1) * queryParams.PageSize,
             limit = queryParams.PageSize
         };
-        
+
         var cursor = await tx.RunAsync(query, parameters);
         var items = await cursor.ToListAsync(record => record.ConvertToNotificationDto());
-        
+
         // language=Cypher
         const string totalCountQuery = """
                                        MATCH (:User { id: $userId })<-[r:NOTIFICATION]-(:Movie)
                                        RETURN COUNT(r) AS totalCount
                                        """;
-        
+
         var totalCountCursor = await tx.RunAsync(totalCountQuery, new { userId = userId.ToString() });
         var totalCount = await totalCountCursor.SingleAsync(record => record["totalCount"].As<int>());
         return new PagedList<NotificationDto>(items, queryParams.PageNumber, queryParams.PageSize, totalCount);
@@ -58,7 +58,7 @@ public class NotificationRepository : INotificationRepository
                              SET r.isRead = true
                              """;
 
-        await tx.RunAsync(query, new { userId = userId.ToString(), notificationId = notificationId.ToString()});
+        await tx.RunAsync(query, new { userId = userId.ToString(), notificationId = notificationId.ToString() });
     }
 
     public Task MarkAllNotificationsAsReadAsync(IAsyncQueryRunner tx, Guid userId)
@@ -68,7 +68,7 @@ public class NotificationRepository : INotificationRepository
                              MATCH (:User { id: $userId })<-[r:NOTIFICATION]-(:Movie)
                              SET r.isRead = true
                              """;
-        
+
         return tx.RunAsync(query, new { userId = userId.ToString() });
     }
 
@@ -79,8 +79,8 @@ public class NotificationRepository : INotificationRepository
                              MATCH (:User { id: $userId })<-[r:NOTIFICATION { id: $notificationId }]-(:Movie)
                              DELETE r
                              """;
-        
-        await tx.RunAsync(query, new { userId = userId.ToString(), notificationId = notificationId.ToString()});
+
+        await tx.RunAsync(query, new { userId = userId.ToString(), notificationId = notificationId.ToString() });
     }
 
     public async Task DeleteAllNotificationsAsync(IAsyncQueryRunner tx, Guid userId)
@@ -90,7 +90,7 @@ public class NotificationRepository : INotificationRepository
                              MATCH (:User { id: $userId })<-[r:NOTIFICATION]-(:Movie)
                              DELETE r
                              """;
-        
+
         await tx.RunAsync(query, new { userId = userId.ToString() });
     }
 
@@ -101,13 +101,13 @@ public class NotificationRepository : INotificationRepository
                              MATCH (:User { id: $userId })<-[r:NOTIFICATION { id: $notificationId }]-(:Movie)
                              RETURN COUNT(r) > 0 AS exists
                              """;
-        
+
         var parameters = new
         {
             userId = userId.ToString(),
             notificationId = notificationId.ToString()
         };
-        
+
         var cursor = await tx.RunAsync(query, parameters);
         return await cursor.SingleAsync(record => record["exists"].As<bool>());
     }

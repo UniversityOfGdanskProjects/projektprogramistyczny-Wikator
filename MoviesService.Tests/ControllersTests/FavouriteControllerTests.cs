@@ -20,20 +20,20 @@ public class FavouriteControllerTests : ControllerTestsBase
 
         var claimsProvider = new Mock<IUserClaimsProvider>();
         claimsProvider.Setup(x => x.GetUserId(It.IsAny<ClaimsPrincipal>())).Returns(Guid.NewGuid());
-        
+
         var movieRepository = new Mock<IMovieRepository>();
         var controller = new FavouriteController(QueryExecutorMock.Object, favouriteRepository.Object,
             movieRepository.Object, claimsProvider.Object);
-        
+
         // Act
         var result = await controller.GetAllMoviesOnFavouriteList();
-        
+
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
         var model = Assert.IsAssignableFrom<IEnumerable<MovieDto>>(okResult.Value);
         model.Should().BeEmpty();
     }
-    
+
     [Fact]
     public async Task AddToFavouriteList_ReturnsNotFoundObjectResult_WhenMovieNotFound()
     {
@@ -44,19 +44,19 @@ public class FavouriteControllerTests : ControllerTestsBase
 
         var claimsProvider = new Mock<IUserClaimsProvider>();
         claimsProvider.Setup(x => x.GetUserId(It.IsAny<ClaimsPrincipal>())).Returns(Guid.NewGuid());
-        
+
         var favouriteRepository = new Mock<IFavouriteRepository>();
         var controller = new FavouriteController(QueryExecutorMock.Object, favouriteRepository.Object,
             movieRepository.Object, claimsProvider.Object);
-        
+
         // Act
         var result = await controller.AddToFavouriteList(Guid.NewGuid());
-        
+
         // Assert
         var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
         notFoundResult.Value.Should().Be("Movie does not exist found");
     }
-    
+
     [Fact]
     public async Task AddToFavouriteList_ReturnsBadRequestObjectResult_WhenMovieIsAlreadyFavourite()
     {
@@ -67,22 +67,23 @@ public class FavouriteControllerTests : ControllerTestsBase
 
         var claimsProvider = new Mock<IUserClaimsProvider>();
         claimsProvider.Setup(x => x.GetUserId(It.IsAny<ClaimsPrincipal>())).Returns(Guid.NewGuid());
-        
+
         var favouriteRepository = new Mock<IFavouriteRepository>();
-        favouriteRepository.Setup(x => x.MovieIsFavourite(It.IsAny<IAsyncQueryRunner>(), It.IsAny<Guid>(), It.IsAny<Guid>()))
+        favouriteRepository.Setup(x =>
+                x.MovieIsFavourite(It.IsAny<IAsyncQueryRunner>(), It.IsAny<Guid>(), It.IsAny<Guid>()))
             .ReturnsAsync(true);
-        
+
         var controller = new FavouriteController(QueryExecutorMock.Object, favouriteRepository.Object,
             movieRepository.Object, claimsProvider.Object);
-        
+
         // Act
         var result = await controller.AddToFavouriteList(Guid.NewGuid());
-        
+
         // Assert
         var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
         badRequestResult.Value.Should().Be("Movie is already favourite");
     }
-    
+
     [Fact]
     public async Task AddToFavouriteList_ReturnsNoContentResult_WhenMovieIsAddedToFavourites()
     {
@@ -93,21 +94,22 @@ public class FavouriteControllerTests : ControllerTestsBase
 
         var claimsProvider = new Mock<IUserClaimsProvider>();
         claimsProvider.Setup(x => x.GetUserId(It.IsAny<ClaimsPrincipal>())).Returns(Guid.NewGuid());
-        
+
         var favouriteRepository = new Mock<IFavouriteRepository>();
-        favouriteRepository.Setup(x => x.MovieIsFavourite(It.IsAny<IAsyncQueryRunner>(), It.IsAny<Guid>(), It.IsAny<Guid>()))
+        favouriteRepository.Setup(x =>
+                x.MovieIsFavourite(It.IsAny<IAsyncQueryRunner>(), It.IsAny<Guid>(), It.IsAny<Guid>()))
             .ReturnsAsync(false);
-        
+
         var controller = new FavouriteController(QueryExecutorMock.Object, favouriteRepository.Object,
             movieRepository.Object, claimsProvider.Object);
-        
+
         // Act
         var result = await controller.AddToFavouriteList(Guid.NewGuid());
-        
+
         // Assert
         Assert.IsType<NoContentResult>(result);
     }
-    
+
     [Fact]
     public async Task RemoveFromFavourites_ReturnsNotFoundObjectResult_WhenMovieNotFound()
     {
@@ -118,19 +120,19 @@ public class FavouriteControllerTests : ControllerTestsBase
 
         var claimsProvider = new Mock<IUserClaimsProvider>();
         claimsProvider.Setup(x => x.GetUserId(It.IsAny<ClaimsPrincipal>())).Returns(Guid.NewGuid());
-        
+
         var favouriteRepository = new Mock<IFavouriteRepository>();
         var controller = new FavouriteController(QueryExecutorMock.Object, favouriteRepository.Object,
             movieRepository.Object, claimsProvider.Object);
-        
+
         // Act
         var result = await controller.RemoveFromFavourites(Guid.NewGuid());
-        
+
         // Assert
         var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
         notFoundResult.Value.Should().Be("Movie does not exist");
     }
-    
+
     [Fact]
     public async Task RemoveFromFavourites_ReturnsBadRequestObjectResult_WhenMovieIsNotOnFavouriteList()
     {
@@ -141,22 +143,23 @@ public class FavouriteControllerTests : ControllerTestsBase
 
         var claimsProvider = new Mock<IUserClaimsProvider>();
         claimsProvider.Setup(x => x.GetUserId(It.IsAny<ClaimsPrincipal>())).Returns(Guid.NewGuid());
-        
+
         var favouriteRepository = new Mock<IFavouriteRepository>();
-        favouriteRepository.Setup(x => x.MovieIsFavourite(It.IsAny<IAsyncQueryRunner>(), It.IsAny<Guid>(), It.IsAny<Guid>()))
+        favouriteRepository.Setup(x =>
+                x.MovieIsFavourite(It.IsAny<IAsyncQueryRunner>(), It.IsAny<Guid>(), It.IsAny<Guid>()))
             .ReturnsAsync(false);
-        
+
         var controller = new FavouriteController(QueryExecutorMock.Object, favouriteRepository.Object,
             movieRepository.Object, claimsProvider.Object);
-        
+
         // Act
         var result = await controller.RemoveFromFavourites(Guid.NewGuid());
-        
+
         // Assert
         var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
         badRequestResult.Value.Should().Be("This movie is not on your favourite list");
     }
-    
+
     [Fact]
     public async Task RemoveFromFavourites_ReturnsNoContentResult_WhenMovieIsRemovedFromFavourites()
     {
@@ -167,17 +170,18 @@ public class FavouriteControllerTests : ControllerTestsBase
 
         var claimsProvider = new Mock<IUserClaimsProvider>();
         claimsProvider.Setup(x => x.GetUserId(It.IsAny<ClaimsPrincipal>())).Returns(Guid.NewGuid());
-        
+
         var favouriteRepository = new Mock<IFavouriteRepository>();
-        favouriteRepository.Setup(x => x.MovieIsFavourite(It.IsAny<IAsyncQueryRunner>(), It.IsAny<Guid>(), It.IsAny<Guid>()))
+        favouriteRepository.Setup(x =>
+                x.MovieIsFavourite(It.IsAny<IAsyncQueryRunner>(), It.IsAny<Guid>(), It.IsAny<Guid>()))
             .ReturnsAsync(true);
-        
+
         var controller = new FavouriteController(QueryExecutorMock.Object, favouriteRepository.Object,
             movieRepository.Object, claimsProvider.Object);
-        
+
         // Act
         var result = await controller.RemoveFromFavourites(Guid.NewGuid());
-        
+
         // Assert
         Assert.IsType<NoContentResult>(result);
     }
