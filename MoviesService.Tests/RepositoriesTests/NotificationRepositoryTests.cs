@@ -344,4 +344,49 @@ public class NotificationRepositoryTests
 
         result.Should().BeTrue();
     }
+
+    [Fact]
+    public async Task NotificationExistsAsync_ShouldReturnTrue_IfNotificationExists()
+    {
+        // Arrange
+        var notificationId = Guid.NewGuid();
+        await using var session = Database.Driver.AsyncSession();
+
+        // language=Cypher
+        const string query = """
+                             MATCH (u:User { id: $userId }), (m: Movie { id: $movieId })
+                             CREATE (u)<-[:NOTIFICATION { id: $notificationId }]-(m)
+                             """;
+
+        var parameters = new
+        {
+            userId = Database.UserId.ToString(),
+            movieId = Database.MovieId.ToString(),
+            notificationId = notificationId.ToString()
+        };
+
+        await session.ExecuteWriteAsync(async tx => await tx.RunAsync(query, parameters));
+        
+        // Act
+        var result = await session.ExecuteReadAsync(async tx =>
+            await Repository.NotificationExistsAsync(tx, notificationId, Database.UserId));
+        
+        // Assert
+        result.Should().BeTrue();
+    }
+    
+    [Fact]
+    public async Task NotificationExistsAsync_ShouldReturnFalse_IfNotificationDoesNotExist()
+    {
+        // Arrange
+        var notificationId = Guid.NewGuid();
+        await using var session = Database.Driver.AsyncSession();
+        
+        // Act
+        var result = await session.ExecuteReadAsync(async tx =>
+            await Repository.NotificationExistsAsync(tx, notificationId, Database.UserId));
+        
+        // Assert
+        result.Should().BeFalse();
+    }
 }

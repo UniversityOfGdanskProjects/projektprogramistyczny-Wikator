@@ -1,4 +1,5 @@
-﻿using MoviesService.DataAccess.Extensions;
+﻿using FluentAssertions;
+using MoviesService.DataAccess.Extensions;
 
 namespace MoviesService.Tests.RepositoriesTests;
 
@@ -12,8 +13,8 @@ public class ReviewRepositoryTests
 
         // language=Cypher
         const string query = """
-                             MATCH (u1:User { id: $userId }), (m1:Movie { id: $movieId })
-                             CREATE (u1)-[:REVIEWED {id: $reviewId, score: 5}]->(m1)
+                             MATCH (u:User { id: $userId }), (m:Movie { id: $movieId })
+                             CREATE (u)-[:REVIEWED {id: $reviewId, score: 5}]->(m)
                              """;
 
         var parameters = new
@@ -22,6 +23,7 @@ public class ReviewRepositoryTests
             movieId = Database.MovieId.ToString(),
             reviewId = ReviewId.ToString()
         };
+        
         using var session = Database.Driver.AsyncSession();
         session.ExecuteWriteAsync(async tx => await tx.RunAsync(query, parameters)).Wait();
     }
@@ -134,6 +136,36 @@ public class ReviewRepositoryTests
 
         // Assert
         Assert.False(reviewExists);
+    }
+
+    [Fact]
+    public async Task GetMovieIdFromReviewId_ShouldReturnId_IfReviewExists()
+    {
+        // Arrange
+        var repository = new ReviewRepository();
+        await using var session = Database.Driver.AsyncSession();
+        
+        // Act
+        var result = await session.ExecuteReadAsync(async tx =>
+            await repository.GetMovieIdFromReviewId(tx, ReviewId, Database.UserId));
+        
+        // Assert
+        result.Should().Be(Database.MovieId);
+    }
+    
+    [Fact]
+    public async Task GetMovieIdFromReviewId_ShouldNull_IfReviewDoesNotExists()
+    {
+        // Arrange
+        var repository = new ReviewRepository();
+        await using var session = Database.Driver.AsyncSession();
+        
+        // Act
+        var result = await session.ExecuteReadAsync(async tx =>
+            await repository.GetMovieIdFromReviewId(tx, Guid.NewGuid(), Database.UserId));
+        
+        // Assert
+        result.Should().BeNull();
     }
 
     [Fact]
