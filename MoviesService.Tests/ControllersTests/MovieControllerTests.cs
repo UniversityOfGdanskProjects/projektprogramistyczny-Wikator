@@ -192,9 +192,8 @@ public class MovieControllerTests : ControllerTestsBase
 
         // Act
         async Task<IActionResult> Act()
-        {
-            return await controller.CreateMovie(movieDto);
-        }
+            => await controller.CreateMovie(movieDto);
+        
     }
 
     [Fact]
