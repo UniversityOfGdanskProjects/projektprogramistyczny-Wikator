@@ -1,6 +1,6 @@
 ﻿using FluentAssertions;
-using MoviesService.Core.Enums;
-using MoviesService.Core.Helpers;
+using MoviesService.Models.Enums;
+using MoviesService.Models.Parameters;
 
 namespace MoviesService.Tests.RepositoriesTests;
 

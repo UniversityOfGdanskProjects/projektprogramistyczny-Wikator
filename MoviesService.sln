@@ -11,10 +11,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MoviesService.Models", "Mov
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MoviesService.DataAccess", "MoviesService.DataAccess\MoviesService.DataAccess.csproj", "{1281CD46-A2C7-411B-8B67-494AE5D22EC4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MoviesService.Core", "MoviesService.Core\MoviesService.Core.csproj", "{F859E507-42A6-41D9-A1B3-F8C336D27EE3}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MoviesService.Services", "MoviesService.Services\MoviesService.Services.csproj", "{FE443C39-44D6-4829-B3BE-9FF0D16DF35E}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -37,14 +33,6 @@ Global
 		{1281CD46-A2C7-411B-8B67-494AE5D22EC4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1281CD46-A2C7-411B-8B67-494AE5D22EC4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1281CD46-A2C7-411B-8B67-494AE5D22EC4}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F859E507-42A6-41D9-A1B3-F8C336D27EE3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F859E507-42A6-41D9-A1B3-F8C336D27EE3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F859E507-42A6-41D9-A1B3-F8C336D27EE3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F859E507-42A6-41D9-A1B3-F8C336D27EE3}.Release|Any CPU.Build.0 = Release|Any CPU
-		{FE443C39-44D6-4829-B3BE-9FF0D16DF35E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FE443C39-44D6-4829-B3BE-9FF0D16DF35E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FE443C39-44D6-4829-B3BE-9FF0D16DF35E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FE443C39-44D6-4829-B3BE-9FF0D16DF35E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

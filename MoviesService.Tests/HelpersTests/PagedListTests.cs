@@ -1,5 +1,5 @@
 ﻿using FluentAssertions;
-using MoviesService.Core.Helpers;
+using MoviesService.DataAccess.Helpers;
 
 namespace MoviesService.Tests.HelpersTests;
 

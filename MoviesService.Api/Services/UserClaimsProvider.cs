@@ -1,7 +1,7 @@
 ﻿using System.Security.Claims;
-using MoviesService.Services.Contracts;
+using MoviesService.Api.Services.Contracts;
 
-namespace MoviesService.Services;
+namespace MoviesService.Api.Services;
 
 public class UserClaimsProvider : IUserClaimsProvider
 {

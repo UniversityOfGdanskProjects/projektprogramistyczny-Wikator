@@ -1,4 +1,4 @@
-﻿namespace MoviesService.Core.Enums;
+﻿namespace MoviesService.Models.Enums;
 
 public enum SortOrder
 {

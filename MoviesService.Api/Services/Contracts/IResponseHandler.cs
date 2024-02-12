@@ -1,7 +1,6 @@
-﻿using Microsoft.AspNetCore.Http;
-using MoviesService.Core.Helpers;
+﻿using MoviesService.Models.Headers;
 
-namespace MoviesService.Services.Contracts;
+namespace MoviesService.Api.Services.Contracts;
 
 public interface IResponseHandler
 {

@@ -1,7 +1,7 @@
 ﻿using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using MoviesService.Api.Controllers;
-using MoviesService.Services.Contracts;
+using MoviesService.Api.Services.Contracts;
 using MoviesService.Tests.ControllersTests.Base;
 
 namespace MoviesService.Tests.ControllersTests;

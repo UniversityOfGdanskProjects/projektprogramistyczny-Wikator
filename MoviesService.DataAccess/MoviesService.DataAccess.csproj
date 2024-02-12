@@ -12,7 +12,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\MoviesService.Models\MoviesService.Models.csproj"/>
-        <ProjectReference Include="..\MoviesService.Core\MoviesService.Core.csproj"/>
     </ItemGroup>
 
 </Project>

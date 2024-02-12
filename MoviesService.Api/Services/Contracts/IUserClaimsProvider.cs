@@ -1,6 +1,6 @@
 ﻿using System.Security.Claims;
 
-namespace MoviesService.Services.Contracts;
+namespace MoviesService.Api.Services.Contracts;
 
 public interface IUserClaimsProvider
 {

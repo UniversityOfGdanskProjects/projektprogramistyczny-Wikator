@@ -1,17 +1,16 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using System.Text.Json;
-using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using MoviesService.Api.Services.Contracts;
 using MoviesService.DataAccess.Contracts;
 using MoviesService.DataAccess.Repositories.Contracts;
-using MoviesService.Services.Contracts;
 using MQTTnet;
 using MQTTnet.Client;
 using Newtonsoft.Json;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
-namespace MoviesService.Services;
+namespace MoviesService.Api.Services;
 
 public class MqttService : IMqttService
 {
@@ -61,12 +60,8 @@ public class MqttService : IMqttService
             if (userId is null)
                 return;
 
-
             var messageDto = await queryExecutor.ExecuteWriteAsync(async tx =>
                 await messageRepository.CreateMessageAsync(tx, Guid.Parse(userId), message.Content));
-
-            if (messageDto is null)
-                return;
 
             JsonSerializerOptions options = new()
             {
@@ -93,7 +88,6 @@ public class MqttService : IMqttService
             .WithTopic(topic)
             .WithPayload(message.ToString())
             .Build();
-        ;
 
         await _mqttClient.PublishAsync(applicationMessage);
     }

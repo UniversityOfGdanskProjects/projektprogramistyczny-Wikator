@@ -1,7 +1,7 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
+using MoviesService.Api.Services.Contracts;
 using MoviesService.DataAccess.Contracts;
-using MoviesService.Services.Contracts;
 
 namespace MoviesService.Tests.ControllersTests.Base;
 

@@ -1,6 +1,6 @@
 ﻿using FluentAssertions;
-using MoviesService.Core.Enums;
 using MoviesService.DataAccess.Extensions;
+using MoviesService.Models.Enums;
 
 namespace MoviesService.Tests.ExtensionsTests;
 

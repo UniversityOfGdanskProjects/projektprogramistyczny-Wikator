@@ -1,5 +1,5 @@
 ﻿using System.Net;
-using MoviesService.Core.Exceptions;
+using MoviesService.Api.Exceptions;
 using Neo4j.Driver;
 
 namespace MoviesService.Api.Middleware;

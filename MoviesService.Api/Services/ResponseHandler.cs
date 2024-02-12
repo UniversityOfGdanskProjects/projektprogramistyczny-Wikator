@@ -1,11 +1,12 @@
 ﻿using System.Text.Json;
-using MoviesService.Core.Helpers;
+using MoviesService.Api.Services.Contracts;
+using MoviesService.Models.Headers;
 
-namespace MoviesService.Api.Extensions;
+namespace MoviesService.Api.Services;
 
-public static class HttpExtensions
+public class ResponseHandler : IResponseHandler
 {
-    public static void AddPaginationHeader(this HttpResponse response, PaginationHeader paginationHeader)
+    public void AddPaginationHeader(HttpResponse response, PaginationHeader paginationHeader)
     {
         JsonSerializerOptions options = new()
         {

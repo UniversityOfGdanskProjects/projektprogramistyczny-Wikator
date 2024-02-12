@@ -9,16 +9,19 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="CloudinaryDotNet" Version="1.25.1" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.12"/>
-        <PackageReference Include="Neo4j.Driver" Version="5.17.0"/>
+        <PackageReference Include="MQTTnet" Version="4.3.3.952" />
         <PackageReference Include="Serilog.AspNetCore" Version="8.0.1"/>
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\MoviesService.Models\MoviesService.Models.csproj"/>
-        <ProjectReference Include="..\MoviesService.Core\MoviesService.Core.csproj"/>
         <ProjectReference Include="..\MoviesService.DataAccess\MoviesService.DataAccess.csproj"/>
-        <ProjectReference Include="..\MoviesService.Services\MoviesService.Services.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="Requests\Environments\http-client.env.json" />
     </ItemGroup>
 
 </Project>

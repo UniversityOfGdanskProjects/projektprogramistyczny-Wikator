@@ -1,5 +1,5 @@
 ﻿using FluentAssertions;
-using MoviesService.Core.Helpers;
+using MoviesService.Models.Parameters;
 
 namespace MoviesService.Tests.RepositoriesTests;
 

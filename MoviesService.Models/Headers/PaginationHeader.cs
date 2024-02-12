@@ -1,4 +1,4 @@
-﻿namespace MoviesService.Core.Helpers;
+﻿namespace MoviesService.Models.Headers;
 
 public class PaginationHeader(int currentPage, int itemsPerPage, int totalItems, int totalPages)
 {

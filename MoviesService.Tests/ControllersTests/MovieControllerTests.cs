@@ -3,9 +3,10 @@ using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MoviesService.Api.Controllers;
-using MoviesService.Core.Exceptions;
-using MoviesService.Core.Helpers;
-using MoviesService.Services.Contracts;
+using MoviesService.Api.Exceptions;
+using MoviesService.Api.Services.Contracts;
+using MoviesService.DataAccess.Helpers;
+using MoviesService.Models.Parameters;
 using MoviesService.Tests.ControllersTests.Base;
 
 namespace MoviesService.Tests.ControllersTests;

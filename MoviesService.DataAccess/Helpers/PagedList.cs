@@ -1,4 +1,4 @@
-﻿namespace MoviesService.Core.Helpers;
+﻿namespace MoviesService.DataAccess.Helpers;
 
 public class PagedList<T> : List<T>
 {

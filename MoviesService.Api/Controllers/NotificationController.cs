@@ -1,10 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MoviesService.Api.Controllers.Base;
-using MoviesService.Core.Helpers;
+using MoviesService.Api.Services.Contracts;
 using MoviesService.DataAccess.Contracts;
 using MoviesService.DataAccess.Repositories.Contracts;
-using MoviesService.Services.Contracts;
+using MoviesService.Models.Headers;
+using MoviesService.Models.Parameters;
 
 namespace MoviesService.Api.Controllers;
 

@@ -1,5 +1,6 @@
-﻿using MoviesService.Core.Helpers;
+﻿using MoviesService.DataAccess.Helpers;
 using MoviesService.Models.DTOs.Responses;
+using MoviesService.Models.Parameters;
 using Neo4j.Driver;
 
 namespace MoviesService.DataAccess.Repositories.Contracts;

@@ -1,8 +1,9 @@
 ﻿using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using MoviesService.Api.Controllers;
-using MoviesService.Core.Helpers;
-using MoviesService.Services.Contracts;
+using MoviesService.Api.Services.Contracts;
+using MoviesService.DataAccess.Helpers;
+using MoviesService.Models.Parameters;
 using MoviesService.Tests.ControllersTests.Base;
 
 namespace MoviesService.Tests.ControllersTests;

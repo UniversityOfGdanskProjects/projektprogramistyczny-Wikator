@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using MoviesService.Api.Extensions;
 using MoviesService.Api.Middleware;
 using MoviesService.DataAccess;
+using MoviesService.DataAccess.Extensions;
 using MoviesService.Models.Configurations;
 using Neo4j.Driver;
 using Serilog;
@@ -14,7 +15,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
-builder.Services.AddApplicationServices(builder.Configuration);
+builder.Services.AddApplicationServices();
+builder.Services.AddDataAccessRepositories(builder.Configuration);
 builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
 
 var tokenKey = builder.Configuration["TokenKey"]

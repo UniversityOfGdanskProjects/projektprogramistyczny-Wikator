@@ -1,11 +1,10 @@
 ﻿using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
+using MoviesService.Api.Services.Contracts;
 using MoviesService.Models.Configurations;
-using MoviesService.Services.Contracts;
 
-namespace MoviesService.Services;
+namespace MoviesService.Api.Services;
 
 public class PhotoService(IOptions<CloudinarySettings> config) : IPhotoService
 {

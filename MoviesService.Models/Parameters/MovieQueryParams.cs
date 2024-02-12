@@ -1,6 +1,6 @@
-﻿using MoviesService.Core.Enums;
+﻿using MoviesService.Models.Enums;
 
-namespace MoviesService.Core.Helpers;
+namespace MoviesService.Models.Parameters;
 
 public class MovieQueryParams
 {
