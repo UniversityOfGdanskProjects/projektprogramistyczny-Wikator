@@ -1,18 +1,10 @@
 ﻿namespace MoviesService.DataAccess.Helpers;
 
-public class PagedList<T> : List<T>
+public class PagedList<T>(IEnumerable<T> items, int currentPage, int pageSize, int totalCount)
 {
-    public PagedList(IEnumerable<T> items, int currentPage, int pageSize, int totalCount)
-    {
-        CurrentPage = currentPage;
-        TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
-        PageSize = pageSize;
-        TotalCount = totalCount;
-        AddRange(items);
-    }
-
-    public int CurrentPage { get; init; }
-    public int TotalPages { get; init; }
-    public int PageSize { get; init; }
-    public int TotalCount { get; init; }
+    public IEnumerable<T> Items { get; } = items;
+    public int CurrentPage { get; } = currentPage;
+    public int TotalPages { get; } = (int)Math.Ceiling(totalCount / (double)pageSize);
+    public int PageSize { get; } = pageSize;
+    public int TotalCount { get; } = totalCount;
 }

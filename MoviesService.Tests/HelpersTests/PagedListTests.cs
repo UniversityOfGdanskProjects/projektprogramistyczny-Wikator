@@ -22,7 +22,7 @@ public class PagedListTests
 
         // Assert
         pagedList.Should().BeOfType<PagedList<string>>();
-        pagedList.Should().HaveCount(2);
+        pagedList.Items.Should().HaveCount(2);
         pagedList.CurrentPage.Should().Be(currentPage);
         pagedList.PageSize.Should().Be(pageSize);
         pagedList.TotalCount.Should().Be(totalCount);
@@ -45,7 +45,7 @@ public class PagedListTests
 
         // Assert
         pagedList.Should().BeOfType<PagedList<string>>();
-        pagedList.Should().HaveCount(2);
+        pagedList.Items.Should().HaveCount(2);
         pagedList.CurrentPage.Should().Be(currentPage);
         pagedList.PageSize.Should().Be(pageSize);
         pagedList.TotalCount.Should().Be(totalCount);

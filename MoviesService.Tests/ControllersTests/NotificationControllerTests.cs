@@ -31,8 +31,8 @@ public class NotificationControllerTests : ControllerTestsBase
 
         // Assert
         var okObjectResult = Assert.IsType<OkObjectResult>(result);
-        var pagedList = Assert.IsType<PagedList<NotificationDto>>(okObjectResult.Value);
-        pagedList.Should().HaveCount(1);
+        var items = Assert.IsAssignableFrom<IEnumerable<NotificationDto>>(okObjectResult.Value);
+        items.Should().HaveCount(1);
     }
     
     [Fact]

@@ -40,8 +40,8 @@ public class MovieControllerTests : ControllerTestsBase
 
         // Assert
         var okObjectResult = Assert.IsType<OkObjectResult>(result);
-        var model = Assert.IsAssignableFrom<PagedList<MovieDto>>(okObjectResult.Value);
-        Assert.Equal(pagedList, model);
+        var model = Assert.IsAssignableFrom<IEnumerable<MovieDto>>(okObjectResult.Value);
+        Assert.Equal(pagedList.Items, model);
     }
 
     [Fact]
@@ -70,8 +70,8 @@ public class MovieControllerTests : ControllerTestsBase
 
         // Assert
         var okObjectResult = Assert.IsType<OkObjectResult>(result);
-        var model = Assert.IsAssignableFrom<PagedList<MovieDto>>(okObjectResult.Value);
-        Assert.Equal(pagedList, model);
+        var model = Assert.IsAssignableFrom<IEnumerable<MovieDto>>(okObjectResult.Value);
+        Assert.Equal(pagedList.Items, model);
     }
 
     [Fact]

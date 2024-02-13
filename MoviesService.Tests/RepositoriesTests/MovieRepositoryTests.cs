@@ -72,8 +72,8 @@ public class MovieRepositoryTests
             await Repository.GetMoviesExcludingIgnored(tx, Database.UserId, new MovieQueryParams()));
 
         // Assert
-        movies.Should().HaveCount(1);
-        movies.Should().ContainEquivalentOf(expectedResult);
+        movies.Items.Should().HaveCount(1);
+        movies.Items.Should().ContainEquivalentOf(expectedResult);
     }
 
     [Fact]
@@ -121,8 +121,8 @@ public class MovieRepositoryTests
             await Repository.GetMoviesExcludingIgnored(tx, Database.UserId, new MovieQueryParams()));
 
         // Assert
-        movies.Should().HaveCount(1);
-        movies.Should().ContainEquivalentOf(expectedResult);
+        movies.Items.Should().HaveCount(1);
+        movies.Items.Should().ContainEquivalentOf(expectedResult);
     }
 
     [Fact]
@@ -154,7 +154,7 @@ public class MovieRepositoryTests
             await Repository.GetMoviesExcludingIgnored(tx, Database.UserId, new MovieQueryParams()));
 
         // Assert
-        movies.Should().BeEmpty();
+        movies.Items.Should().BeEmpty();
     }
 
     [Fact]
@@ -198,8 +198,8 @@ public class MovieRepositoryTests
             await Repository.GetMoviesExcludingIgnored(tx, Database.UserId, new MovieQueryParams()));
 
         // Assert
-        movies.Should().HaveCount(1);
-        movies.Should().ContainEquivalentOf(expectedResult);
+        movies.Items.Should().HaveCount(1);
+        movies.Items.Should().ContainEquivalentOf(expectedResult);
     }
 
     [Fact]
@@ -243,8 +243,8 @@ public class MovieRepositoryTests
             await Repository.GetMoviesExcludingIgnored(tx, Database.UserId, new MovieQueryParams()));
 
         // Assert
-        movies.Should().HaveCount(1);
-        movies.Should().ContainEquivalentOf(expectedResult);
+        movies.Items.Should().HaveCount(1);
+        movies.Items.Should().ContainEquivalentOf(expectedResult);
     }
 
     [Fact]
@@ -293,8 +293,8 @@ public class MovieRepositoryTests
             await Repository.GetMoviesExcludingIgnored(tx, Database.UserId, new MovieQueryParams()));
 
         // Assert
-        movies.Should().HaveCount(1);
-        movies.Should().ContainEquivalentOf(expectedResult);
+        movies.Items.Should().HaveCount(1);
+        movies.Items.Should().ContainEquivalentOf(expectedResult);
     }
 
     [Fact]
@@ -329,8 +329,8 @@ public class MovieRepositoryTests
             await Repository.GetMoviesExcludingIgnored(tx, Database.UserId, new MovieQueryParams { Title = "Mo" }));
 
         // Assert
-        movies.Should().HaveCount(1);
-        movies.Should().ContainEquivalentOf(expectedResult);
+        movies.Items.Should().HaveCount(1);
+        movies.Items.Should().ContainEquivalentOf(expectedResult);
     }
 
     [Fact]
@@ -356,7 +356,7 @@ public class MovieRepositoryTests
             await Repository.GetMoviesExcludingIgnored(tx, Database.UserId, new MovieQueryParams { Genre = "Comedy" }));
 
         // Assert
-        movies.Should().BeEmpty();
+        movies.Items.Should().BeEmpty();
     }
 
     [Fact]
@@ -396,8 +396,8 @@ public class MovieRepositoryTests
             await Repository.GetMoviesExcludingIgnored(tx, Database.UserId, new MovieQueryParams { Actor = Actor1Id }));
 
         // Assert
-        movies.Should().HaveCount(2);
-        movies.Should().ContainEquivalentOf(expectedResult);
+        movies.Items.Should().HaveCount(2);
+        movies.Items.Should().ContainEquivalentOf(expectedResult);
     }
 
     [Fact]
@@ -435,8 +435,8 @@ public class MovieRepositoryTests
                     { SortBy = SortBy.Title, SortOrder = SortOrder.Descending, PageNumber = 2, PageSize = 2 }));
 
         // Assert
-        movies.Should().HaveCount(1);
-        movies.Should().ContainEquivalentOf(expectedResult);
+        movies.Items.Should().HaveCount(1);
+        movies.Items.Should().ContainEquivalentOf(expectedResult);
     }
 
     [Fact]
@@ -990,7 +990,7 @@ public class MovieRepositoryTests
                     { SortBy = SortBy.Title, SortOrder = SortOrder.Descending, PageNumber = 2, PageSize = 2 }));
 
         // Assert
-        movies.Should().HaveCount(1);
-        movies.Should().BeEquivalentTo(expectedResult);
+        movies.Items.Should().HaveCount(1);
+        movies.Items.Should().BeEquivalentTo(expectedResult);
     }
 }

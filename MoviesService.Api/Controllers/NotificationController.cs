@@ -33,7 +33,7 @@ public class NotificationController(
                 pagedList.TotalPages);
 
             ResponseHandler.AddPaginationHeader(Response, paginationHeader);
-            return Ok(pagedList);
+            return Ok(pagedList.Items);
         });
     }
 

@@ -35,7 +35,7 @@ public class NotificationRepositoryTests
             await Repository.GetAllNotificationsAsync(tx, new NotificationQueryParams(), Database.UserId));
 
         // Assert
-        notifications.Should().BeEmpty();
+        notifications.Items.Should().BeEmpty();
     }
 
     [Fact]
@@ -89,8 +89,8 @@ public class NotificationRepositoryTests
             await Repository.GetAllNotificationsAsync(tx, new NotificationQueryParams(), Database.UserId));
 
         // Assert
-        notifications.Should().ContainEquivalentOf(expectedNotification1);
-        notifications.Should().ContainEquivalentOf(expectedNotification2);
+        notifications.Items.Should().ContainEquivalentOf(expectedNotification1);
+        notifications.Items.Should().ContainEquivalentOf(expectedNotification2);
     }
 
     [Fact]
@@ -154,9 +154,9 @@ public class NotificationRepositoryTests
             await Repository.GetAllNotificationsAsync(tx, queryParams2, Database.UserId));
 
         // Assert
-        notifications1.Should().HaveCount(1);
-        notifications1.Should().ContainEquivalentOf(expectedNotification);
-        notifications2.Should().HaveCount(2);
+        notifications1.Items.Should().HaveCount(1);
+        notifications1.Items.Should().ContainEquivalentOf(expectedNotification);
+        notifications2.Items.Should().HaveCount(2);
     }
 
     [Theory]
