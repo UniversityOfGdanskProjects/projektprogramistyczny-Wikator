@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MoviesService.Api.Controllers.Base;
-using MoviesService.Api.Extensions;
 using MoviesService.Api.Services.Contracts;
 using MoviesService.DataAccess.Contracts;
 using MoviesService.DataAccess.Repositories.Contracts;
@@ -15,11 +14,13 @@ public class AccountController(
     IAsyncQueryExecutor queryExecutor,
     ITokenService tokenService,
     IAccountRepository accountRepository,
-    IMqttService mqttService) : BaseApiController(queryExecutor)
+    IMqttService mqttService,
+    IUserClaimsProvider claimsProvider) : BaseApiController(queryExecutor)
 {
     private ITokenService TokenService { get; } = tokenService;
     private IAccountRepository AccountRepository { get; } = accountRepository;
     private IMqttService MqttService { get; } = mqttService;
+    private IUserClaimsProvider ClaimsProvider { get; } = claimsProvider;
 
 
     [HttpPost("login")]
@@ -57,7 +58,7 @@ public class AccountController(
     {
         return await QueryExecutor.ExecuteWriteAsync<IActionResult>(async tx =>
         {
-            var userId = User.GetUserId();
+            var userId = ClaimsProvider.GetUserId(User);
             await AccountRepository.DeleteUserAsync(tx, userId);
             return NoContent();
         });
