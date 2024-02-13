@@ -1,0 +1,12 @@
+﻿GET https://localhost:7102/api/movie/watchlist
+Authorization: Bearer {{user_token}}
+
+###
+
+POST https://localhost:7102/api/movie/4b5f1d5b-d0a4-423b-b594-66ba6e3b3b50/watchlist
+Authorization: Bearer {{user_token}}
+
+###
+
+DELETE https://localhost:7102/api/movie/4b5f1d5b-d0a4-423b-b594-66ba6e3b3b50/watchlist
+Authorization: Bearer {{user_token}}

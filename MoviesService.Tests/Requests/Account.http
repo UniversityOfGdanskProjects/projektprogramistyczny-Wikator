@@ -1,0 +1,23 @@
+﻿POST https://localhost:7102/api/account/register
+Content-Type: application/json
+
+{
+  "email": "test3@gmail.com",
+  "name": "Test3",
+  "password": "Pa$$w0rd"
+}
+
+###
+
+POST https://localhost:7102/api/account/login
+Content-Type: application/json
+
+{
+  "email": "test@gmail.com",
+  "password": "Pa$$w0rd"
+}
+
+###
+
+DELETE https://localhost:7102/api/account
+Authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJuYW1laWQiOiI5YWQ2NDQwNC0xYWJmLTQ3ZjEtODE4OC03YTcyM2E5MzM3NDUiLCJ1bmlxdWVfbmFtZSI6IlRlc3QzIiwicm9sZSI6IlVzZXIiLCJuYmYiOjE3MDU0NDQyNzIsImV4cCI6MTcwNjA0OTA3MiwiaWF0IjoxNzA1NDQ0MjcyLCJpc3MiOiJodHRwczovL21vdmllc2FwaXdlYnRlc3QuYXp1cmV3ZWJzaXRlcy5uZXQifQ.Q1sUobFkulNJ5_KMV7PnHhQecGqaqo6TgQC4jQBACHvFkOi7_7-u2vJI9cRZFtl3c_UArbp6F_s9Oxbf8OF-pg

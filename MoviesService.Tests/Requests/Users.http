@@ -1,0 +1,11 @@
+﻿GET https://localhost:7102/api/user
+
+###
+
+PUT https://localhost:7102/api/user/username
+Authorization: Bearer {{user_token}}
+Content-Type: application/json
+
+{
+  "newUsername": "new_username"
+}

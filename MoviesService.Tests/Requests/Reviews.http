@@ -1,0 +1,23 @@
+﻿POST https://localhost:7102/api/review
+Authorization: Bearer {{user_token}}
+Content-Type: application/json
+
+{
+  "movieId": "5635b4ff-a7ab-4e36-80f4-cd1684779660",
+  "score": 3
+}
+
+###
+
+PUT https://localhost:7102/api/review/94c5cc64-e24a-4210-8f13-fbf9d0035a20
+Authorization: Bearer {{user_token}}
+Content-Type: application/json
+
+{
+  "score": 2
+}
+
+###
+
+DELETE https://localhost:7102/api/Reviews/94c5cc64-e24a-4210-8f13-fbf9d0035a20
+Authorization: Bearer {{user_token}}

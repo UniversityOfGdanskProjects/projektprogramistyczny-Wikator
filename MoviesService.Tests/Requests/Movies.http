@@ -1,0 +1,65 @@
+﻿GET https://localhost:7102/api/movie
+# Authorization: Bearer {{user_token}}
+
+###
+
+GET https://localhost:7102/api/movie/4b5f1d5b-d0a4-423b-b594-66ba6e3b3b50
+
+###
+
+GET https://localhost:7102/api/movie?sortOrder=Descending
+
+###
+
+GET https://localhost:7102/api/movie?SortBy=title&SortOrder=Ascending
+
+###
+
+GET https://localhost:7102/api/movie?genre=action
+
+###
+
+POST https://localhost:7102/api/movie
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "title": "The Matrix",
+  "inTheaters": false,
+  "minimumAge": 13,
+  "releaseDate": "1999-03-31",
+  "TrailerUrl": "https://www.youtube.com/watch?v=vKQi3bBA1y8",
+  "description": "A computer hacker learns from mysterious rebels about the true nature of his reality and his role in the war against its controllers.",
+  "actorIds": [],
+  "genres": [
+    "Action",
+    "Adventure",
+    "fsfsd"
+  ]
+}
+
+###
+
+PUT https://localhost:7102/api/movie/7ec9c273-b55b-4b08-9cc8-357bb2122bb0
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "title": "Two Towers",
+  "inTheaters": false,
+  "minimumAge": 13,
+  "releaseDate": "2022-03-31",
+  "TrailerUrl": "https://www.youtube.com/watch?v=LbfMDwc4azU&t=1s",
+  "description": "Hobbits",
+  "actorIds": [],
+  "genres": [
+    "Action",
+    "Adventure",
+    "fsfsd"
+  ]
+}
+
+###
+
+DELETE  https://localhost:7102/api/movie/133aadee-bc16-4bdd-b62f-29a1e7da3c9b
+Authorization: Bearer {{admin_token}}

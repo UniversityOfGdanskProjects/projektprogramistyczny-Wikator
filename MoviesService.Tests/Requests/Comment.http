@@ -1,0 +1,25 @@
+﻿POST https://localhost:7102/api/comment
+Authorization: Bearer {{user_token}}
+Content-Type: application/json
+
+{
+  "text": "nice",
+  "movieId": "4b5f1d5b-d0a4-423b-b594-66ba6e3b3b50"
+}
+
+###
+
+PUT https://localhost:7102/api/comment/42861ba9-fcb7-407c-9c5b-63449d93c908
+Authorization: Bearer {{user_token}}
+Content-Type: application/json
+
+{
+  "text": "Pew-pew-pew",
+  "movieId": "4b5f1d5b-d0a4-423b-b594-66ba6e3b3b50"
+}
+
+
+###
+
+DELETE https://localhost:7102/api/Comment/42861ba9-fcb7-407c-9c5b-63449d93c908
+Authorization: Bearer {{admin_token}}
